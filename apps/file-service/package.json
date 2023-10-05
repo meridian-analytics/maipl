@@ -6,7 +6,10 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@maipl/common": "workspace:*",
+    "@maipl/api": "workspace:*",
+    "@maipl/format": "workspace:*",
+    "@maipl/react": "workspace:*",
+    "@maipl/tree": "workspace:*",
     "@monaco-editor/react": "^4.5.2",
     "@mui/icons-material": "^5.14.12",
     "@mui/material": "^5.14.12",

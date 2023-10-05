@@ -1,8 +1,6 @@
-import { File, Task } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/context"
-import * as F from "@maipl/common/format"
-import { Files } from "@maipl/common/table"
-import * as UI from "@maipl/common/ui"
+import { File, Task } from "@maipl/api"
+import * as F from "@maipl/format"
+import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as RR from "react-router-dom"
@@ -12,7 +10,7 @@ export default function ShowTaskLoader(props: {
 }) {
   const params = RR.useParams()
   const taskId = F.safeParseInteger(params.taskId, null)
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
 
   const { data: task, error } = RQ.useQuery({
     enabled: taskId != null,
@@ -33,7 +31,7 @@ export default function ShowTaskLoader(props: {
   })
 
   return (
-    <UI.Modal onClose={props.onClose}>
+    <MR.Modal onClose={props.onClose}>
       {error != null ? (
         <M.Typography>{(error as Error).message}</M.Typography>
       ) : modelError != null ? (
@@ -43,7 +41,7 @@ export default function ShowTaskLoader(props: {
       ) : (
         <ShowTask task={task} model={model} onClose={props.onClose} />
       )}
-    </UI.Modal>
+    </MR.Modal>
   )
 }
 
@@ -63,9 +61,9 @@ function ShowTask(props: {
     setFolder,
     setPagination,
     setSelection,
-  } = Files.useTable({})
+  } = MR.Files.useTable({})
 
-  const { data: files } = Files.useQuery({
+  const { data: files } = MR.Files.useQuery({
     ids: task.filelist,
     maipl_folder: folder,
     path: debouncedFilter.get("path"),
@@ -138,7 +136,7 @@ function ShowTask(props: {
         Input Files
       </M.Typography>
       <M.Stack direction="row" spacing={2}>
-        <UI.MaiplFolderPicker
+        <MR.MaiplFolderPicker
           folder={folder}
           folders={["public", "dataset", "raw"]}
           setFolder={setFolder}
@@ -170,7 +168,7 @@ function ShowTask(props: {
           />
         )}
       </M.Stack>
-      <Files.Table
+      <MR.Files.Table
         rows={files.data}
         count={files.count}
         pagination={pagination}

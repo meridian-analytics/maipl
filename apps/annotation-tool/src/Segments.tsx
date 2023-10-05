@@ -1,6 +1,5 @@
-import { Segment } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/hooks"
-import { Segments } from "@maipl/common/table"
+import { Segment } from "@maipl/api"
+import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
@@ -9,10 +8,10 @@ import AddToBatch from "./AddToBatch.jsx"
 
 function Actions(props: {
   setModal: R.Dispatch<R.SetStateAction<boolean>>
-  selection: ReturnType<typeof Segments.useTable>["selection"]
-  setSelection: ReturnType<typeof Segments.useTable>["setSelection"]
+  selection: ReturnType<typeof MR.Segments.useTable>["selection"]
+  setSelection: ReturnType<typeof MR.Segments.useTable>["setSelection"]
 }) {
-  const { client, user } = useMaipl()
+  const { client } = MR.useMaipl()
   const queryClient = RQ.useQueryClient()
 
   const onAdd = async () => {
@@ -65,7 +64,7 @@ function Actions(props: {
 }
 
 export default function SegmentsTable(props: { sx?: M.SxProps }) {
-  const { user } = useMaipl()
+  const { user } = MR.useMaipl()
   const [modal, setModal] = R.useState(false)
 
   const {
@@ -75,9 +74,9 @@ export default function SegmentsTable(props: { sx?: M.SxProps }) {
     selection,
     setPagination,
     setSelection,
-  } = Segments.useTable()
+  } = MR.Segments.useTable()
 
-  const { data: segments } = Segments.useQuery({
+  const { data: segments } = MR.Segments.useQuery({
     // filters
     filename: debouncedFilter.get("filename"),
     tag: debouncedFilter.get("tag"),
@@ -130,7 +129,7 @@ export default function SegmentsTable(props: { sx?: M.SxProps }) {
           setSelection={setSelection}
         />
       </M.Stack>
-      <Segments.Table
+      <MR.Segments.Table
         rows={segments.data}
         count={segments.count}
         pagination={pagination}

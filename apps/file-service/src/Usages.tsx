@@ -1,11 +1,11 @@
-import { File } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/context"
-import { filesize } from "@maipl/common/format"
+import { File } from "@maipl/api"
+import { filesize } from "@maipl/format"
+import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "@tanstack/react-query"
 
 function Usages() {
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
   const { data } = RR.useQuery({
     queryKey: ["files", "usage"],
     queryFn: () => File.usage(client),

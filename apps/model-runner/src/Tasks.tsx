@@ -1,6 +1,5 @@
-import { Task } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/context"
-import { Tasks } from "@maipl/common/table"
+import { Task } from "@maipl/api"
+import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
@@ -14,7 +13,7 @@ function TaskActions(props: { task: Task.t }) {
   const [anchorEl, setAnchorEl] = R.useState<HTMLElement | null>(null)
   const buttonId = R.useId()
   const menuId = R.useId()
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
   const open = anchorEl != null
 
   const startMutation = RQ.useMutation({
@@ -100,9 +99,9 @@ export default function TasksTable(props: {
   const navigate = RR.useNavigate()
   const queryClient = RQ.useQueryClient()
   const { pagination, selection, setPagination, setSelection } =
-    Tasks.useTable()
+    MR.Tasks.useTable()
 
-  const { data: tasks } = Tasks.useQuery({})
+  const { data: tasks } = MR.Tasks.useQuery({})
 
   // hack: refresh tasks every 30 seconds
   R.useEffect(() => {
@@ -147,9 +146,9 @@ export default function TasksTable(props: {
           />
         </M.Tooltip>
       </M.Stack>
-      <Tasks.Table
+      <MR.Tasks.Table
         columns={[
-          Tasks.column.display({
+          MR.Tasks.column.display({
             id: "actions",
             header: "",
             cell: ({ row }) => <TaskActions task={row.original} />,

@@ -1,6 +1,5 @@
-import { Batch } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/context"
-import { Batches } from "@maipl/common/table"
+import { Batch } from "@maipl/api"
+import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
@@ -13,7 +12,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
   const [anchorEl, setAnchorEl] = R.useState<HTMLElement | null>(null)
   const buttonId = R.useId()
   const menuId = R.useId()
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
   const { batch } = props
   const open = anchorEl != null
 
@@ -98,7 +97,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
 }
 
 export default function BatchesTable(props: { sx?: M.SxProps }) {
-  const { user } = useMaipl()
+  const { user } = MR.useMaipl()
   const navigate = RR.useNavigate()
 
   const {
@@ -108,9 +107,9 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
     selection,
     setPagination,
     setSelection,
-  } = Batches.useTable()
+  } = MR.Batches.useTable()
 
-  const { data: batches } = Batches.useQuery({
+  const { data: batches } = MR.Batches.useQuery({
     // filters
     name: debouncedFilter.get("name"),
     user: user?.id,
@@ -121,7 +120,7 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
 
   const columns = R.useMemo(
     () => [
-      Batches.column.display({
+      MR.Batches.column.display({
         id: "actions",
         header: "",
         cell: info => <BatchActions batch={info.row.original} />,
@@ -173,7 +172,7 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
           />
         </M.Tooltip>
       </M.Stack>
-      <Batches.Table
+      <MR.Batches.Table
         rows={batches.data}
         columns={columns}
         count={batches.count}

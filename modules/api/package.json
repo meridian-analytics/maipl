@@ -1,0 +1,17 @@
+{
+  "name": "@maipl/api",
+  "private": false,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@maipl/buffer": "workspace:*",
+    "@maipl/constants": "workspace:*",
+    "@maipl/csv": "workspace:*",
+    "@maipl/format": "workspace:*",
+    "axios": "^1.5.1",
+    "typescript": "^5.2.2"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

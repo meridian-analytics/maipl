@@ -1,4 +1,4 @@
-import { Auth } from "@maipl/common/api"
+import { Auth } from "@maipl/api"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as R from "react"

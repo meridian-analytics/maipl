@@ -1,5 +1,4 @@
-import { MaiplProvider } from "@maipl/common/context"
-import * as UI from "@maipl/common/ui"
+import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
 import Detections from "./Detections.js"
@@ -24,7 +23,7 @@ function LocalNavigation() {
 
 export default function App() {
   return (
-    <MaiplProvider>
+    <MR.MaiplProvider>
       <M.Stack
         sx={{
           backgroundColor: M.colors.grey[50],
@@ -32,15 +31,15 @@ export default function App() {
           maxHeight: "100vh",
         }}
       >
-        <UI.Navbar>
+        <MR.Navbar>
           <LocalNavigation />
-        </UI.Navbar>
+        </MR.Navbar>
         <RR.Routes>
           <RR.Route path="detections" element={<Detections />} />
           <RR.Route path="tasks/*" element={<Tasks />} />
           <RR.Route path="*" element={<RR.Navigate to="/tasks" replace />} />
         </RR.Routes>
       </M.Stack>
-    </MaiplProvider>
+    </MR.MaiplProvider>
   )
 }

@@ -1,7 +1,6 @@
-import { File } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/hooks"
-import { Files } from "@maipl/common/table"
-import * as UI from "@maipl/common/ui"
+import { File } from "@maipl/api"
+import * as MR from "@maipl/react"
+import * as Tree from "@maipl/tree"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
@@ -10,20 +9,18 @@ import FileEditor from "./FileEditor.js"
 import FileUpload from "./FileUpload.js"
 
 function Actions(props: {
-  selection: ReturnType<typeof Files.useTable>["selection"]
-  setSelection: ReturnType<typeof Files.useTable>["setSelection"]
+  selection: ReturnType<typeof MR.Files.useTable>["selection"]
+  setSelection: ReturnType<typeof MR.Files.useTable>["setSelection"]
 }) {
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
   const queryClient = RQ.useQueryClient()
   const navigate = RR.useNavigate()
 
   const onDelete = async () => {
     const message = [
       `Are you sure you want to delete ${props.selection.size} files?`,
-      File.Util.treeToString(
-        File.Util.treeFromPaths(
-          Array.from(props.selection.values(), file => file.path),
-        ),
+      Tree.toString(
+        Tree.fromPaths(Array.from(props.selection.values(), file => file.path)),
       ),
     ]
 
@@ -100,9 +97,9 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
     setFolder,
     setPagination,
     setSelection,
-  } = Files.useTable()
+  } = MR.Files.useTable()
 
-  const { data: files } = Files.useQuery({
+  const { data: files } = MR.Files.useQuery({
     maipl_folder: folder,
     path: debouncedFilter.get("path"),
     tag: debouncedFilter.get("tag"),
@@ -140,7 +137,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
         />
       </RR.Routes>
       <M.Stack direction="row" spacing={2}>
-        <UI.MaiplFolderPicker
+        <MR.MaiplFolderPicker
           folder={folder}
           folders={[
             "public",
@@ -171,7 +168,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
         <M.Stack flexGrow={1} />
         <Actions selection={selection} setSelection={setSelection} />
       </M.Stack>
-      <Files.Table
+      <MR.Files.Table
         rows={files.data}
         count={files.count}
         pagination={pagination}

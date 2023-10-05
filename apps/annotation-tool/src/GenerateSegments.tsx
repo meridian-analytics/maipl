@@ -1,7 +1,5 @@
-import { File, Segment } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/hooks"
-import * as MT from "@maipl/common/table"
-import { Modal } from "@maipl/common/ui"
+import { File, Segment } from "@maipl/api"
+import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as R from "react"
 
@@ -42,7 +40,7 @@ function GenerateSegments(props: {
   files: Array<File.t>
 }) {
   const { files } = props
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
 
   const [length, setLength] = R.useState(60)
   const [step, setStep] = R.useState(60)
@@ -61,13 +59,13 @@ function GenerateSegments(props: {
   }
 
   return (
-    <Modal onClose={props.onClose}>
+    <MR.Modal onClose={props.onClose}>
       <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography variant="h5">
           Selected Files ({files.length})
         </M.Typography>
-        <MT.Files.Table
-          {...MT.useTable<File.t>()}
+        <MR.Files.Table
+          {...MR.useTable<File.t>()}
           rows={files}
           sx={{ maxHeight: "35vh" }}
           visibility={{
@@ -120,8 +118,8 @@ function GenerateSegments(props: {
           />
         </M.Stack>
         <M.Typography variant="h5">Segments Preview:</M.Typography>
-        <MT.Segments.Table
-          {...MT.useTable<Segment.t>()}
+        <MR.Segments.Table
+          {...MR.useTable<Segment.t>()}
           rows={segments as Segment.t[]}
           sx={{ maxHeight: "35vh" }}
           visibility={{
@@ -144,7 +142,7 @@ function GenerateSegments(props: {
           />
         </M.Stack>
       </M.Stack>
-    </Modal>
+    </MR.Modal>
   )
 }
 

@@ -24,9 +24,15 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.25)(react@18.2.0)
-      '@maipl/common':
+      '@maipl/api':
         specifier: workspace:*
-        version: link:../../modules/common
+        version: link:../../modules/api
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../../modules/format
+      '@maipl/react':
+        specifier: workspace:*
+        version: link:../../modules/react
       '@mui/icons-material':
         specifier: ^5.14.12
         version: 5.14.12(@mui/material@5.14.12)(@types/react@18.2.25)(react@18.2.0)
@@ -48,9 +54,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^4.35.7
         version: 4.35.7(react-dom@18.2.0)(react@18.2.0)
-      '@tanstack/react-table':
-        specifier: ^8.10.3
-        version: 8.10.3(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -97,18 +100,18 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.25)(react@18.2.0)
-      '@maipl/common':
+      '@maipl/api':
         specifier: workspace:*
-        version: link:../../modules/common
+        version: link:../../modules/api
+      '@maipl/react':
+        specifier: workspace:*
+        version: link:../../modules/react
       '@mui/icons-material':
         specifier: ^5.14.12
         version: 5.14.12(@mui/material@5.14.12)(@types/react@18.2.25)(react@18.2.0)
       '@mui/material':
         specifier: ^5.14.12
         version: 5.14.12(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.2.25)(react-dom@18.2.0)(react@18.2.0)
-      '@tanstack/react-query':
-        specifier: ^4.35.7
-        version: 4.35.7(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -146,9 +149,18 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.25)(react@18.2.0)
-      '@maipl/common':
+      '@maipl/api':
         specifier: workspace:*
-        version: link:../../modules/common
+        version: link:../../modules/api
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../../modules/format
+      '@maipl/react':
+        specifier: workspace:*
+        version: link:../../modules/react
+      '@maipl/tree':
+        specifier: workspace:*
+        version: link:../../modules/tree
       '@monaco-editor/react':
         specifier: ^4.5.2
         version: 4.5.2(monaco-editor@0.43.0)(react-dom@18.2.0)(react@18.2.0)
@@ -207,9 +219,15 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.25)(react@18.2.0)
-      '@maipl/common':
+      '@maipl/api':
         specifier: workspace:*
-        version: link:../../modules/common
+        version: link:../../modules/api
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../../modules/format
+      '@maipl/react':
+        specifier: workspace:*
+        version: link:../../modules/react
       '@mui/icons-material':
         specifier: ^5.14.12
         version: 5.14.12(@mui/material@5.14.12)(@types/react@18.2.25)(react@18.2.0)
@@ -219,9 +237,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^4.35.7
         version: 4.35.7(react-dom@18.2.0)(react@18.2.0)
-      '@tanstack/react-table':
-        specifier: ^8.10.3
-        version: 8.10.3(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -251,7 +266,52 @@ importers:
         specifier: ^4.4.10
         version: 4.4.10
 
-  modules/common:
+  modules/api:
+    dependencies:
+      '@maipl/buffer':
+        specifier: workspace:*
+        version: link:../buffer
+      '@maipl/constants':
+        specifier: workspace:*
+        version: link:../constants
+      '@maipl/csv':
+        specifier: workspace:*
+        version: link:../csv
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../format
+      axios:
+        specifier: ^1.5.1
+        version: 1.5.1
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
+
+  modules/async: {}
+
+  modules/buffer: {}
+
+  modules/constants:
+    dependencies:
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../format
+    devDependencies:
+      vite:
+        specifier: ^4.4.10
+        version: 4.4.10
+
+  modules/csv: {}
+
+  modules/format: {}
+
+  modules/pkce:
+    dependencies:
+      '@maipl/buffer':
+        specifier: workspace:*
+        version: link:../buffer
+
+  modules/react:
     dependencies:
       '@emotion/react':
         specifier: ^11.11.1
@@ -259,6 +319,21 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.25)(react@18.2.0)
+      '@maipl/api':
+        specifier: workspace:*
+        version: link:../api
+      '@maipl/async':
+        specifier: workspace:*
+        version: link:../async
+      '@maipl/constants':
+        specifier: workspace:*
+        version: link:../constants
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../format
+      '@maipl/pkce':
+        specifier: workspace:*
+        version: link:../pkce
       '@mui/icons-material':
         specifier: ^5.14.12
         version: 5.14.12(@mui/material@5.14.12)(@types/react@18.2.25)(react@18.2.0)
@@ -295,10 +370,12 @@ importers:
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
-    devDependencies:
-      vite:
-        specifier: ^4.4.10
-        version: 4.4.10
+
+  modules/tree:
+    dependencies:
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../format
 
 packages:
 

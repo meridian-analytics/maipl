@@ -1,7 +1,6 @@
-import { File } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/context"
-import * as F from "@maipl/common/format"
-import { MaiplFolderPicker, Modal } from "@maipl/common/ui"
+import { File } from "@maipl/api"
+import * as F from "@maipl/format"
+import * as MR from "@maipl/react"
 import { Editor } from "@monaco-editor/react"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
@@ -16,7 +15,7 @@ export default function FileEditor(props: {
   const params = RR.useParams()
   const fileId = F.safeParseInteger(params.fileId, null)
 
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
   const { data: file, error } = RQ.useQuery({
     enabled: fileId != null,
     queryKey: ["files", fileId],
@@ -24,7 +23,7 @@ export default function FileEditor(props: {
   })
 
   return (
-    <Modal onClose={props.onClose}>
+    <MR.Modal onClose={props.onClose}>
       {error != null ? (
         <M.Typography>{(error as Error).message}</M.Typography>
       ) : (
@@ -34,7 +33,7 @@ export default function FileEditor(props: {
           onClose={props.onClose}
         />
       )}
-    </Modal>
+    </MR.Modal>
   )
 }
 
@@ -43,7 +42,7 @@ function FileEditor_(props: {
   folder: File.t_maipl_folder
   onClose: () => void
 }) {
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
   const { file } = props
   const [path, setPath] = R.useState(() => file?.path ?? "/path/to/myfile.txt")
   const [folder, setFolder] = R.useState(
@@ -146,7 +145,7 @@ function FileEditor_(props: {
   }, [file?.tag, tag, value])
 
   return (
-    <Modal
+    <MR.Modal
       onClose={() => hasUnsavedChanges == false && props.onClose()}
       sx={{ width: "100%" }}
     >
@@ -155,7 +154,7 @@ function FileEditor_(props: {
           {file == null ? "Create new file ..." : file.basename}
         </M.Typography>
         <M.Stack direction="row" spacing={2}>
-          <MaiplFolderPicker
+          <MR.MaiplFolderPicker
             folder={folder}
             folders={[
               "public",
@@ -231,6 +230,6 @@ function FileEditor_(props: {
           )}
         </M.Stack>
       </M.Stack>
-    </Modal>
+    </MR.Modal>
   )
 }

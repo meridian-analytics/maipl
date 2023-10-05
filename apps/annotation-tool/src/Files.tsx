@@ -1,6 +1,5 @@
-import { File } from "@maipl/common/api"
-import { Files } from "@maipl/common/table"
-import * as UI from "@maipl/common/ui"
+import { File } from "@maipl/api"
+import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as R from "react"
@@ -8,8 +7,8 @@ import GenerateSegments from "./GenerateSegments.jsx"
 
 function Actions(props: {
   setModal: R.Dispatch<R.SetStateAction<boolean>>
-  selection: ReturnType<typeof Files.useTable>["selection"]
-  setSelection: ReturnType<typeof Files.useTable>["setSelection"]
+  selection: ReturnType<typeof MR.Files.useTable>["selection"]
+  setSelection: ReturnType<typeof MR.Files.useTable>["setSelection"]
 }) {
   const onGenerate = async () => {
     props.setModal(true)
@@ -40,9 +39,9 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
     setFolder,
     setPagination,
     setSelection,
-  } = Files.useTable()
+  } = MR.Files.useTable()
 
-  const { data: files } = Files.useQuery({
+  const { data: files } = MR.Files.useQuery({
     maipl_folder: folder,
     path: debouncedFilter.get("path"),
     tag: debouncedFilter.get("tag"),
@@ -68,7 +67,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
         />
       )}
       <M.Stack direction="row" spacing={2}>
-        <UI.MaiplFolderPicker
+        <MR.MaiplFolderPicker
           folder={folder}
           folders={[
             "public",
@@ -104,7 +103,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
         />
       </M.Stack>
 
-      <Files.Table
+      <MR.Files.Table
         rows={files.data}
         rowCanSelect={R.useCallback(
           (file: File.t) => ((file.meta?.duration as number) ?? 0) !== 0,

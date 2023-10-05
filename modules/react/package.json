@@ -1,0 +1,30 @@
+{
+  "name": "@maipl/react",
+  "private": false,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@maipl/api": "workspace:*",
+    "@maipl/async": "workspace:*",
+    "@maipl/constants": "workspace:*",
+    "@maipl/format": "workspace:*",
+    "@maipl/pkce": "workspace:*",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.14.12",
+    "@mui/material": "^5.14.12",
+    "@tanstack/react-query": "^4.35.7",
+    "@tanstack/react-query-devtools": "^4.35.7",
+    "@tanstack/react-table": "^8.10.3",
+    "@types/react": "^18.2.25",
+    "@types/react-dom": "^18.2.10",
+    "axios": "^1.5.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.16.0",
+    "typescript": "^5.2.2"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

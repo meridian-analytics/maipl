@@ -1,7 +1,6 @@
-import { Batch, File } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/context"
-import { safeParseInteger } from "@maipl/common/format"
-import { Modal } from "@maipl/common/ui"
+import { Batch, File } from "@maipl/api"
+import { safeParseInteger } from "@maipl/format"
+import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import { Form } from "@rjsf/mui"
@@ -14,7 +13,7 @@ import * as BatchParameters from "./schema/BatchParametersSchema.js"
 function EditBatch(props: { isNew: boolean; onClose: () => void }) {
   const params = RR.useParams()
   const batchId = safeParseInteger(params.batchId, null)
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
 
   const { data: batch, error } = RQ.useQuery({
     queryKey: ["batches", batchId],
@@ -24,9 +23,9 @@ function EditBatch(props: { isNew: boolean; onClose: () => void }) {
 
   if (error) {
     return (
-      <Modal onClose={props.onClose}>
+      <MR.Modal onClose={props.onClose}>
         <M.Typography>{(error as Error).message}</M.Typography>
-      </Modal>
+      </MR.Modal>
     )
   }
 
@@ -39,7 +38,7 @@ function EditBatch(props: { isNew: boolean; onClose: () => void }) {
 
 function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
   const { batch } = props
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
 
   const queryClient = RQ.useQueryClient()
   const [allowChanges, setAllowChanges] = R.useState(
@@ -134,7 +133,7 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
   const templateSelectorId = R.useId()
 
   return (
-    <Modal onClose={props.onClose}>
+    <MR.Modal onClose={props.onClose}>
       <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography variant="h6">
           {batch == null ? "Create new batch ..." : name}
@@ -241,7 +240,7 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
           />
         </M.Stack>
       </M.Stack>
-    </Modal>
+    </MR.Modal>
   )
 }
 

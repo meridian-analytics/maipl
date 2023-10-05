@@ -1,8 +1,6 @@
-import { File } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/context"
-import { filesize } from "@maipl/common/format"
-import * as MT from "@maipl/common/table"
-import { Modal } from "@maipl/common/ui"
+import { File } from "@maipl/api"
+import { filesize } from "@maipl/format"
+import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as RT from "@tanstack/react-table"
@@ -48,19 +46,19 @@ type FileState = {
 
 const column = RT.createColumnHelper<FileState>()
 
-const AcceptedFiles = MT.Table<FileState, string>()
+const AcceptedFiles = MR.Table<FileState, string>()
 
 export default function FileUpload(props: {
   folder: File.t_maipl_folder
   onClose: () => void
 }) {
   const queryClient = RQ.useQueryClient()
-  const { client, enqueue } = useMaipl()
+  const { client, enqueue } = MR.useMaipl()
   const [tag, setTag] = R.useState("")
   const [status, setStatus] = R.useState<UploadStatus>(() => new Map())
 
   // table
-  const table = MT.useTable<FileState, string>()
+  const table = MR.useTable<FileState, string>()
   const columns = R.useMemo(
     () =>
       [
@@ -82,7 +80,7 @@ export default function FileUpload(props: {
             </M.Stack>
           ),
         }),
-      ] as Array<MT.ColumnDef<FileState>>,
+      ] as Array<MR.ColumnDef<FileState>>,
     [],
   )
 
@@ -167,7 +165,7 @@ export default function FileUpload(props: {
   )
 
   return dz.acceptedFiles.length == 0 ? (
-    <Modal onClose={props.onClose}>
+    <MR.Modal onClose={props.onClose}>
       <M.Stack spacing={2}>
         <M.Typography variant="h5" children="Upload Files" />
         <M.Box my={5}>
@@ -179,9 +177,9 @@ export default function FileUpload(props: {
           </M.Box>
         </M.Box>
       </M.Stack>
-    </Modal>
+    </MR.Modal>
   ) : (
-    <Modal onClose={props.onClose}>
+    <MR.Modal onClose={props.onClose}>
       <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography
           children={`${table.selection.size} files to be uploaded (${filesize(
@@ -233,7 +231,7 @@ export default function FileUpload(props: {
           />
         </M.Stack>
       </M.Stack>
-    </Modal>
+    </MR.Modal>
   )
 }
 
