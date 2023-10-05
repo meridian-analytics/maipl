@@ -1,0 +1,47 @@
+{
+  "name": "@maipl/file-service",
+  "version": "0.8.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@maipl/common": "workspace:*",
+    "@monaco-editor/react": "^4.5.2",
+    "@mui/icons-material": "^5.14.12",
+    "@mui/material": "^5.14.12",
+    "@tanstack/react-query": "^4.35.7",
+    "@tanstack/react-table": "^8.10.3",
+    "monaco-editor": "^0.43.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.2.3",
+    "react-router-dom": "^6.16.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query-devtools": "^4.35.7",
+    "@types/react": "^18.2.25",
+    "@types/react-dom": "^18.2.10",
+    "@vitejs/plugin-react": "^4.1.0",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.10"
+  },
+  "scripts": {
+    "build": "vite build",
+    "preview": "vite preview --port 3100",
+    "start": "vite dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

@@ -1,0 +1,112 @@
+/* specviz-react defaults */
+.visualization {
+  height: 300px;
+  background-color: #fbf1a9;
+  border-radius: 0.25rem;
+  border: 1px solid #000;
+  overflow: hidden;
+  margin: 0.25rem 0;
+}
+
+.visualization.annotate {
+  cursor: crosshair;
+}
+
+.visualization.select {
+  cursor: context-menu;
+}
+
+.visualization.zoom {
+  cursor: zoom-in;
+}
+
+.visualization.pan {
+  cursor: move;
+}
+
+.visualization .playhead {
+  stroke: white;
+  stroke-width: 0.2%;
+  mix-blend-mode: difference;
+}
+
+.visualization .selection {
+  fill: rgba(200, 200, 200, 1);
+  mix-blend-mode: difference;
+}
+
+.cursor-x,
+.cursor-y {
+  stroke: white;
+  stroke-width: 0.2%;
+  mix-blend-mode: difference;
+}
+
+.cursor-text {
+  fill: white;
+  font-size: 12pt;
+  font-family: monospace;
+  mix-blend-mode: difference;
+}
+
+.navigator {
+  height: 50px;
+  cursor: crosshair;
+  background-color: #fbf1a9;
+  border-radius: 0.25rem;
+  border: 1px solid #000;
+  overflow: hidden;
+}
+
+.navigator.zoom {
+  cursor: zoom-out;
+}
+
+.navigator .playhead {
+  stroke: white;
+  stroke-width: 0.2%;
+  mix-blend-mode: difference;
+}
+
+.navigator .playhead-text {
+  display: none;
+}
+
+.navigator .mask {
+  fill: rgba(0, 0, 0, 0.5);
+}
+
+.annotation {
+  fill: rgba(33, 33, 33, 1);
+  mix-blend-mode: difference;
+}
+
+.annotation-selected {
+  fill: rgba(99, 99, 99, 1);
+}
+
+button.active {
+  color: #d5008f;
+}
+
+.encoder {
+  stroke: black;
+  stroke-width: 0.05;
+  fill: none;
+  text-align: center;
+}
+
+.encoder-marker {
+  fill: black;
+  stroke-width: 0;
+}
+
+.encoder-text {
+  text-align: center;
+  font-size: 0.3pt;
+  font-family: sans-serif;
+  font-weight: normal;
+  fill: rgba(0, 0, 0, 0.87);
+  stroke-width: 0;
+  letter-spacing: 0.0075em;
+}

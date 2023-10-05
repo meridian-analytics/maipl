@@ -1,0 +1,19 @@
+{
+  "name": "@maipl/monorepo",
+  "private": true,
+  "scripts": {
+    "@check": "biome check .",
+    "@format": "biome format --write .",
+
+
+    "@build": "pnpm -F \"./apps/*\" build",
+    "@preview": "pnpm -F \"./apps/*\" preview",
+    "@start": "pnpm -F \"./apps/*\" start"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.2.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.2.2"
+  }
+}

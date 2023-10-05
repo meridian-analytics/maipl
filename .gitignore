@@ -1,0 +1,12 @@
+# production
+dist
+
+# npm
+node_modules
+
+# env
+.env*
+!.env*.defaults
+
+# log
+*.log
