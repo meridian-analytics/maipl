@@ -2,13 +2,15 @@ import axios, * as A from "axios"
 
 type t_config = {
   headers?: Record<string, string>
-  onError?: (error: A.AxiosError) => any
+  onError?: t_error_handler
 }
+
+type t_error_handler = <T>(error: A.AxiosError) => Promise<T>
 
 /** Client.t */
 class t {
   private readonly headers?: Record<string, string>
-  private readonly onError?: (error: A.AxiosError) => any
+  private readonly onError?: t_error_handler
   constructor(defaults?: t_config) {
     this.headers = defaults?.headers
     this.onError = defaults?.onError
@@ -17,9 +19,13 @@ class t {
   // https://axios-http.com/docs/req_config
   // https://axios-http.com/docs/res_schema
   // https://axios-http.com/docs/handling_errors
-  request: typeof axios["request"] = ({ headers, ...config }) =>
+  // typeof axios["request"] = <T=any, R=A.AxiosResponse<T>, D=any>(config: A.AxiosRequestConfig): Promise<R>
+  request = <T, R = A.AxiosResponse<T>>({
+    headers,
+    ...config
+  }: A.AxiosRequestConfig): Promise<R> =>
     axios
-      .request({
+      .request<T, R>({
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
@@ -28,7 +34,7 @@ class t {
         },
         ...config,
       })
-      .catch(this.onError)
+      .catch(this.onError<R>)
   // wrappers
   delete: typeof axios["delete"] = (url, config) =>
     this.request({ ...config, method: "DELETE", url })
@@ -55,4 +61,4 @@ const create = (config?: t_config) => {
 /** Client.guest: a guest client */
 const guest = create()
 
-export { type t, create, guest }
+export { type t, type t_config, type t_error_handler, create, guest }
