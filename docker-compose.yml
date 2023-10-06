@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  frontend-apps:
+    build: 
+      context: . 
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+      - 3100:3100
+      - 3300:3300
+      - 3400:3400
+    volumes:
+      - ./apps:/app/apps
+    command: nginx -g 'daemon off;'
