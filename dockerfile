@@ -2,7 +2,7 @@
 # Step 1: Build phase
 FROM node:16 as build
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json tsconfig.json pnpm-lock.yaml pnpm-workspace.yaml biome.json ./
 COPY modules ./modules
 COPY apps ./apps
 RUN npm install --global pnpm
