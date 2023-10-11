@@ -4,10 +4,11 @@ export function retry<T>(
   task: () => Promise<T>,
   retries = 3,
   cooldown = PHI * 1000,
+  onError?: (message: string, err: unknown) => void,
 ): Promise<T> {
   return task().catch((err: unknown) => {
     if (retries <= 0) throw err
-    console.warn(`retrying ${retries} more times...`, err)
+    onError?.(`retrying ${retries} more times...`, err)
     return sleep(cooldown).then(() => retry(task, retries - 1, cooldown * PHI))
   })
 }
