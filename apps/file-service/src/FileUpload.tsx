@@ -100,7 +100,7 @@ export default function FileUpload(props: {
   const sortedFiles = R.useMemo(
     () =>
       [...dz.acceptedFiles].sort((a: DZ.FileWithPath, b: DZ.FileWithPath) =>
-        a.path.localeCompare(b.path),
+        (a.path ?? a.name).localeCompare(b.path ?? b.name),
       ),
     [dz.acceptedFiles],
   )
@@ -123,7 +123,8 @@ export default function FileUpload(props: {
         sortedFiles
           .filter(
             (file: DZ.FileWithPath) =>
-              table.selection.has(file.path) && status.get(file.path) !== "ok",
+              table.selection.has(file.path ?? file.name) &&
+              status.get(file.path ?? file.name) !== "ok",
           )
           .map((file: DZ.FileWithPath) =>
             enqueue(async () =>
@@ -133,14 +134,18 @@ export default function FileUpload(props: {
                   file,
                   maipl_folder: props.folder,
                   meta: await File.meta(file),
-                  path: file.path,
+                  path: file.path ?? file.name,
                   tag,
                 },
                 pevent =>
                   setStatus(status =>
                     new Map(status).set(
-                      file.path,
-                      `${((pevent.loaded / pevent.total) * 100).toFixed(2)}%`,
+                      file.path ?? file.name,
+                      pevent.total == null
+                        ? "..."
+                        : `${((pevent.loaded / pevent.total) * 100).toFixed(
+                            2,
+                          )}%`,
                     ),
                   ),
               ]),
@@ -185,7 +190,7 @@ export default function FileUpload(props: {
           children={`${table.selection.size} files to be uploaded (${filesize(
             dz.acceptedFiles.reduce(
               (r, f: DZ.FileWithPath) =>
-                table.selection.has(f.path) ? r + f.size : r,
+                table.selection.has(f.path ?? f.name) ? r + f.size : r,
               0,
             ),
           )})`}
@@ -195,13 +200,15 @@ export default function FileUpload(props: {
           {...table}
           columns={columns}
           rows={sortedFiles.map((file: DZ.FileWithPath) => ({
-            id: file.path,
+            id: file.path ?? file.name,
             name: file.name,
-            path: file.path,
+            path: file.path ?? file.name,
             size: file.size,
             status:
-              status.get(file.path) ??
-              (table.selection.has(file.path) ? "pending" : "none"),
+              status.get(file.path ?? file.name) ??
+              (table.selection.has(file.path ?? file.name)
+                ? "pending"
+                : "none"),
           }))}
           rowCanSelect={rowCanSelect}
           visibility={{

@@ -5,7 +5,7 @@ import * as PKCE from "@maipl/pkce"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
-import { AxiosError } from "axios"
+import * as A from "axios"
 import * as R from "react"
 import * as RR from "react-router-dom"
 import * as Ui from "./ui.tsx"
@@ -68,13 +68,13 @@ function MaiplContextProvider(props: {
 
   // client refresh and retry
   const refreshAndRetry = R.useCallback(
-    async (err: AxiosError) => {
+    async <T, R = A.AxiosResponse<T>>(err: A.AxiosError): Promise<R> => {
       if (err.request == null || err.response == null) throw err
       if (err.response.status != 401 || refresh == null) throw err
       if (err.config == null) throw err
       const { access: freshAccess } = await Auth.refresh(refresh)
       return Client.guest
-        .request({
+        .request<T, R>({
           ...err.config,
           headers: {
             ...err.config.headers,

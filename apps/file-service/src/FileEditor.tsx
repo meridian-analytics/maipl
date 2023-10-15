@@ -49,21 +49,20 @@ function FileEditor_(props: {
     () => file?.maipl_folder ?? props.folder,
   )
   const [tag, setTag] = R.useState(() => file?.tag ?? "")
-  const [value, setValue] = R.useState<string | null>(() =>
-    file == null ? "" : null,
-  )
+  const [value, setValue] = R.useState<string | undefined>(() =>
+    file == null ? "" : undefined,
+  ) // monaco-editor uses undefined
   const lastSavedValue = R.useRef<string | null>(null)
   const queryClient = RQ.useQueryClient()
 
   const language: Monaco.languages.ILanguageExtensionPoint | null =
     R.useMemo(() => {
       const lookup = file?.extname ?? path.match(/(\.[^.]+)$/)?.[1]
+      if (lookup == null) return null
       return (
-        (lookup &&
-          Monaco.languages
-            .getLanguages()
-            .find(lang => lang?.extensions?.includes?.(lookup))) ??
-        null
+        Monaco.languages
+          .getLanguages()
+          .find(lang => lang?.extensions?.includes?.(lookup)) ?? null
       )
     }, [file, path])
 
@@ -73,7 +72,7 @@ function FileEditor_(props: {
     queryKey: ["files", file?.file],
     queryFn: () => {
       lastSavedValue.current = null
-      return fetch(file.file)
+      return fetch(file!.file)
         .then(r => r.arrayBuffer())
         .then(buffer => new TextDecoder("utf-8").decode(buffer))
     },
@@ -113,7 +112,7 @@ function FileEditor_(props: {
     createMutation.mutate([
       client,
       {
-        file: new window.File([value], path),
+        file: new window.File([value ?? ""], path),
         maipl_folder: folder,
         meta: {},
         path,
@@ -123,11 +122,14 @@ function FileEditor_(props: {
   }
 
   const onUpdate = () => {
+    if (file == null) {
+      throw Error("FileEditor onUpdate called with no file")
+    }
     updateMutation.mutate([
       client,
       file.id,
       {
-        file: new window.File([value], path),
+        file: new window.File([value ?? ""], path),
         maipl_folder: folder,
         meta: file.meta,
         path,

@@ -5,7 +5,9 @@ type t_config = {
   onError?: t_error_handler
 }
 
-type t_error_handler = <T>(error: A.AxiosError) => Promise<T>
+type t_error_handler = <T, R = A.AxiosResponse<T>>(
+  error: A.AxiosError,
+) => Promise<R>
 
 /** Client.t */
 class t {
@@ -34,7 +36,7 @@ class t {
         },
         ...config,
       })
-      .catch(this.onError<R>)
+      .catch(this.onError<T, R>)
   // wrappers
   delete: typeof axios["delete"] = (url, config) =>
     this.request({ ...config, method: "DELETE", url })

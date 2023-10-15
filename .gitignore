@@ -10,3 +10,6 @@ node_modules
 
 # log
 *.log
+
+# typescript
+*.tsbuildinfo

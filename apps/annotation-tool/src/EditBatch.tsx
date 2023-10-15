@@ -44,7 +44,7 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
   const [allowChanges, setAllowChanges] = R.useState(
     () => batch?.allow_change_settings ?? false,
   )
-  const [createdAt, setCreatedAt] = R.useState(
+  const [_createdAt, _setCreatedAt] = R.useState(
     () => batch?.created_at ?? new Date(),
   )
   const [description, setDescription] = R.useState(
@@ -53,8 +53,8 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
   const [form, setForm] = R.useState<string | Error>(() => batch?.form ?? "")
   const [name, setName] = R.useState(() => batch?.batch_name ?? "")
   const [parameters, setParameters] = R.useState(() => batch?.parameters ?? {})
-  const [progress, setProgress] = R.useState(() => batch?.progress ?? 0)
-  const [segments, setSegments] = R.useState(() => batch?.segments ?? [])
+  const [_progress, _setProgress] = R.useState(() => batch?.progress ?? 0)
+  const [segments, _setSegments] = R.useState(() => batch?.segments ?? [])
   const [template, setTemplate] = R.useState(() => "__")
 
   const queryParams = R.useMemo(
@@ -87,7 +87,7 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
         ? Promise.resolve("")
         : fetch(url).then(res => res.text())
     },
-    onSuccess: (data, vars) => {
+    onSuccess: (data, _vars) => {
       console.warn(
         "EditBatch selectTemplate warning: validate template not implemented",
       ) // todo

@@ -303,7 +303,7 @@ function NullForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
       children=" "
       formData={{}}
       readonly={true}
-      schema={props.schema}
+      schema={props.schema ?? {}}
       uiSchema={props.uiSchema}
       validator={validator}
     />
@@ -328,7 +328,7 @@ function MonoForm(props: {
           )
         }
         readonly={false}
-        schema={props.schema}
+        schema={props.schema ?? {}}
         uiSchema={props.uiSchema}
         validator={validator}
       />
@@ -381,7 +381,7 @@ function PolyForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
         children=" "
         formData={{}}
         readonly={true}
-        schema={props.schema}
+        schema={props.schema ?? {}}
         uiSchema={props.uiSchema}
         validator={validator}
       />

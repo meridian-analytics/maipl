@@ -27,7 +27,6 @@ export const schema: RJSFSchema = {
       type: "integer",
     },
     comments: {
-      size: "small",
       title: "Comments",
       type: "string",
     },
