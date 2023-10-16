@@ -44,23 +44,28 @@ export function iso8601(date: Date): string {
   return date.toISOString().slice(0, 10)
 }
 
-export function safeParseBool(value: unknown, orElse = false): boolean {
-  return value == null
-    ? orElse
-    : String(value).toLowerCase() == "true" || String(value) == "1"
+export function safeParseBoolean<T>(value: unknown, orElse: T): boolean | T {
+  const s = String(value)
+  return value == null ? orElse : s.toLowerCase() == "true" || s == "1"
 }
 
 export function safeParseNumber<T>(value: unknown, orElse: T): number | T {
-  const n = Number(value)
+  const n = Number.parseFloat(String(value))
   return isNaN(n) ? orElse : n
 }
 
-export function safeParseInteger<T>(value: unknown, orElse: T): number | T {
-  return /^\d+$/.test(String(value)) ? Number(value) : orElse
+export function safeParseInteger<T>(
+  value: unknown,
+  orElse: T,
+  radix?: number,
+): number | T {
+  const n = Number.parseInt(String(value), radix)
+  return isNaN(n) ? orElse : n
 }
 
-export function safeParseString(value: unknown, orElse: string): string {
-  return value == null || String(value) == "" ? orElse : String(value)
+export function safeParseString<T>(value: unknown, orElse: T): string | T {
+  const s = String(value)
+  return value == null || s == "" ? orElse : s
 }
 
 export function truncate(s: string, maxLength: number) {

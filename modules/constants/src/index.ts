@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import { safeParseBool, safeParseString } from "@maipl/format"
+import { safeParseBoolean, safeParseString } from "@maipl/format"
 
 export const MAIPL_ANNOTATION_BACKEND = safeParseString(
   import.meta.env.MAIPL_ANNOTATION_BACKEND,
@@ -42,7 +42,7 @@ export const MAIPL_MODEL_RUNNER_FRONTEND = safeParseString(
   "http://localhost:3000",
 )
 
-export const MAIPL_REACT_QUERY_DEVTOOLS: boolean = safeParseBool(
+export const MAIPL_REACT_QUERY_DEVTOOLS: boolean = safeParseBoolean(
   import.meta.env.MAIPL_REACT_QUERY_DEVTOOLS,
   false,
 )

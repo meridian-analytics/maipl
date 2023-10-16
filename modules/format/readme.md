@@ -4,9 +4,9 @@
 function filesize(bytes: number): string
 function fuzzyTime(date: Date): string
 function iso8601(date: Date): string
-function safeParseBool(value: unknown, orElse = false): boolean
+function safeParseBoolean<T>(value: unknown, orElse: T): boolean | T
 function safeParseNumber<T>(value: unknown, orElse: T): number | T
-function safeParseInteger<T>(value: unknown, orElse: T): number | T
-function safeParseString(value: unknown, orElse: string): string
+function safeParseInteger<T>(value: unknown, orElse: T, radix?: number): number | T
+function safeParseString<T>(value: unknown, orElse: T): string | T
 function truncate(s: string, maxLength: number): string
 ```
