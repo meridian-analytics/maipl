@@ -141,32 +141,22 @@ function ShowTask(props: {
           folders={["public", "dataset", "raw"]}
           setFolder={setFolder}
         />
-        <M.Button
-          variant="contained"
-          color="primary"
-          onClick={filter.toggle}
-          children={filter.enabled ? "Turn Off Filters" : "Turn On Filters"}
+        <M.TextField
+          size="small"
+          label="Path"
+          onChange={e => filter.set("path", e.currentTarget.value)}
+          placeholder="path/to/folder"
+          value={filter.get("path")}
+          variant="outlined"
         />
-        {filter.enabled && (
-          <M.TextField
-            size="small"
-            label="Path"
-            onChange={e => filter.set("path", e.currentTarget.value)}
-            placeholder="path/to/folder"
-            value={filter.get("path")}
-            variant="outlined"
-          />
-        )}
-        {filter.enabled && (
-          <M.TextField
-            size="small"
-            label="Tag"
-            onChange={e => filter.set("tag", e.currentTarget.value)}
-            placeholder="my-tag"
-            value={filter.get("tag")}
-            variant="outlined"
-          />
-        )}
+        <M.TextField
+          size="small"
+          label="Tag"
+          onChange={e => filter.set("tag", e.currentTarget.value)}
+          placeholder="my-tag"
+          value={filter.get("tag")}
+          variant="outlined"
+        />
       </M.Stack>
       <MR.Files.Table
         rows={files.data}
@@ -185,33 +175,19 @@ function ShowTask(props: {
           created_at: true,
         }}
       />
-      <M.Stack direction="row" spacing={2}>
-        <M.FormControl size="small">
-          <M.InputLabel>Output</M.InputLabel>
-          <M.Select disabled label="Output" value={String(task.overwrite)}>
-            <M.MenuItem value="false" children="Append" />
-            <M.MenuItem value="true" children="Overwrite" />
-          </M.Select>
-        </M.FormControl>
-        <M.FormControlLabel
-          control={
-            <M.Switch checked={task.merge_detections} disabled size="small" />
-          }
-          label="Merge detections"
-        />
-        <M.Stack flexGrow={1} />
-        <M.Button
-          children="Close"
-          color="primary"
-          onClick={props.onClose}
-          variant="outlined"
-        />
+      <M.Stack direction="row-reverse" spacing={2}>
         <M.Button
           children="Copy"
           color="primary"
           component={RR.Link}
           to={`/tasks/${task.id}/copy`}
           variant="contained"
+        />
+        <M.Button
+          children="Close"
+          color="primary"
+          onClick={props.onClose}
+          variant="outlined"
         />
       </M.Stack>
     </M.Stack>

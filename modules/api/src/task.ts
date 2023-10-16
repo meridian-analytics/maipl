@@ -57,6 +57,8 @@ type t_create_request = Omit<
   | "celery_task_id"
   | "created_at"
   | "detections"
+  | "merge_detections"
+  | "overwrite"
   | "status"
   | "updated_at"
   | "user_id"
@@ -106,7 +108,7 @@ const get = async (client: Client.t, id: number) => {
   } as t
 }
 
-/** Task.list: get paginated list of batches */
+/** Task.list: get list of tasks */
 const list = async (client: Client.t, params: t_list_request) => {
   const response = await client
     .get<t_list_response>(

@@ -50,18 +50,12 @@ function EditTask(props: {
   const queryClient = RQ.useQueryClient()
   const { client } = MR.useMaipl()
   const { task } = props
-  const [batchSize, setBatchSize] = R.useState(() => task?.batch_size ?? 0)
+  const [batchSize, setBatchSize] = R.useState(() => task?.batch_size ?? 32)
   const [buffer, setBuffer] = R.useState(() => task?.buffer ?? 0)
   const [description, setDescription] = R.useState<string>(
     () => task?.description ?? "",
   )
-  const [mergeDetections, setMergeDetections] = R.useState<boolean>(
-    () => task?.merge_detections ?? false,
-  )
   const [modelFile, setModelFile] = R.useState(() => task?.model_file ?? -1)
-  const [overwrite, setOverwrite] = R.useState<boolean>(
-    () => task?.overwrite ?? false,
-  )
   const [stepSize, setStepSize] = R.useState(() => task?.step_size ?? 0)
   const [threshold, setThreshold] = R.useState(() => task?.threshold ?? 0)
 
@@ -125,9 +119,7 @@ function EditTask(props: {
         buffer,
         description,
         filelist: Array.from(selection.keys()),
-        merge_detections: mergeDetections,
         model_file: modelFile,
-        overwrite,
         step_size: stepSize,
         threshold,
       },
@@ -245,42 +237,20 @@ function EditTask(props: {
           created_at: true,
         }}
       />
-      <M.Stack direction="row" spacing={2}>
-        <M.FormControl size="small">
-          <M.InputLabel>Output</M.InputLabel>
-          <M.Select
-            label="Output"
-            value={String(overwrite)}
-            onChange={e => setOverwrite(e.target.value == "true")}
-          >
-            <M.MenuItem value="false" children="Append" />
-            <M.MenuItem value="true" children="Overwrite" />
-          </M.Select>
-        </M.FormControl>
-        <M.FormControlLabel
-          control={
-            <M.Switch
-              checked={mergeDetections}
-              onChange={(_e, value) => setMergeDetections(value)}
-              size="small"
-            />
-          }
-          label="Merge detections"
-        />
-        <M.Stack flexGrow={1} />
-        <M.Button
-          children="Cancel"
-          color="primary"
-          disabled={createMutation.isLoading}
-          onClick={props.onClose}
-          variant="outlined"
-        />
+      <M.Stack direction="row-reverse" spacing={2}>
         <M.Button
           children="Create"
           color="primary"
           disabled={createMutation.isLoading}
           onClick={onSave}
           variant="contained"
+        />
+        <M.Button
+          children="Cancel"
+          color="primary"
+          disabled={createMutation.isLoading}
+          onClick={props.onClose}
+          variant="outlined"
         />
       </M.Stack>
     </M.Stack>
