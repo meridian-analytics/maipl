@@ -5,8 +5,8 @@ import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import EditTask from "./EditTask.js"
-import ShowTask from "./ShowTask.js"
+import EditTask from "./EditTask.tsx"
+import ShowTask from "./ShowTask.tsx"
 
 function TaskActions(props: { task: Task.t }) {
   const queryClient = RQ.useQueryClient()

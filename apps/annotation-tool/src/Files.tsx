@@ -3,7 +3,7 @@ import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as R from "react"
-import GenerateSegments from "./GenerateSegments.jsx"
+import GenerateSegments from "./GenerateSegments.tsx"
 
 function Actions(props: {
   setModal: R.Dispatch<R.SetStateAction<boolean>>

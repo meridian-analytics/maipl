@@ -5,7 +5,7 @@ import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import EditBatch from "./EditBatch.js"
+import EditBatch from "./EditBatch.tsx"
 
 function BatchActions(props: { batch: Batch.t_list_item }) {
   const queryClient = RQ.useQueryClient()

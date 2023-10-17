@@ -5,8 +5,8 @@ import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as RR from "react-router-dom"
-import FileEditor from "./FileEditor.js"
-import FileUpload from "./FileUpload.js"
+import FileEditor from "./FileEditor.tsx"
+import FileUpload from "./FileUpload.tsx"
 
 function Actions(props: {
   selection: ReturnType<typeof MR.Files.useTable>["selection"]

@@ -1,7 +1,7 @@
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import Files from "./Files.js"
+import Files from "./Files.tsx"
 
 export default function App() {
   return (

@@ -1,10 +1,10 @@
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import AnnotationTool from "./AnnotationTool.js"
-import Batches from "./Batches.js"
-import Files from "./Files.jsx"
-import Segments from "./Segments.jsx"
+import AnnotationTool from "./AnnotationTool.tsx"
+import Batches from "./Batches.tsx"
+import Files from "./Files.tsx"
+import Segments from "./Segments.tsx"
 
 function LocalNavigation() {
   const batchId = RR.useMatch("/annotate/:batchId/*")?.params?.batchId

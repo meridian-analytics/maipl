@@ -1,8 +1,8 @@
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import Detections from "./Detections.js"
-import Tasks from "./Tasks.js"
+import Detections from "./Detections.tsx"
+import Tasks from "./Tasks.tsx"
 
 function LocalNavigation() {
   const tab = RR.useMatch("/:tab/*")?.params?.tab

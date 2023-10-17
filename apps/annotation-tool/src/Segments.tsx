@@ -4,7 +4,7 @@ import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
-import AddToBatch from "./AddToBatch.jsx"
+import AddToBatch from "./AddToBatch.tsx"
 
 function Actions(props: {
   setModal: R.Dispatch<R.SetStateAction<boolean>>
