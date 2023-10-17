@@ -50,7 +50,7 @@ const Table = BaseTable([
   }),
   column.accessor("filelist", {
     header: "Input Files",
-    cell: info => info.getValue().length,
+    cell: info => info.getValue()?.length ?? 0,
   }),
   column.accessor("created_at", {
     header: "Date",

@@ -70,7 +70,7 @@ const Table = BaseTable([
   }),
   column.accessor("segments", {
     header: "Segments",
-    cell: info => info.getValue().length,
+    cell: info => info.getValue()?.length ?? 0,
   }),
   column.accessor("user", {
     header: "Owner",
