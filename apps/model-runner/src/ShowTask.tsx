@@ -15,10 +15,7 @@ export default function ShowTaskLoader(props: {
   const { data: task, error } = RQ.useQuery({
     enabled: taskId != null,
     queryKey: ["tasks", taskId],
-    queryFn: () => {
-      console.log("fetching task", taskId)
-      return Task.get(client, taskId!)
-    },
+    queryFn: () => Task.get(client, taskId!),
   })
 
   const { data: model, error: modelError } = RQ.useQuery({

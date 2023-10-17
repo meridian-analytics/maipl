@@ -101,7 +101,7 @@ export default function TasksTable(props: {
   const { pagination, selection, setPagination, setSelection } =
     MR.Tasks.useTable()
 
-  const { data: tasks } = MR.Tasks.useQuery({})
+  const { data: tasks } = MR.Tasks.useQuery()
 
   // hack: refresh tasks every 30 seconds
   R.useEffect(() => {

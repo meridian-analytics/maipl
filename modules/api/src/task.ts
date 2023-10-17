@@ -109,7 +109,7 @@ const get = async (client: Client.t, id: number) => {
 }
 
 /** Task.list: get list of tasks */
-const list = async (client: Client.t, params: t_list_request) => {
+const list = async (client: Client.t, params?: t_list_request) => {
   const response = await client
     .get<t_list_response>(
       `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/run/tasks/`,
