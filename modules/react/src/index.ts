@@ -9,6 +9,7 @@ export {
   type VisibilityState,
   Batches,
   Files,
+  Detections,
   Segments,
   Table,
   Tasks,

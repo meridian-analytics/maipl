@@ -5,6 +5,7 @@ import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
+import Detections from "./Detections.tsx"
 import EditTask from "./EditTask.tsx"
 import ShowTask from "./ShowTask.tsx"
 
@@ -62,6 +63,12 @@ function TaskActions(props: { task: Task.t }) {
           children="Details"
           component={RR.Link}
           to={`/tasks/${props.task.id}`}
+        />
+        <M.MenuItem
+          children="Detections"
+          disabled={props.task.detections == null}
+          component={RR.Link}
+          to={`/tasks/${props.task.id}/detections`}
         />
         <M.MenuItem
           disabled={props.task.status != "CREATED" && startMutation.isIdle}
@@ -130,6 +137,10 @@ export default function TasksTable(props: {
         <RR.Route
           path=":taskId/copy"
           element={<EditTask onClose={() => navigate("/tasks")} />}
+        />
+        <RR.Route
+          path=":taskId/detections"
+          element={<Detections onClose={() => navigate("/tasks")} />}
         />
         <RR.Route
           path=":taskId"

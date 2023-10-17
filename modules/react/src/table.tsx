@@ -10,6 +10,7 @@ export {
 export { default as Table } from "./table/Table.tsx"
 
 export * as Batches from "./table/Batches.tsx"
+export * as Detections from "./table/Detections.tsx"
 export * as Files from "./table/Files.tsx"
 export * as Segments from "./table/Segments.tsx"
 export * as Tasks from "./table/Tasks.tsx"
