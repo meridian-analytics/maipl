@@ -25,7 +25,7 @@ function useTable(props?: {
   const [selection, setSelection] = useSelection(props?.selection)
 
   const filter = useFilter({ name: props?.name ?? "" })
-  const debouncedFilter = useDebounce(filter, props?.debounceDelay ?? 500)
+  const debouncedFilter = useDebounce(filter, props?.debounceDelay)
 
   // hack: fixes bug above in queryParams
   R.useEffect(() => {

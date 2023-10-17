@@ -30,7 +30,7 @@ function useTable(props?: {
     props?.maipl_folder ?? "public",
   )
   const filter = useFilter({ path: props?.path ?? "", tag: props?.tag ?? "" })
-  const debouncedFilter = useDebounce(filter, props?.debounceDelay ?? 500)
+  const debouncedFilter = useDebounce(filter, props?.debounceDelay)
 
   // hack: fixes bug above in queryParams
   R.useEffect(() => {

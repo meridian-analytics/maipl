@@ -28,7 +28,7 @@ function useTable(props?: {
     filename: props?.filename ?? "",
     tag: props?.tag ?? "",
   })
-  const debouncedFilter = useDebounce(filter, props?.debounceDelay ?? 500)
+  const debouncedFilter = useDebounce(filter, props?.debounceDelay)
   R.useEffect(() => {
     // hack: fixes bug above in queryParams
     setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
