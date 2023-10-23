@@ -72,19 +72,32 @@ function MaiplContextProvider(props: {
       if (err.request == null || err.response == null) throw err
       if (err.response.status != 401 || refresh == null) throw err
       if (err.config == null) throw err
-      const { access: freshAccess } = await Auth.refresh(refresh)
-      return Client.guest
-        .request<T, R>({
-          ...err.config,
-          headers: {
-            ...err.config.headers,
-            Authorization: `JWT ${freshAccess}`,
-          },
-        })
-        .finally(() => {
-          localStorage.setItem("access", freshAccess)
-          setAccess(freshAccess)
-        })
+      try {
+        const { access: freshAccess } = await Auth.refresh(refresh)
+        return Client.guest
+          .request<T, R>({
+            ...err.config,
+            headers: {
+              ...err.config.headers,
+              Authorization: `JWT ${freshAccess}`,
+            },
+          })
+          .finally(() => {
+            if (freshAccess) {
+              localStorage.setItem("access", freshAccess)
+              setAccess(freshAccess)
+            }
+          })
+      } catch (err) {
+        if ((err as A.AxiosError)?.response?.status == 400) {
+          // todo: bug? should server be responding 401 instead?
+          localStorage.removeItem("access")
+          localStorage.removeItem("refresh")
+          setAccess(null)
+          setRefresh(null)
+        }
+        return undefined as R
+      }
     },
     [refresh],
   )
