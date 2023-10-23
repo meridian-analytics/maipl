@@ -168,7 +168,7 @@ function ShowTask(props: {
           dirname: false,
           extname: false,
           channels: false,
-          sampleRate: false,
+          sample_rate: false,
           created_at: true,
         }}
       />

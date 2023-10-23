@@ -163,7 +163,10 @@ const export_ = async (client: Client.t, id: number) => {
       { type: "text/csv" },
     ),
     maipl_folder: "annotation",
-    meta: {},
+    meta: {
+      maipl: "annotations",
+      batch: id,
+    },
     path: filename,
     tag: "export",
   })

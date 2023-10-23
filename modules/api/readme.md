@@ -3,6 +3,7 @@
 - [Client](#client)
 - [Auth](#auth)
 - [Batch](#batch)
+- [Detection](#detection)
 - [File](#file)
 - [Profile](#profile)
 - [Segment](#segment)
@@ -61,6 +62,23 @@ function update
 
 <small>[back to top](#top)</small>
 
+## <a name="detection"></a> Detection
+
+```ts
+type t_filter_params
+type t_get_response
+type t_list_request
+type t_list_response
+type t_export_request
+type t_export_response
+
+function get
+function list
+function export
+```
+
+<small>[back to top](#top)</small>
+
 ## <a name="file"></a> File
 
 ```ts
@@ -74,7 +92,6 @@ type t_get_response
 type t_list_request
 type t_list_response
 type t_maipl_folder
-type t_meta
 type t_update_request
 type t_update_response
 type t_usage
@@ -83,9 +100,17 @@ function create
 function delete
 function get
 function list
-function meta
 function update
 function usage
+```
+
+Additional memebers for accessing `meta` field:
+
+```ts
+type t_meta
+
+function discoverMeta
+function safeMeta
 ```
 
 <small>[back to top](#top)</small>

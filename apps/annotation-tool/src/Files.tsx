@@ -106,7 +106,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
       <MR.Files.Table
         rows={files.data}
         rowCanSelect={R.useCallback(
-          (file: File.t) => ((file.meta?.duration as number) ?? 0) !== 0,
+          (file: File.t) => File.safeMeta(file, "audio", "duration", 0) != 0,
           [],
         )}
         count={files.count}
@@ -119,7 +119,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
           dirname: false,
           extname: false,
           channels: false,
-          sampleRate: false,
+          sample_rate: false,
         }}
       />
     </M.Stack>

@@ -4,6 +4,7 @@ import * as Tree from "@maipl/tree"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
+import * as R from "react"
 import * as RR from "react-router-dom"
 import FileEditor from "./FileEditor.tsx"
 import FileUpload from "./FileUpload.tsx"
@@ -99,6 +100,43 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
     setSelection,
   } = MR.Files.useTable()
 
+  const extraColumns = R.useMemo(
+    () =>
+      [
+        MR.Files.column.accessor(
+          file => File.safeMeta(file, "audio", "duration", 0),
+          {
+            id: "duration",
+            header: "Duration",
+            cell: info => {
+              const value = info.getValue()
+              return value ? `${value.toFixed(2)} sec` : "-"
+            },
+          },
+        ),
+        MR.Files.column.accessor(
+          file => File.safeMeta(file, "audio", "channels", 0),
+          {
+            id: "channels",
+            header: "Channels",
+            cell: info => info.getValue(),
+          },
+        ),
+        MR.Files.column.accessor(
+          file => File.safeMeta(file, "audio", "sample_rate", 0),
+          {
+            id: "sample_rate",
+            header: "Rate",
+            cell: info => {
+              const value = info.getValue()
+              return value ? `${value} Hz` : "-"
+            },
+          },
+        ),
+      ] as Array<MR.ColumnDef<File.t>>,
+    [],
+  )
+
   const { data: files } = MR.Files.useQuery({
     maipl_folder: folder,
     path: debouncedFilter.get("path"),
@@ -169,6 +207,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
         <Actions selection={selection} setSelection={setSelection} />
       </M.Stack>
       <MR.Files.Table
+        columns={extraColumns}
         rows={files.data}
         count={files.count}
         pagination={pagination}
@@ -180,7 +219,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
           dirname: false,
           extname: false,
           channels: false,
-          sampleRate: false,
+          sample_rate: false,
           created_at: true,
         }}
       />

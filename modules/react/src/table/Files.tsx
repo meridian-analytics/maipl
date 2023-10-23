@@ -81,30 +81,9 @@ const Table = BaseTable([
   column.accessor("extname", {
     header: "Type",
   }),
-  column.accessor(row => (row.meta?.duration as number) ?? 0, {
-    id: "duration",
-    header: "Duration",
-    cell: info => {
-      const value = info.getValue()
-      return value ? `${value.toFixed(2)} sec` : "-"
-    },
-  }),
   column.accessor("size", {
     header: "Size",
     cell: info => filesize(info.getValue()),
-  }),
-  column.accessor(row => (row.meta?.channels as number) ?? 0, {
-    id: "channels",
-    header: "Channels",
-    cell: info => info.getValue(),
-  }),
-  column.accessor(row => (row.meta?.sampleRate as number) ?? 0, {
-    id: "sampleRate",
-    header: "Rate",
-    cell: info => {
-      const value = info.getValue()
-      return value ? `${value} Hz` : "-"
-    },
   }),
   column.accessor("created_at", {
     header: "Date",

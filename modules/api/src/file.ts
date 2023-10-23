@@ -2,6 +2,7 @@ import { hexDigest, sha256 } from "@maipl/buffer"
 import * as K from "@maipl/constants"
 import * as A from "axios"
 import * as Client from "./client.ts"
+import * as Meta from "./meta.ts"
 import { t_page, t_page_params } from "./types.ts"
 import * as User from "./user.ts"
 
@@ -30,7 +31,7 @@ type t = {
   /** MAIPL folder */
   maipl_folder: t_maipl_folder
   /** File metadata */
-  meta: t_meta
+  meta?: Meta.t_meta
   /** The complete file path, including name */
   path: string
   /** Sha256 integrity checksum */
@@ -44,9 +45,6 @@ type t = {
   /** Owner of the file */
   user: User.t
 }
-
-/** File.t_meta */
-type t_meta = Record<string, unknown>
 
 /** File.t_usage */
 type t_usage = {
@@ -87,11 +85,11 @@ type t_create_request = {
   /** MAIPL folder */
   maipl_folder: t_maipl_folder
   /** File metadata */
-  meta: Record<string, unknown>
+  meta?: Meta.t_meta
   /** Complete file path, including file name */
   path: string
   /** File tag */
-  tag: string
+  tag?: string
 }
 
 /** File.t_create_response */
@@ -148,7 +146,7 @@ const create = async (
   formData.append("meta", JSON.stringify(body.meta))
   formData.append("path", body.path)
   formData.append("sha256", checksum)
-  formData.append("tag", body.tag)
+  formData.append("tag", body.tag ?? "")
   const response = await client
     .post<t_create_response>(`${K.MAIPL_FILE_BACKEND}/api/file/`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -159,7 +157,7 @@ const create = async (
     ...response,
     created_at: new Date(response.created_at),
     updated_at: new Date(response.updated_at),
-    meta: safeParseMeta(response.meta),
+    meta: Meta.safeParse(response.meta),
   }
 }
 
@@ -188,7 +186,7 @@ const list = async (client: Client.t, params: t_list_request) => {
       ...file,
       created_at: new Date(file.created_at),
       updated_at: new Date(file.updated_at),
-      meta: safeParseMeta(file.meta),
+      meta: Meta.safeParse(file.meta),
     })),
   } as t_page<t>
 }
@@ -202,24 +200,25 @@ const get = async (client: Client.t, id: t_get_request) => {
     ...response,
     created_at: new Date(response.created_at),
     updated_at: new Date(response.updated_at),
-    meta: safeParseMeta(response.meta),
+    meta: Meta.safeParse(response.meta),
   } as t
 }
 
-/** File.meta: get  */
-async function meta(file: File): Promise<t_meta> {
-  try {
-    const buffer = await read(file)
-    const audioContext = new window.AudioContext()
-    const audio = await audioContext.decodeAudioData(buffer)
-    return {
-      channels: audio.numberOfChannels,
-      duration: audio.duration,
-      sampleRate: audio.sampleRate,
-    }
-  } catch (e) {
-    return {}
-  }
+/** File.discoverMeta: attempt automatic discovery of metadata from a system file */
+async function discoverMeta(file: File): Promise<Meta.t_meta | undefined> {
+  return Meta.discover(await read(file))
+}
+
+/** File.safeMeta: safely read metadata from a file */
+function safeMeta<
+  K extends Meta.t_meta["maipl"],
+  U extends Extract<Meta.t_meta, { maipl: K }>,
+  F extends keyof U,
+  R,
+>(file: t, kind: K, field: F, orElse: R): U[F] | R {
+  return file.meta == null
+    ? orElse
+    : Meta.safeRead(file.meta, kind, field, orElse)
 }
 
 function read(file: File): Promise<ArrayBuffer> {
@@ -249,7 +248,7 @@ const update = async (
   formData.append("meta", JSON.stringify(body.meta))
   formData.append("path", body.path)
   formData.append("sha256", checksum)
-  formData.append("tag", body.tag)
+  formData.append("tag", body.tag ?? "")
   const response = await client
     .put<t_create_response>(
       `${K.MAIPL_FILE_BACKEND}/api/file/${id}/`,
@@ -264,7 +263,7 @@ const update = async (
     ...response,
     created_at: new Date(response.created_at),
     updated_at: new Date(response.updated_at),
-    meta: safeParseMeta(response.meta),
+    meta: Meta.safeParse(response.meta),
   }
 }
 
@@ -273,17 +272,6 @@ const usage = async (client: Client.t) => {
   return client
     .get<t_usage>(`${K.MAIPL_FILE_BACKEND}/api/file/usage/`)
     .then(r => r.data)
-}
-
-/** File.safeParseMeta: safely parse meta info without raising an exception */
-function safeParseMeta(meta: string): t_meta {
-  try {
-    if (typeof meta === "object") return meta // todo: backend api should accept/return string only
-    return JSON.parse(meta)
-  } catch (e) {
-    if (import.meta.env.DEV) console.warn("Failed to parse meta", meta, e)
-    return {}
-  }
 }
 
 export {
@@ -297,15 +285,17 @@ export {
   type t_list_request,
   type t_list_response,
   type t_maipl_folder,
-  type t_meta,
   type t_update_request,
   type t_update_response,
   type t_usage,
   create,
   delete_ as delete,
+  discoverMeta,
   get,
   list,
-  meta,
+  safeMeta,
   update,
   usage,
 }
+
+export { type t_meta } from "./meta.ts"

@@ -10,7 +10,7 @@ function* makeSegments(
   pad: boolean,
   tag: string,
 ): Generator<Segment.t_create_request> {
-  const duration = (file.meta?.duration as number) ?? 0
+  const duration = File.safeMeta(file, "audio", "duration", 0)
   let remaining = duration
   let start = 0
   while (remaining > 0) {

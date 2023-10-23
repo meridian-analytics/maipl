@@ -133,7 +133,7 @@ export default function FileUpload(props: {
                 {
                   file,
                   maipl_folder: props.folder,
-                  meta: await File.meta(file),
+                  meta: await File.discoverMeta(file),
                   path: file.path ?? file.name,
                   tag,
                 },
