@@ -1,4 +1,4 @@
-import { Detection } from "@maipl/api"
+import { Detection, t_page } from "@maipl/api"
 import * as F from "@maipl/format"
 import * as RQ from "@tanstack/react-query"
 import * as RT from "@tanstack/react-table"
@@ -17,7 +17,7 @@ const column = RT.createColumnHelper<Detection.t>()
 
 function useTable(props?: {
   debounceDelay?: number
-  filter?: Detection.t_list_request
+  filter?: Detection.t_filter_params
   pagination?: PaginationState
   selection?: SelectionState<Detection.t>
 }) {
@@ -42,13 +42,21 @@ function useTable(props?: {
   }
 }
 
-function useQuery(props?: Detection.t_list_request) {
+function useQuery(filter?: Detection.t_list_request) {
   const { client } = useMaipl()
   return RQ.useQuery({
     keepPreviousData: true,
-    queryKey: ["detections", "list", props],
-    queryFn: () => Detection.list(client, props),
-    initialData: [],
+    queryKey: ["detections", "list", filter],
+    queryFn: () => Detection.list(client, filter),
+    initialData: () =>
+      ({
+        data: [],
+        page: 1,
+        size: filter?.size ?? 100,
+        count: 0,
+        prev: null,
+        next: null,
+      }) as t_page<Detection.t>,
   })
 }
 
@@ -57,6 +65,9 @@ const Table = BaseTable([
     header: "Id",
   }),
   column.accessor("file", {
+    header: "File",
+  }),
+  column.accessor("file_path", {
     header: "File",
   }),
   column.accessor("start", {

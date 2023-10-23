@@ -1,3 +1,6 @@
+/** Types.Require: derive new type that converts optional fields to required fields */
+export type Require<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>
+
 /** Types.tpage: a paginated list of items */
 export type t_page<T> = {
   /** List of items */

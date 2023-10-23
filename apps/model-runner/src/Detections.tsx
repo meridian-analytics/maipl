@@ -1,8 +1,9 @@
-import { File, Task } from "@maipl/api"
+import { Detection, File, Task } from "@maipl/api"
 import * as F from "@maipl/format"
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
+import * as R from "react"
 import * as RR from "react-router-dom"
 
 export default function DetectionsLoader(props: {
@@ -45,20 +46,33 @@ function Detections(props: {
   onClose: () => void
   sx?: M.SxProps
 }) {
+  const maipl = MR.useMaipl()
   const table = MR.Detections.useTable()
 
-  const { data: detections, error: detectionsError } = MR.Detections.useQuery({
-    task: props.task.id,
-    label: F.safeParseString(table.debouncedFilter.get("label"), undefined),
-    score_max: F.safeParseNumber(
-      table.debouncedFilter.get("score_max"),
-      undefined,
-    ),
-    score_min: F.safeParseNumber(
-      table.debouncedFilter.get("score_min"),
-      undefined,
-    ),
-  })
+  const filter = R.useMemo<Detection.t_list_request>(() => {
+    return {
+      task: props.task.id,
+      label: F.safeParseString(table.debouncedFilter.get("label"), undefined),
+      score_max: F.safeParseNumber(
+        table.debouncedFilter.get("score_max"),
+        undefined,
+      ),
+      score_min: F.safeParseNumber(
+        table.debouncedFilter.get("score_min"),
+        undefined,
+      ),
+      page: table.pagination.pageIndex + 1, // bug: when query changes, page needs to be reset
+      size: table.pagination.pageSize,
+    }
+  }, [
+    props.task.id,
+    table.debouncedFilter,
+    table.pagination.pageIndex,
+    table.pagination.pageSize,
+  ])
+
+  const { data: detections, error: detectionsError } =
+    MR.Detections.useQuery(filter)
 
   if (detectionsError != null) {
     return <M.Typography>{(detectionsError as Error).message}</M.Typography>
@@ -110,8 +124,8 @@ function Detections(props: {
       </M.Stack>
       <MR.Detections.Table
         {...table}
-        rows={detections}
-        count={detections.length}
+        rows={detections.data}
+        count={detections.count}
         visibility={{
           file: false,
           id: false,
@@ -120,10 +134,21 @@ function Detections(props: {
       />
       <M.Stack direction="row-reverse" spacing={2}>
         <M.Button
-          children="Export CSV"
+          children="Save as .CSV"
           color="primary"
-          component={RR.Link}
-          to={`/tasks/${props.task.id}`}
+          onClick={async () => {
+            // todo: use react-query mutation
+            try {
+              const res = await Detection.export(maipl.client, {
+                ...filter,
+                task: props.task.id,
+                model: props.model.id,
+              })
+              console.log(res)
+            } catch (err) {
+              console.error("Detection.export err", err)
+            }
+          }}
           variant="contained"
         />
         <M.Button
