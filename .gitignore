@@ -1,8 +1,5 @@
-# production
-dist
-
-# npm
-node_modules
+# development
+.vscode
 
 # env
 .env*
@@ -10,6 +7,12 @@ node_modules
 
 # log
 *.log
+
+# npm
+node_modules
+
+# production
+dist
 
 # typescript
 *.tsbuildinfo
