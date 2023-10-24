@@ -4,16 +4,14 @@
   "scripts": {
     "@check": "biome check .",
     "@format": "biome format --write .",
-
-
-    "@build": "pnpm -F \"./apps/*\" build",
+    "@build": "tsc && pnpm -F \"./apps/*\" build",
     "@preview": "pnpm -F \"./apps/*\" preview",
-    "@start": "pnpm -F \"./apps/*\" start"
+    "@start": "pnpm -F \"./apps/*\" start",
+    "@tsc": "tsc"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.2.2"
-  },
-  "peerDependencies": {
+    "@biomejs/biome": "1.2.2",
+    "@types/node": "^20.8.5",
     "typescript": "^5.2.2"
   }
 }

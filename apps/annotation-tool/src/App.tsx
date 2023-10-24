@@ -1,11 +1,10 @@
-import { MaiplProvider } from "@maipl/common/context"
-import * as UI from "@maipl/common/ui"
+import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import AnnotationTool from "./AnnotationTool.js"
-import Batches from "./Batches.js"
-import Files from "./Files.jsx"
-import Segments from "./Segments.jsx"
+import AnnotationTool from "./AnnotationTool.tsx"
+import Batches from "./Batches.tsx"
+import Files from "./Files.tsx"
+import Segments from "./Segments.tsx"
 
 function LocalNavigation() {
   const batchId = RR.useMatch("/annotate/:batchId/*")?.params?.batchId
@@ -40,7 +39,7 @@ function LocalNavigation() {
 
 export default function App() {
   return (
-    <MaiplProvider>
+    <MR.MaiplProvider>
       <M.Stack
         sx={{
           backgroundColor: M.colors.grey[50],
@@ -48,9 +47,9 @@ export default function App() {
           maxHeight: "100vh",
         }}
       >
-        <UI.Navbar>
+        <MR.Navbar>
           <LocalNavigation />
-        </UI.Navbar>
+        </MR.Navbar>
         <RR.Routes>
           <RR.Route path="/" element={<RR.Navigate to="/files" replace />} />
           <RR.Route path="files" element={<Files />} />
@@ -63,6 +62,6 @@ export default function App() {
           />
         </RR.Routes>
       </M.Stack>
-    </MaiplProvider>
+    </MR.MaiplProvider>
   )
 }

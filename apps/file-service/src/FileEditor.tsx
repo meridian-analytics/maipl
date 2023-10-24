@@ -1,7 +1,6 @@
-import { File } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/context"
-import * as F from "@maipl/common/format"
-import { MaiplFolderPicker, Modal } from "@maipl/common/ui"
+import { File } from "@maipl/api"
+import * as F from "@maipl/format"
+import * as MR from "@maipl/react"
 import { Editor } from "@monaco-editor/react"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
@@ -16,7 +15,7 @@ export default function FileEditor(props: {
   const params = RR.useParams()
   const fileId = F.safeParseInteger(params.fileId, null)
 
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
   const { data: file, error } = RQ.useQuery({
     enabled: fileId != null,
     queryKey: ["files", fileId],
@@ -24,7 +23,7 @@ export default function FileEditor(props: {
   })
 
   return (
-    <Modal onClose={props.onClose}>
+    <MR.Modal onClose={props.onClose}>
       {error != null ? (
         <M.Typography>{(error as Error).message}</M.Typography>
       ) : (
@@ -34,7 +33,7 @@ export default function FileEditor(props: {
           onClose={props.onClose}
         />
       )}
-    </Modal>
+    </MR.Modal>
   )
 }
 
@@ -43,28 +42,27 @@ function FileEditor_(props: {
   folder: File.t_maipl_folder
   onClose: () => void
 }) {
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
   const { file } = props
   const [path, setPath] = R.useState(() => file?.path ?? "/path/to/myfile.txt")
   const [folder, setFolder] = R.useState(
     () => file?.maipl_folder ?? props.folder,
   )
   const [tag, setTag] = R.useState(() => file?.tag ?? "")
-  const [value, setValue] = R.useState<string | null>(() =>
-    file == null ? "" : null,
-  )
+  const [value, setValue] = R.useState<string | undefined>(() =>
+    file == null ? "" : undefined,
+  ) // monaco-editor uses undefined
   const lastSavedValue = R.useRef<string | null>(null)
   const queryClient = RQ.useQueryClient()
 
   const language: Monaco.languages.ILanguageExtensionPoint | null =
     R.useMemo(() => {
       const lookup = file?.extname ?? path.match(/(\.[^.]+)$/)?.[1]
+      if (lookup == null) return null
       return (
-        (lookup &&
-          Monaco.languages
-            .getLanguages()
-            .find(lang => lang?.extensions?.includes?.(lookup))) ??
-        null
+        Monaco.languages
+          .getLanguages()
+          .find(lang => lang?.extensions?.includes?.(lookup)) ?? null
       )
     }, [file, path])
 
@@ -74,7 +72,7 @@ function FileEditor_(props: {
     queryKey: ["files", file?.file],
     queryFn: () => {
       lastSavedValue.current = null
-      return fetch(file.file)
+      return fetch(file!.file)
         .then(r => r.arrayBuffer())
         .then(buffer => new TextDecoder("utf-8").decode(buffer))
     },
@@ -114,9 +112,9 @@ function FileEditor_(props: {
     createMutation.mutate([
       client,
       {
-        file: new window.File([value], path),
+        file: new window.File([value ?? ""], path),
         maipl_folder: folder,
-        meta: {},
+        // todo: meta: { maipl: "file", ... }
         path,
         tag,
       },
@@ -124,11 +122,14 @@ function FileEditor_(props: {
   }
 
   const onUpdate = () => {
+    if (file == null) {
+      throw Error("FileEditor onUpdate called with no file")
+    }
     updateMutation.mutate([
       client,
       file.id,
       {
-        file: new window.File([value], path),
+        file: new window.File([value ?? ""], path),
         maipl_folder: folder,
         meta: file.meta,
         path,
@@ -146,7 +147,7 @@ function FileEditor_(props: {
   }, [file?.tag, tag, value])
 
   return (
-    <Modal
+    <MR.Modal
       onClose={() => hasUnsavedChanges == false && props.onClose()}
       sx={{ width: "100%" }}
     >
@@ -155,7 +156,7 @@ function FileEditor_(props: {
           {file == null ? "Create new file ..." : file.basename}
         </M.Typography>
         <M.Stack direction="row" spacing={2}>
-          <MaiplFolderPicker
+          <MR.MaiplFolderPicker
             folder={folder}
             folders={[
               "public",
@@ -231,6 +232,6 @@ function FileEditor_(props: {
           )}
         </M.Stack>
       </M.Stack>
-    </Modal>
+    </MR.Modal>
   )
 }

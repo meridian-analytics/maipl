@@ -1,8 +1,0 @@
-export * as Annotation from "./api/api.annotation.ts"
-export * as Auth from "./api/api.auth.ts"
-export * as Batch from "./api/api.batch.ts"
-export * as File from "./api/api.file.ts"
-export * as Profile from "./api/api.profile.ts"
-export * as Segment from "./api/api.segment.ts"
-export * as Task from "./api/api.task.ts"
-export * as User from "./api/api.user.ts"

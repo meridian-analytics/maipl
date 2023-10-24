@@ -7,14 +7,16 @@ settings:
 importers:
 
   .:
-    dependencies:
-      typescript:
-        specifier: ^5.2.2
-        version: 5.2.2
     devDependencies:
       '@biomejs/biome':
         specifier: 1.2.2
         version: 1.2.2
+      '@types/node':
+        specifier: ^20.8.5
+        version: 20.8.5
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
 
   apps/annotation-tool:
     dependencies:
@@ -24,9 +26,15 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.25)(react@18.2.0)
-      '@maipl/common':
+      '@maipl/api':
         specifier: workspace:*
-        version: link:../../modules/common
+        version: link:../../modules/api
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../../modules/format
+      '@maipl/react':
+        specifier: workspace:*
+        version: link:../../modules/react
       '@mui/icons-material':
         specifier: ^5.14.12
         version: 5.14.12(@mui/material@5.14.12)(@types/react@18.2.25)(react@18.2.0)
@@ -48,9 +56,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^4.35.7
         version: 4.35.7(react-dom@18.2.0)(react@18.2.0)
-      '@tanstack/react-table':
-        specifier: ^8.10.3
-        version: 8.10.3(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -73,6 +78,9 @@ importers:
       '@tanstack/react-query-devtools':
         specifier: ^4.35.7
         version: 4.35.7(@tanstack/react-query@4.35.7)(react-dom@18.2.0)(react@18.2.0)
+      '@types/json-schema':
+        specifier: ^7.0.13
+        version: 7.0.13
       '@types/react':
         specifier: ^18.2.25
         version: 18.2.25
@@ -82,12 +90,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.1.0
         version: 4.1.0(vite@4.4.10)
-      typescript:
-        specifier: ^5.2.2
-        version: 5.2.2
       vite:
         specifier: ^4.4.10
-        version: 4.4.10
+        version: 4.4.10(@types/node@20.8.5)
 
   apps/authentication-service:
     dependencies:
@@ -97,18 +102,18 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.25)(react@18.2.0)
-      '@maipl/common':
+      '@maipl/api':
         specifier: workspace:*
-        version: link:../../modules/common
+        version: link:../../modules/api
+      '@maipl/react':
+        specifier: workspace:*
+        version: link:../../modules/react
       '@mui/icons-material':
         specifier: ^5.14.12
         version: 5.14.12(@mui/material@5.14.12)(@types/react@18.2.25)(react@18.2.0)
       '@mui/material':
         specifier: ^5.14.12
         version: 5.14.12(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.2.25)(react-dom@18.2.0)(react@18.2.0)
-      '@tanstack/react-query':
-        specifier: ^4.35.7
-        version: 4.35.7(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -131,12 +136,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.1.0
         version: 4.1.0(vite@4.4.10)
-      typescript:
-        specifier: ^5.2.2
-        version: 5.2.2
       vite:
         specifier: ^4.4.10
-        version: 4.4.10
+        version: 4.4.10(@types/node@20.8.5)
 
   apps/file-service:
     dependencies:
@@ -146,9 +148,18 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.25)(react@18.2.0)
-      '@maipl/common':
+      '@maipl/api':
         specifier: workspace:*
-        version: link:../../modules/common
+        version: link:../../modules/api
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../../modules/format
+      '@maipl/react':
+        specifier: workspace:*
+        version: link:../../modules/react
+      '@maipl/tree':
+        specifier: workspace:*
+        version: link:../../modules/tree
       '@monaco-editor/react':
         specifier: ^4.5.2
         version: 4.5.2(monaco-editor@0.43.0)(react-dom@18.2.0)(react@18.2.0)
@@ -192,12 +203,12 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.1.0
         version: 4.1.0(vite@4.4.10)
-      typescript:
-        specifier: ^5.2.2
-        version: 5.2.2
+      json-schema:
+        specifier: ^0.4.0
+        version: 0.4.0
       vite:
         specifier: ^4.4.10
-        version: 4.4.10
+        version: 4.4.10(@types/node@20.8.5)
 
   apps/model-runner:
     dependencies:
@@ -207,9 +218,15 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.25)(react@18.2.0)
-      '@maipl/common':
+      '@maipl/api':
         specifier: workspace:*
-        version: link:../../modules/common
+        version: link:../../modules/api
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../../modules/format
+      '@maipl/react':
+        specifier: workspace:*
+        version: link:../../modules/react
       '@mui/icons-material':
         specifier: ^5.14.12
         version: 5.14.12(@mui/material@5.14.12)(@types/react@18.2.25)(react@18.2.0)
@@ -219,9 +236,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^4.35.7
         version: 4.35.7(react-dom@18.2.0)(react@18.2.0)
-      '@tanstack/react-table':
-        specifier: ^8.10.3
-        version: 8.10.3(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -244,14 +258,53 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.1.0
         version: 4.1.0(vite@4.4.10)
-      typescript:
-        specifier: ^5.2.2
-        version: 5.2.2
       vite:
         specifier: ^4.4.10
-        version: 4.4.10
+        version: 4.4.10(@types/node@20.8.5)
 
-  modules/common:
+  modules/api:
+    dependencies:
+      '@maipl/buffer':
+        specifier: workspace:*
+        version: link:../buffer
+      '@maipl/constants':
+        specifier: workspace:*
+        version: link:../constants
+      '@maipl/csv':
+        specifier: workspace:*
+        version: link:../csv
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../format
+      axios:
+        specifier: ^1.5.1
+        version: 1.5.1
+
+  modules/async: {}
+
+  modules/buffer: {}
+
+  modules/constants:
+    dependencies:
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../format
+    devDependencies:
+      vite:
+        specifier: ^4.4.10
+        version: 4.4.10(@types/node@20.8.5)
+
+  modules/csv: {}
+
+  modules/format: {}
+
+  modules/pkce:
+    dependencies:
+      '@maipl/buffer':
+        specifier: workspace:*
+        version: link:../buffer
+
+  modules/react:
     dependencies:
       '@emotion/react':
         specifier: ^11.11.1
@@ -259,6 +312,21 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.25)(react@18.2.0)
+      '@maipl/api':
+        specifier: workspace:*
+        version: link:../api
+      '@maipl/async':
+        specifier: workspace:*
+        version: link:../async
+      '@maipl/constants':
+        specifier: workspace:*
+        version: link:../constants
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../format
+      '@maipl/pkce':
+        specifier: workspace:*
+        version: link:../pkce
       '@mui/icons-material':
         specifier: ^5.14.12
         version: 5.14.12(@mui/material@5.14.12)(@types/react@18.2.25)(react@18.2.0)
@@ -292,13 +360,12 @@ importers:
       react-router-dom:
         specifier: ^6.16.0
         version: 6.16.0(react-dom@18.2.0)(react@18.2.0)
-      typescript:
-        specifier: ^5.2.2
-        version: 5.2.2
-    devDependencies:
-      vite:
-        specifier: ^4.4.10
-        version: 4.4.10
+
+  modules/tree:
+    dependencies:
+      '@maipl/format':
+        specifier: workspace:*
+        version: link:../format
 
 packages:
 
@@ -1326,6 +1393,16 @@ packages:
       '@babel/types': 7.23.0
     dev: true
 
+  /@types/json-schema@7.0.13:
+    resolution: {integrity: sha512-RbSSoHliUbnXj3ny0CNFOoxrIDV6SUGyStHsvDqosw6CkdPV8TtWGlfecuK4ToyMEAql6pzNxgCFKanovUzlgQ==}
+    dev: true
+
+  /@types/node@20.8.5:
+    resolution: {integrity: sha512-SPlobFgbidfIeOYlzXiEjSYeIJiOCthv+9tSQVpvk4PAdIIc+2SmjNVzWXk9t0Y7dl73Zdf+OgXKHX9XtkqUpw==}
+    dependencies:
+      undici-types: 5.25.3
+    dev: true
+
   /@types/parse-json@4.0.0:
     resolution: {integrity: sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==}
     dev: false
@@ -1365,7 +1442,7 @@ packages:
       '@babel/plugin-transform-react-jsx-source': 7.22.5(@babel/core@7.23.0)
       '@types/babel__core': 7.20.2
       react-refresh: 0.14.0
-      vite: 4.4.10
+      vite: 4.4.10(@types/node@20.8.5)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -1716,6 +1793,10 @@ packages:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
     dev: false
 
+  /json-schema@0.4.0:
+    resolution: {integrity: sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==}
+    dev: true
+
   /json5@2.2.3:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
     engines: {node: '>=6'}
@@ -2031,6 +2112,11 @@ packages:
     resolution: {integrity: sha512-mI4WrpHsbCIcwT9cF4FZvr80QUeKvsUsUvKDoR+X/7XHQH98xYD8YHZg7ANtz2GtZt/CBq2QJ0thkGJMHfqc1w==}
     engines: {node: '>=14.17'}
     hasBin: true
+    dev: true
+
+  /undici-types@5.25.3:
+    resolution: {integrity: sha512-Ga1jfYwRn7+cP9v8auvEXN1rX3sWqlayd4HP7OKk4mZWylEmu3KzXDUGrQUN6Ol7qo1gPvB2e5gX6udnyEPgdA==}
+    dev: true
 
   /update-browserslist-db@1.0.13(browserslist@4.22.1):
     resolution: {integrity: sha512-xebP81SNcPuNpPP3uzeW1NYXxI3rxyJzF3pD6sH4jE7o/IX+WtSpwnVU+qIsDPyk0d3hmFQ7mjqc6AtV604hbg==}
@@ -2081,7 +2167,7 @@ packages:
     resolution: {integrity: sha512-kRAyotcbNaSYoDnXvb4MHg/0a1egJdLwS6oJ38TJY7aw9n93Fl/3blIXdyYvPOp55CNxywooG/3BcrwNrBpcSg==}
     dev: false
 
-  /vite@4.4.10:
+  /vite@4.4.10(@types/node@20.8.5):
     resolution: {integrity: sha512-TzIjiqx9BEXF8yzYdF2NTf1kFFbjMjUSV0LFZ3HyHoI3SGSPLnnFUKiIQtL3gl2AjHvMrprOvQ3amzaHgQlAxw==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
@@ -2109,6 +2195,7 @@ packages:
       terser:
         optional: true
     dependencies:
+      '@types/node': 20.8.5
       esbuild: 0.18.20
       postcss: 8.4.31
       rollup: 3.29.4

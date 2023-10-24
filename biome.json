@@ -25,7 +25,8 @@
         "useTemplate": "off"
       },
       "suspicious": {
-        "noDoubleEquals": "off"
+        "noDoubleEquals": "off",
+        "noShadowRestrictedNames": "off"
       }
     }
   },

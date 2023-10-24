@@ -1,9 +1,9 @@
-import { useMaipl } from "@maipl/common/context"
+import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 
 const UserCard = () => {
-  const { user } = useMaipl()
+  const { user } = MR.useMaipl()
   return (
     <M.Stack component={M.Paper} alignItems="center" padding={2} spacing={2}>
       {user == null ? (

@@ -1,6 +1,5 @@
-import { Annotation, Batch, Segment } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/context"
-import * as MT from "@maipl/common/table"
+import { Annotation, Batch, Segment } from "@maipl/api"
+import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import { Form } from "@rjsf/mui"
@@ -43,7 +42,7 @@ function PreloadedAnnotationTool(props: {
   images: Map<number, Segment.t_image>
   audios: Map<number, Segment.t_audio>
 }) {
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
   const segmentId = RR.useParams()?.segmentId
   const queryClient = RQ.useQueryClient()
 
@@ -56,7 +55,7 @@ function PreloadedAnnotationTool(props: {
     [props.audios, props.images, props.segments, segmentId],
   )
 
-  const segmentsTable = MT.useTable<Segment.t>({
+  const segmentsTable = MR.useTable<Segment.t>({
     pagination: {
       pageIndex: 0,
       pageSize: 10,
@@ -65,7 +64,7 @@ function PreloadedAnnotationTool(props: {
 
   const segmentsTableExtraColumns = R.useMemo(
     () => [
-      MT.Segments.column.display({
+      MR.Segments.column.display({
         id: "actions",
         header: "",
         cell: info => (
@@ -171,7 +170,7 @@ function PreloadedAnnotationTool(props: {
         <M.Grid item xs={8} sx={{ maxHeight: "100%", overflow: "hidden" }}>
           <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
             {/* segments */}
-            <MT.Segments.Table
+            <MR.Segments.Table
               {...segmentsTable}
               rows={props.segments}
               columns={segmentsTableExtraColumns}
@@ -304,7 +303,7 @@ function NullForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
       children=" "
       formData={{}}
       readonly={true}
-      schema={props.schema}
+      schema={props.schema ?? {}}
       uiSchema={props.uiSchema}
       validator={validator}
     />
@@ -329,7 +328,7 @@ function MonoForm(props: {
           )
         }
         readonly={false}
-        schema={props.schema}
+        schema={props.schema ?? {}}
         uiSchema={props.uiSchema}
         validator={validator}
       />
@@ -382,7 +381,7 @@ function PolyForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
         children=" "
         formData={{}}
         readonly={true}
-        schema={props.schema}
+        schema={props.schema ?? {}}
         uiSchema={props.uiSchema}
         validator={validator}
       />
@@ -391,7 +390,7 @@ function PolyForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
 }
 
 export default function AnnotationTool(props: { sx?: M.SxProps }) {
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
   const batchId = RR.useParams()?.batchId
   const batch = RQ.useQuery({
     enabled: batchId != null,

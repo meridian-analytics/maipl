@@ -1,8 +1,6 @@
-import { File, Task } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/context"
-import * as F from "@maipl/common/format"
-import { Files } from "@maipl/common/table"
-import * as UI from "@maipl/common/ui"
+import { File, Task } from "@maipl/api"
+import * as F from "@maipl/format"
+import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as RR from "react-router-dom"
@@ -12,15 +10,12 @@ export default function ShowTaskLoader(props: {
 }) {
   const params = RR.useParams()
   const taskId = F.safeParseInteger(params.taskId, null)
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
 
   const { data: task, error } = RQ.useQuery({
     enabled: taskId != null,
     queryKey: ["tasks", taskId],
-    queryFn: () => {
-      console.log("fetching task", taskId)
-      return Task.get(client, taskId!)
-    },
+    queryFn: () => Task.get(client, taskId!),
   })
 
   const { data: model, error: modelError } = RQ.useQuery({
@@ -33,7 +28,7 @@ export default function ShowTaskLoader(props: {
   })
 
   return (
-    <UI.Modal onClose={props.onClose}>
+    <MR.Modal onClose={props.onClose}>
       {error != null ? (
         <M.Typography>{(error as Error).message}</M.Typography>
       ) : modelError != null ? (
@@ -43,7 +38,7 @@ export default function ShowTaskLoader(props: {
       ) : (
         <ShowTask task={task} model={model} onClose={props.onClose} />
       )}
-    </UI.Modal>
+    </MR.Modal>
   )
 }
 
@@ -63,9 +58,9 @@ function ShowTask(props: {
     setFolder,
     setPagination,
     setSelection,
-  } = Files.useTable({})
+  } = MR.Files.useTable({})
 
-  const { data: files } = Files.useQuery({
+  const { data: files } = MR.Files.useQuery({
     ids: task.filelist,
     maipl_folder: folder,
     path: debouncedFilter.get("path"),
@@ -138,39 +133,29 @@ function ShowTask(props: {
         Input Files
       </M.Typography>
       <M.Stack direction="row" spacing={2}>
-        <UI.MaiplFolderPicker
+        <MR.MaiplFolderPicker
           folder={folder}
           folders={["public", "dataset", "raw"]}
           setFolder={setFolder}
         />
-        <M.Button
-          variant="contained"
-          color="primary"
-          onClick={filter.toggle}
-          children={filter.enabled ? "Turn Off Filters" : "Turn On Filters"}
+        <M.TextField
+          size="small"
+          label="Path"
+          onChange={e => filter.set("path", e.currentTarget.value)}
+          placeholder="path/to/folder"
+          value={filter.get("path")}
+          variant="outlined"
         />
-        {filter.enabled && (
-          <M.TextField
-            size="small"
-            label="Path"
-            onChange={e => filter.set("path", e.currentTarget.value)}
-            placeholder="path/to/folder"
-            value={filter.get("path")}
-            variant="outlined"
-          />
-        )}
-        {filter.enabled && (
-          <M.TextField
-            size="small"
-            label="Tag"
-            onChange={e => filter.set("tag", e.currentTarget.value)}
-            placeholder="my-tag"
-            value={filter.get("tag")}
-            variant="outlined"
-          />
-        )}
+        <M.TextField
+          size="small"
+          label="Tag"
+          onChange={e => filter.set("tag", e.currentTarget.value)}
+          placeholder="my-tag"
+          value={filter.get("tag")}
+          variant="outlined"
+        />
       </M.Stack>
-      <Files.Table
+      <MR.Files.Table
         rows={files.data}
         count={files.count}
         pagination={pagination}
@@ -183,37 +168,23 @@ function ShowTask(props: {
           dirname: false,
           extname: false,
           channels: false,
-          sampleRate: false,
+          sample_rate: false,
           created_at: true,
         }}
       />
-      <M.Stack direction="row" spacing={2}>
-        <M.FormControl size="small">
-          <M.InputLabel>Output</M.InputLabel>
-          <M.Select disabled label="Output" value={String(task.overwrite)}>
-            <M.MenuItem value="false" children="Append" />
-            <M.MenuItem value="true" children="Overwrite" />
-          </M.Select>
-        </M.FormControl>
-        <M.FormControlLabel
-          control={
-            <M.Switch checked={task.merge_detections} disabled size="small" />
-          }
-          label="Merge detections"
-        />
-        <M.Stack flexGrow={1} />
-        <M.Button
-          children="Close"
-          color="primary"
-          onClick={props.onClose}
-          variant="outlined"
-        />
+      <M.Stack direction="row-reverse" spacing={2}>
         <M.Button
           children="Copy"
           color="primary"
           component={RR.Link}
           to={`/tasks/${task.id}/copy`}
           variant="contained"
+        />
+        <M.Button
+          children="Close"
+          color="primary"
+          onClick={props.onClose}
+          variant="outlined"
         />
       </M.Stack>
     </M.Stack>

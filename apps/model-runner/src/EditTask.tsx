@@ -1,8 +1,6 @@
-import { File, Task } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/context"
-import * as F from "@maipl/common/format"
-import { Files } from "@maipl/common/table"
-import { MaiplFolderPicker, Modal } from "@maipl/common/ui"
+import { File, Task } from "@maipl/api"
+import * as F from "@maipl/format"
+import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
@@ -13,7 +11,7 @@ export default function EditTaskLoader(props: {
 }) {
   const params = RR.useParams()
   const taskId = F.safeParseInteger(params.taskId, null)
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
 
   const { data: task, error } = RQ.useQuery({
     enabled: taskId != null,
@@ -32,7 +30,7 @@ export default function EditTaskLoader(props: {
   })
 
   return (
-    <Modal onClose={props.onClose}>
+    <MR.Modal onClose={props.onClose}>
       {error != null ? (
         <M.Typography>{(error as Error).message}</M.Typography>
       ) : modelError != null ? (
@@ -40,7 +38,7 @@ export default function EditTaskLoader(props: {
       ) : (
         <EditTask task={task} model={model} onClose={props.onClose} />
       )}
-    </Modal>
+    </MR.Modal>
   )
 }
 
@@ -50,24 +48,18 @@ function EditTask(props: {
   onClose: () => void
 }) {
   const queryClient = RQ.useQueryClient()
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
   const { task } = props
-  const [batchSize, setBatchSize] = R.useState(() => task?.batch_size ?? 0)
+  const [batchSize, setBatchSize] = R.useState(() => task?.batch_size ?? 32)
   const [buffer, setBuffer] = R.useState(() => task?.buffer ?? 0)
   const [description, setDescription] = R.useState<string>(
     () => task?.description ?? "",
   )
-  const [mergeDetections, setMergeDetections] = R.useState<boolean>(
-    () => task?.merge_detections ?? false,
-  )
   const [modelFile, setModelFile] = R.useState(() => task?.model_file ?? -1)
-  const [overwrite, setOverwrite] = R.useState<boolean>(
-    () => task?.overwrite ?? false,
-  )
   const [stepSize, setStepSize] = R.useState(() => task?.step_size ?? 0)
   const [threshold, setThreshold] = R.useState(() => task?.threshold ?? 0)
 
-  const { data: models } = Files.useQuery({
+  const { data: models } = MR.Files.useQuery({
     maipl_folder: "model",
     page: 1, // bug: when query changes, page needs to be reset
     size: 100,
@@ -82,7 +74,7 @@ function EditTask(props: {
     setFolder,
     setPagination,
     setSelection,
-  } = Files.useTable({
+  } = MR.Files.useTable({
     selection: R.useMemo(
       () =>
         task == null
@@ -92,7 +84,7 @@ function EditTask(props: {
     ),
   })
 
-  const { data: files } = Files.useQuery({
+  const { data: files } = MR.Files.useQuery({
     maipl_folder: folder,
     path: debouncedFilter.get("path"),
     tag: debouncedFilter.get("tag"),
@@ -127,9 +119,7 @@ function EditTask(props: {
         buffer,
         description,
         filelist: Array.from(selection.keys()),
-        merge_detections: mergeDetections,
         model_file: modelFile,
-        overwrite,
         step_size: stepSize,
         threshold,
       },
@@ -209,7 +199,7 @@ function EditTask(props: {
         Input Files
       </M.Typography>
       <M.Stack direction="row" spacing={2}>
-        <MaiplFolderPicker
+        <MR.MaiplFolderPicker
           folder={folder}
           folders={["public", "dataset", "raw"]}
           setFolder={setFolder}
@@ -231,7 +221,7 @@ function EditTask(props: {
           variant="outlined"
         />
       </M.Stack>
-      <Files.Table
+      <MR.Files.Table
         rows={files.data}
         count={files.count}
         pagination={pagination}
@@ -243,46 +233,24 @@ function EditTask(props: {
           dirname: false,
           extname: false,
           channels: false,
-          sampleRate: false,
+          sample_rate: false,
           created_at: true,
         }}
       />
-      <M.Stack direction="row" spacing={2}>
-        <M.FormControl size="small">
-          <M.InputLabel>Output</M.InputLabel>
-          <M.Select
-            label="Output"
-            value={String(overwrite)}
-            onChange={e => setOverwrite(e.target.value == "true")}
-          >
-            <M.MenuItem value="false" children="Append" />
-            <M.MenuItem value="true" children="Overwrite" />
-          </M.Select>
-        </M.FormControl>
-        <M.FormControlLabel
-          control={
-            <M.Switch
-              checked={mergeDetections}
-              onChange={(_e, value) => setMergeDetections(value)}
-              size="small"
-            />
-          }
-          label="Merge detections"
-        />
-        <M.Stack flexGrow={1} />
-        <M.Button
-          children="Cancel"
-          color="primary"
-          disabled={createMutation.isLoading}
-          onClick={props.onClose}
-          variant="outlined"
-        />
+      <M.Stack direction="row-reverse" spacing={2}>
         <M.Button
           children="Create"
           color="primary"
           disabled={createMutation.isLoading}
           onClick={onSave}
           variant="contained"
+        />
+        <M.Button
+          children="Cancel"
+          color="primary"
+          disabled={createMutation.isLoading}
+          onClick={props.onClose}
+          variant="outlined"
         />
       </M.Stack>
     </M.Stack>

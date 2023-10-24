@@ -1,20 +1,20 @@
-import { Task } from "@maipl/common/api"
-import { useMaipl } from "@maipl/common/context"
-import { Tasks } from "@maipl/common/table"
+import { Task } from "@maipl/api"
+import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import EditTask from "./EditTask.js"
-import ShowTask from "./ShowTask.js"
+import Detections from "./Detections.tsx"
+import EditTask from "./EditTask.tsx"
+import ShowTask from "./ShowTask.tsx"
 
 function TaskActions(props: { task: Task.t }) {
   const queryClient = RQ.useQueryClient()
   const [anchorEl, setAnchorEl] = R.useState<HTMLElement | null>(null)
   const buttonId = R.useId()
   const menuId = R.useId()
-  const { client } = useMaipl()
+  const { client } = MR.useMaipl()
   const open = anchorEl != null
 
   const startMutation = RQ.useMutation({
@@ -65,6 +65,12 @@ function TaskActions(props: { task: Task.t }) {
           to={`/tasks/${props.task.id}`}
         />
         <M.MenuItem
+          children="Detections"
+          disabled={props.task.detections == null}
+          component={RR.Link}
+          to={`/tasks/${props.task.id}/detections`}
+        />
+        <M.MenuItem
           disabled={props.task.status != "CREATED" && startMutation.isIdle}
           onClick={onStart}
           children="Start"
@@ -100,9 +106,9 @@ export default function TasksTable(props: {
   const navigate = RR.useNavigate()
   const queryClient = RQ.useQueryClient()
   const { pagination, selection, setPagination, setSelection } =
-    Tasks.useTable()
+    MR.Tasks.useTable()
 
-  const { data: tasks } = Tasks.useQuery({})
+  const { data: tasks } = MR.Tasks.useQuery()
 
   // hack: refresh tasks every 30 seconds
   R.useEffect(() => {
@@ -133,6 +139,10 @@ export default function TasksTable(props: {
           element={<EditTask onClose={() => navigate("/tasks")} />}
         />
         <RR.Route
+          path=":taskId/detections"
+          element={<Detections onClose={() => navigate("/tasks")} />}
+        />
+        <RR.Route
           path=":taskId"
           element={<ShowTask onClose={() => navigate("/tasks")} />}
         />
@@ -147,9 +157,9 @@ export default function TasksTable(props: {
           />
         </M.Tooltip>
       </M.Stack>
-      <Tasks.Table
+      <MR.Tasks.Table
         columns={[
-          Tasks.column.display({
+          MR.Tasks.column.display({
             id: "actions",
             header: "",
             cell: ({ row }) => <TaskActions task={row.original} />,
