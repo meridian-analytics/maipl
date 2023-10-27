@@ -13,6 +13,7 @@ export default function App() {
           maxHeight: "100vh",
         }}
       >
+        <MR.Notifications />
         <MR.Navbar />
         <RR.Routes>
           <RR.Route path="files/*" element={<Files />} />

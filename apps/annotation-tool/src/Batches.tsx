@@ -12,8 +12,8 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
   const [anchorEl, setAnchorEl] = R.useState<HTMLElement | null>(null)
   const buttonId = R.useId()
   const menuId = R.useId()
-  const { client } = MR.useMaipl()
-  const { batch } = props
+  const maipl = MR.useMaipl()
+  const notify = MR.useNotify()
   const open = anchorEl != null
 
   const onClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -24,36 +24,97 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
     setAnchorEl(null)
   }
 
-  const onDelete = async () => {
-    const message = `Are you sure you want to delete batch: ${batch.batch_name}?`
-    if (confirm(message)) {
-      await Batch.delete(client, batch.id)
-      queryClient.refetchQueries(["batches"])
+  const onDelete = () => {
+    const message = `Are you sure you want to delete batch: ${props.batch.batch_name}?`
+    if (deleteMutation.isIdle && confirm(message)) {
+      return deleteMutation.mutateAsync([maipl.client, props.batch.id])
     }
   }
 
-  const onExport = async () => {
-    try {
-      const res = await Batch.export(client, batch.id)
-      queryClient.refetchQueries(["files"])
-      console.warn("onExport", res)
-    } catch (err) {
-      console.error("onExport", err)
+  const onExport = () => {
+    if (exportMutation.isIdle) {
+      return exportMutation.mutateAsync([maipl.client, props.batch.id])
     }
   }
 
-  const onProcess = async () => {
-    try {
-      const res = await Batch.process(client, batch.id)
-      console.warn("todo: onProcess", res)
-    } catch (err) {
-      console.error("todo: onProcess", err)
+  const onProcess = () => {
+    if (processMutation.isIdle) {
+      return processMutation.mutateAsync([maipl.client, props.batch.id])
     }
   }
 
   const onShare = () => {
-    console.warn("todo: onShare", batch)
+    console.warn("todo: onShare", props.batch)
   }
+
+  const deleteMutation = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof Batch.delete>) => {
+      return Batch.delete(...vars)
+    },
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert severity="error" onClose={onClose}>
+          Error: Could not delete batch "{props.batch.batch_name}"
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("BatchActions deleteMutation error", err, vars)
+      }
+    },
+    onSuccess: () => {
+      notify(onClose => (
+        <M.Alert severity="success" onClose={onClose}>
+          Success: Deleted batch "{props.batch.batch_name}"
+        </M.Alert>
+      ))
+      queryClient.refetchQueries(["batches"])
+    },
+  })
+
+  const exportMutation = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof Batch.export>) =>
+      Batch.export(...vars),
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert severity="error" onClose={onClose}>
+          Error: Could not export batch "{props.batch.batch_name}"
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("BatchActions exportMutation error", err, vars)
+      }
+    },
+    onSuccess: file => {
+      notify(onClose => (
+        <M.Alert severity="success" onClose={onClose}>
+          Success: Exported "{props.batch.batch_name}" to {file.path}`
+        </M.Alert>
+      ))
+      queryClient.refetchQueries(["files"])
+    },
+  })
+
+  const processMutation = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof Batch.process>) =>
+      Batch.process(...vars),
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert severity="error" onClose={onClose}>
+          Error: Could not process batch "{props.batch.batch_name}"
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("BatchActions processMutation error", err, vars)
+      }
+    },
+    onSuccess: () => {
+      notify(onClose => (
+        <M.Alert severity="success" onClose={onClose}>
+          Success: Started processing batch "{props.batch.batch_name} ..."
+        </M.Alert>
+      ))
+    },
+  })
 
   return (
     <>
@@ -69,28 +130,41 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
         anchorEl={anchorEl}
         id={menuId}
         open={open}
+        onClick={onClose}
         onClose={onClose}
         MenuListProps={{
           "aria-labelledby": buttonId,
         }}
       >
-        <M.MenuItem onClick={onProcess} children="Submit for processing..." />
+        <M.MenuItem
+          children="Submit for processing..."
+          disabled={processMutation.isLoading}
+          onClick={onProcess}
+        />
         <M.Divider />
         <M.MenuItem
           children="Detail"
           component={RR.Link}
-          to={`/batches/${batch.id}`}
+          to={`/batches/${props.batch.id}`}
         />
         <M.MenuItem onClick={onShare} children="Share" />
         <M.Divider />
         <M.MenuItem
           children="Create Annotations"
           component={RR.Link}
-          to={`/annotate/${batch.id}`}
+          to={`/annotate/${props.batch.id}`}
         />
-        <M.MenuItem onClick={onExport} children="Export Annotations" />
+        <M.MenuItem
+          children="Export Annotations"
+          disabled={exportMutation.isLoading}
+          onClick={onExport}
+        />
         <M.Divider />
-        <M.MenuItem onClick={onDelete} children="Delete" />
+        <M.MenuItem
+          children="Delete"
+          disabled={deleteMutation.isLoading}
+          onClick={onDelete}
+        />
       </M.Menu>
     </>
   )

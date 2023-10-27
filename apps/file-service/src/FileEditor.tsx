@@ -43,37 +43,39 @@ function FileEditor_(props: {
   folder: File.t_maipl_folder
   onClose: () => void
 }) {
-  const { client } = MR.useMaipl()
-  const { file } = props
-  const [path, setPath] = R.useState(() => file?.path ?? "/path/to/myfile.txt")
-  const [folder, setFolder] = R.useState(
-    () => file?.maipl_folder ?? props.folder,
+  const maipl = MR.useMaipl()
+  const notify = MR.useNotify()
+  const [path, setPath] = R.useState(
+    () => props.file?.path ?? "path/to/myfile.txt",
   )
-  const [tag, setTag] = R.useState(() => file?.tag ?? "")
+  const [folder, setFolder] = R.useState(
+    () => props.file?.maipl_folder ?? props.folder,
+  )
+  const [tag, setTag] = R.useState(() => props.file?.tag ?? "")
   const [value, setValue] = R.useState<string | undefined>(() =>
-    file == null ? "" : undefined,
+    props.file == null ? "" : undefined,
   ) // monaco-editor uses undefined
   const lastSavedValue = R.useRef<string | null>(null)
   const queryClient = RQ.useQueryClient()
 
   const language: Monaco.languages.ILanguageExtensionPoint | null =
     R.useMemo(() => {
-      const lookup = file?.extname ?? path.match(/(\.[^.]+)$/)?.[1]
+      const lookup = props.file?.extname ?? path.match(/(\.[^.]+)$/)?.[1]
       if (lookup == null) return null
       return (
         Monaco.languages
           .getLanguages()
           .find(lang => lang?.extensions?.includes?.(lookup)) ?? null
       )
-    }, [file, path])
+    }, [props.file, path])
 
   RQ.useQuery({
     initialData: "",
-    enabled: file != null,
-    queryKey: ["files", file?.file],
+    enabled: props.file != null,
+    queryKey: ["files", props.file?.file],
     queryFn: () => {
       lastSavedValue.current = null
-      return fetch(file!.file)
+      return fetch(props.file!.file)
         .then(r => r.arrayBuffer())
         .then(buffer => new TextDecoder("utf-8").decode(buffer))
     },
@@ -82,70 +84,105 @@ function FileEditor_(props: {
       setValue(value)
     },
     onError: err => {
-      console.error("FileEditor could not load file", err)
-      setValue("// There was an error loading this file.")
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not load file "{props.file?.path}"
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("FileEditor could not load file", err)
+      }
+      setValue("")
     },
   })
 
   const createMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof File.create>) => File.create(...vars),
-    onSuccess: () => {
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not create file "{vars[1].path}"
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("FileEditor createMutation error", err, vars)
+      }
+    },
+    onSuccess: file => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Created file "{file.path}"
+        </M.Alert>
+      ))
       queryClient.refetchQueries(["files"])
       props.onClose()
-    },
-    onError: err => {
-      console.error("FileEditor create err", err)
     },
   })
 
   const updateMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof File.update>) => File.update(...vars),
-    onSuccess: () => {
+    onSuccess: file => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Updated file "{file.path}""
+        </M.Alert>
+      ))
       queryClient.refetchQueries(["files"])
       props.onClose()
     },
-    onError: err => {
-      console.error("FileEditor update err", err)
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not update file "{vars[2].path}"
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("FileEditor updateMutation error", err, vars)
+      }
     },
   })
 
   const onCreate = () => {
-    createMutation.mutate([
-      client,
-      {
-        file: new window.File([value ?? ""], path),
-        maipl_folder: folder,
-        meta: { maipl: "file" },
-        path,
-        tag,
-      },
-    ])
+    if (createMutation.isIdle) {
+      return createMutation.mutateAsync([
+        maipl.client,
+        {
+          file: new window.File([value ?? ""], path),
+          maipl_folder: folder,
+          meta: { maipl: "file" },
+          path,
+          tag,
+        },
+      ])
+    }
   }
 
   const onUpdate = () => {
-    if (file == null) {
+    if (props.file == null) {
       throw Error("FileEditor onUpdate called with no file")
     }
-    updateMutation.mutate([
-      client,
-      file.id,
-      {
-        file: new window.File([value ?? ""], path),
-        maipl_folder: folder,
-        meta: file.meta,
-        path,
-        tag,
-      },
-    ])
+    if (updateMutation.isIdle) {
+      return updateMutation.mutateAsync([
+        maipl.client,
+        props.file.id,
+        {
+          file: new window.File([value ?? ""], path),
+          maipl_folder: folder,
+          meta: props.file.meta,
+          path,
+          tag,
+        },
+      ])
+    }
   }
 
   const hasUnsavedChanges = R.useMemo(() => {
-    if (file == null) {
+    if (props.file == null) {
       return tag != "" || value != ""
     } else {
-      return tag != file.tag || value != lastSavedValue.current
+      return tag != props.file.tag || value != lastSavedValue.current
     }
-  }, [file?.tag, tag, value])
+  }, [props.file?.tag, tag, value])
 
   return (
     <MR.Modal
@@ -154,7 +191,7 @@ function FileEditor_(props: {
     >
       <M.Stack spacing={2}>
         <M.Typography variant="h5">
-          {file == null ? "Create new file ..." : file.basename}
+          {props.file == null ? "Create new file ..." : props.file.basename}
         </M.Typography>
         <M.Stack direction="row" spacing={2}>
           <MR.MaiplFolderPicker
@@ -177,7 +214,7 @@ function FileEditor_(props: {
             value={path}
             variant="outlined"
             onChange={e => setPath(e.currentTarget.value)}
-            disabled={file != null}
+            disabled={props.file != null}
           />
           <M.TextField
             size="small"
@@ -187,7 +224,7 @@ function FileEditor_(props: {
             onChange={e => setTag(e.currentTarget.value)}
           />
         </M.Stack>
-        {file && value == null ? (
+        {props.file && value == null ? (
           <M.Typography>Loading...</M.Typography>
         ) : (
           <Editor
@@ -204,7 +241,7 @@ function FileEditor_(props: {
         <M.Stack direction="row" spacing={2}>
           <M.Typography>{F.filesize(value?.length ?? 0)}</M.Typography>
           <M.Typography>
-            {file == null ? F.iso8601(new Date()) : F.iso8601(file.created_at)}
+            {F.iso8601(props.file?.created_at ?? new Date())}
           </M.Typography>
           <M.Typography>{language?.aliases?.[0] ?? "Plain Text"}</M.Typography>
           <M.Stack flexGrow={1} />
@@ -214,11 +251,11 @@ function FileEditor_(props: {
             onClick={props.onClose}
             children={hasUnsavedChanges ? "Close Without Saving" : "Close"}
           />
-          {file == null ? (
+          {props.file == null ? (
             <M.Button
               color="success"
               children="Create"
-              disabled={hasUnsavedChanges == false}
+              disabled={hasUnsavedChanges == false || createMutation.isLoading}
               onClick={onCreate}
               variant="contained"
             />
@@ -226,7 +263,7 @@ function FileEditor_(props: {
             <M.Button
               color="success"
               children="Save"
-              disabled={hasUnsavedChanges == false}
+              disabled={hasUnsavedChanges == false || updateMutation.isLoading}
               onClick={onUpdate}
               variant="contained"
             />

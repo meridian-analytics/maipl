@@ -47,6 +47,7 @@ export default function App() {
           maxHeight: "100vh",
         }}
       >
+        <MR.Notifications />
         <MR.Navbar>
           <LocalNavigation />
         </MR.Navbar>

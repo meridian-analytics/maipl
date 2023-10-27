@@ -53,7 +53,8 @@ export default function FileUpload(props: {
   onClose: () => void
 }) {
   const queryClient = RQ.useQueryClient()
-  const { client, enqueue } = MR.useMaipl()
+  const maipl = MR.useMaipl()
+  const notify = MR.useNotify()
   const [tag, setTag] = R.useState("")
   const [status, setStatus] = R.useState<UploadStatus>(() => new Map())
 
@@ -106,18 +107,26 @@ export default function FileUpload(props: {
   )
 
   // event handlers
+  const onUpload = () => {
+    if (uploadMutation.isIdle) {
+      return uploadMutation.mutateAsync()
+    }
+  }
+
   const uploadFile = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof File.create>) => File.create(...vars),
+    onError: (err, vars) => {
+      if (import.meta.env.DEV) {
+        console.error("FileUpload uploadMutation error", err, vars)
+      }
+      setStatus(status => new Map(status).set(vars[1].path, "error"))
+    },
     onSuccess: file => {
       setStatus(status => new Map(status).set(file.path, "ok"))
     },
-    onError: (err, vars) => {
-      console.error("FileUpload uploadMutation err", err)
-      setStatus(status => new Map(status).set(vars[1].path, "error"))
-    },
   })
 
-  const onUpload = RQ.useMutation({
+  const uploadMutation = RQ.useMutation({
     mutationFn: () =>
       Promise.allSettled(
         sortedFiles
@@ -127,9 +136,9 @@ export default function FileUpload(props: {
               status.get(file.path ?? file.name) !== "ok",
           )
           .map((file: DZ.FileWithPath) =>
-            enqueue(async () =>
+            maipl.enqueue(async () =>
               uploadFile.mutateAsync([
-                client,
+                maipl.client,
                 {
                   file,
                   maipl_folder: props.folder,
@@ -152,21 +161,38 @@ export default function FileUpload(props: {
             ),
           ),
       ),
+    onError: (error, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: There was an error uploading files
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("FileUpload uploadMutation error", error, vars)
+      }
+    },
     onSuccess: data => {
-      console.log("FileUpload onUpload success", data)
-    },
-    onError: error => {
-      console.error("FileUpload onUpload error", error)
-    },
-    onSettled: () => {
+      notify(onClose => {
+        const count = data.filter(f => f.status == "fulfilled").length
+        return count == data.length ? (
+          <M.Alert onClose={onClose} severity="success">
+            Success: Uploaded {count} files
+          </M.Alert>
+        ) : (
+          <M.Alert onClose={onClose} severity="warning">
+            Warning: Uploaded {count} of {data.length} files
+          </M.Alert>
+        )
+      })
       queryClient.refetchQueries(["files"])
     },
   })
 
   // checkbox enabled?
   const rowCanSelect = R.useCallback(
-    (file: FileState) => !onUpload.isLoading && status.get(file.path) !== "ok",
-    [onUpload, status],
+    (file: FileState) =>
+      !uploadMutation.isLoading && status.get(file.path) !== "ok",
+    [uploadMutation, status],
   )
 
   return dz.acceptedFiles.length == 0 ? (
@@ -217,7 +243,7 @@ export default function FileUpload(props: {
         />
         <M.Stack direction="row" spacing={2}>
           <M.TextField
-            disabled={onUpload.isLoading}
+            disabled={uploadMutation.isLoading}
             label="Tag (optional)"
             onChange={e => setTag(e.currentTarget.value)}
             size="small"
@@ -226,14 +252,14 @@ export default function FileUpload(props: {
           />
           <M.Stack flexGrow={1} />
           <M.Button
-            children={onUpload.isLoading ? "Cancel" : "Close"}
+            children={uploadMutation.isLoading ? "Cancel" : "Close"}
             onClick={props.onClose} // todo: implement cancel and abord upload
             variant="outlined"
           />
           <M.Button
-            children={onUpload.isLoading ? "Please wait ..." : "Upload"}
-            disabled={onUpload.isLoading || table.selection.size == 0}
-            onClick={() => onUpload.mutate()}
+            children={uploadMutation.isLoading ? "Please wait ..." : "Upload"}
+            disabled={uploadMutation.isLoading || table.selection.size == 0}
+            onClick={onUpload}
             variant="contained"
           />
         </M.Stack>

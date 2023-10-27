@@ -11,25 +11,48 @@ function Actions(props: {
   selection: ReturnType<typeof MR.Segments.useTable>["selection"]
   setSelection: ReturnType<typeof MR.Segments.useTable>["setSelection"]
 }) {
-  const { client } = MR.useMaipl()
+  const maipl = MR.useMaipl()
+  const notify = MR.useNotify()
   const queryClient = RQ.useQueryClient()
 
-  const onAdd = async () => {
+  const onAdd = () => {
     props.setModal(true)
   }
 
-  const onDelete = async () => {
+  const onDelete = () => {
     const message = `Are you sure you want to delete ${props.selection.size} segments?`
-    if (confirm(message)) {
-      await Promise.all(
-        Array.from(props.selection.keys(), id => Segment.delete(client, id)),
-      )
-      props.setSelection(new Map())
-      // bug: how to handle when deleting all items on last page?
-      // setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
-      queryClient.refetchQueries(["segments"])
+    if (deleteMutation.isIdle && confirm(message)) {
+      return deleteMutation.mutateAsync()
     }
   }
+
+  const deleteMutation = RQ.useMutation({
+    mutationFn: () =>
+      Promise.all(
+        Array.from(props.selection.keys(), id =>
+          Segment.delete(maipl.client, id),
+        ),
+      ),
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not delete selected segments
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("Segments Actions deleteMutation error", err, vars)
+      }
+    },
+    onSuccess: () => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Deleted {props.selection.size} segments
+        </M.Alert>
+      ))
+      props.setSelection(new Map())
+      queryClient.refetchQueries(["segments"])
+    },
+  })
 
   return (
     <M.Stack direction="row" spacing={2}>

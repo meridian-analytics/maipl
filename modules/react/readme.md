@@ -2,6 +2,7 @@
 
 - [Context](#context)
 - [Hooks](#hooks)
+- [Notifications](#notification)
 - [Table](#table)
 - [UI](#ui)
 
@@ -25,6 +26,19 @@ function useFilter
 
 <small>[back to top](#top)</small>
 
+## <a name="notification"></a> Notification
+
+```ts
+type t_notification
+type t_notification_context
+
+function NotificationProvider
+function Notifications
+function useNotify
+```
+
+<small>[back to top](#top)</small>
+
 ## <a name="table"></a> Table
 
 ```ts
@@ -39,6 +53,7 @@ function useTable
 function Table
 
 function Batches
+function Detections
 function Files
 function Segments
 function Tasks

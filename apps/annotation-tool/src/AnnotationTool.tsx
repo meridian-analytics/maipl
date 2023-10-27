@@ -48,7 +48,8 @@ function PreloadedAnnotationTool(props: {
   images: Map<number, Segment.t_image>
   audios: Map<number, Segment.t_audio>
 }) {
-  const { client } = MR.useMaipl()
+  const maipl = MR.useMaipl()
+  const notify = MR.useNotify()
   const segmentId = RR.useParams()?.segmentId
   const queryClient = RQ.useQueryClient()
 
@@ -86,7 +87,8 @@ function PreloadedAnnotationTool(props: {
   const annotations = RQ.useQuery({
     initialData: [],
     queryKey: ["annotations", segment?.id],
-    queryFn: () => Annotation.readSegment(client, props.batch.id, segment!.id),
+    queryFn: () =>
+      Annotation.readSegment(maipl.client, props.batch.id, segment!.id),
     onSuccess(data) {
       setRegions(new Map(data.map(a => [a.id, a.region])))
     },
@@ -130,26 +132,39 @@ function PreloadedAnnotationTool(props: {
   const saveMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Annotation.updateSegment>) =>
       Annotation.updateSegment(...vars),
-    onSuccess: () => {
-      queryClient.refetchQueries(["annotations", segment?.id])
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not save annotations
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("AnnotationTool saveMutation error", err, vars)
+      }
     },
-    onError: err => {
-      console.error("AnnotationTool save error", err)
+    onSuccess: segments => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Saved {segments.length} annotations
+        </M.Alert>
+      ))
+      queryClient.refetchQueries(["annotations", segment?.id])
     },
   })
 
   const onSave = () => {
-    if (segment == null) return
-    saveMutation.mutate([
-      client,
-      props.batch.id,
-      segment.id,
-      Array.from(regions.values(), region => ({
-        id: region.id,
-        created_at: new Date(),
-        region,
-      })),
-    ])
+    if (saveMutation.isIdle && segment != null) {
+      return saveMutation.mutateAsync([
+        maipl.client,
+        props.batch.id,
+        segment.id,
+        Array.from(regions.values(), region => ({
+          id: region.id,
+          created_at: new Date(),
+          region,
+        })),
+      ])
+    }
   }
 
   // no segments in batch
@@ -219,9 +234,10 @@ function PreloadedAnnotationTool(props: {
               <MyAudioControls direction="row" spacing={2} />
               <M.Stack direction="row" spacing={2}>
                 <M.Button
+                  children="Save"
+                  disabled={saveMutation.isLoading}
                   onClick={onSave}
                   variant="contained"
-                  children="Save"
                 />
               </M.Stack>
               <M.Stack flexGrow={1} />

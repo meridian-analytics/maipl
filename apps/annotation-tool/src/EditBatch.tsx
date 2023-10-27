@@ -13,11 +13,11 @@ import * as BatchParameters from "./schema/BatchParametersSchema.ts"
 function EditBatch(props: { isNew: boolean; onClose: () => void }) {
   const params = RR.useParams()
   const batchId = safeParseInteger(params.batchId, null)
-  const { client } = MR.useMaipl()
+  const maipl = MR.useMaipl()
 
   const { data: batch, error } = RQ.useQuery({
     queryKey: ["batches", batchId],
-    queryFn: () => Batch.get(client, batchId!),
+    queryFn: () => Batch.get(maipl.client, batchId!),
     enabled: batchId != null,
   })
 
@@ -38,7 +38,8 @@ function EditBatch(props: { isNew: boolean; onClose: () => void }) {
 
 function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
   const { batch } = props
-  const { client } = MR.useMaipl()
+  const maipl = MR.useMaipl()
+  const notify = MR.useNotify()
 
   const queryClient = RQ.useQueryClient()
   const [allowChanges, setAllowChanges] = R.useState(
@@ -70,7 +71,7 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
     enabled: batch == null,
     queryKey: ["files", queryParams],
     queryFn: () =>
-      File.list(client, queryParams).then(page =>
+      File.list(maipl.client, queryParams).then(page =>
         Object.fromEntries(
           page.data
             .sort((a, b) => a.path.localeCompare(b.path))
@@ -80,50 +81,75 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
     initialData: {},
   })
 
-  const selectTemplate = RQ.useMutation({
-    mutationFn: ([url]: [string]) => {
-      setTemplate(url)
-      return url == "__"
-        ? Promise.resolve("")
-        : fetch(url).then(res => res.text())
+  const selectTemplate = RQ.useQuery({
+    enabled: template != "__",
+    queryFn: () => fetch(template).then(res => res.text()),
+    queryKey: ["templates", template],
+    onError: err => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not load template "{template}"
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("EditBatch selectTemplate error", err)
+      }
     },
-    onSuccess: (data, _vars) => {
+    onSuccess: data => {
       console.warn(
         "EditBatch selectTemplate warning: validate template not implemented",
       ) // todo
       setForm(data)
     },
-    onError: err => {
-      console.error("EditBatch selectTemplate error", err)
-      setForm(Error("Failed to load template"))
-    },
+    initialData: "",
   })
 
   const createMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Batch.create>) =>
       Batch.create(...vars),
-    onSuccess: () => {
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not create batch
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("EditBatch create error", err, vars)
+      }
+    },
+    onSuccess: batch => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Created batch{" "}
+          {
+            <M.Link
+              component={RR.Link}
+              to={`/batches/${batch.id}`}
+              children={batch.batch_name}
+            />
+          }
+        </M.Alert>
+      ))
       queryClient.refetchQueries(["batches"])
       props.onClose()
-    },
-    onError: err => {
-      console.error("EditBatch create err", err)
     },
   })
 
   const onCreate = () => {
     if (form instanceof Error) return
-    createMutation.mutate([
-      client,
-      {
-        allow_change_settings: allowChanges,
-        batch_name: name,
-        description,
-        form,
-        parameters: parameters as Batch.t_parameters, // todo: release enforcement of this type
-        segments,
-      },
-    ])
+    if (createMutation.isIdle) {
+      return createMutation.mutateAsync([
+        maipl.client,
+        {
+          allow_change_settings: allowChanges,
+          batch_name: name,
+          description,
+          form,
+          parameters: parameters as Batch.t_parameters, // todo: release enforcement of this type
+          segments,
+        },
+      ])
+    }
   }
 
   const onUpdate = () => {
@@ -159,7 +185,7 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
               <M.Select
                 label={"Template"}
                 labelId={templateSelectorId}
-                onChange={e => selectTemplate.mutate([e.target.value])}
+                onChange={e => setTemplate(e.target.value)}
                 size="small"
                 value={template}
                 variant="outlined"
@@ -209,6 +235,7 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
             <M.Button
               children="Create"
               color="primary"
+              disabled={createMutation.isLoading}
               onClick={onCreate}
               variant="contained"
             />
