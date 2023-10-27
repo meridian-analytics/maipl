@@ -24,14 +24,20 @@ import { Bindings, Keypress } from "specviz-react/keybinds"
 function SegmentActions(props: { batch: Batch.t; segment: Segment.t }) {
   return (
     <M.Stack direction="row" spacing={2}>
-      <M.Tooltip title="Annotate">
-        <M.IconButton
-          children={<I.Architecture />}
-          component={RR.Link}
-          to={`/annotate/${props.batch.id}/segment/${props.segment.id}`}
-          size="small"
-        />
-      </M.Tooltip>
+      <MR.ActionButton
+        children={<I.Architecture />}
+        component={RR.Link}
+        to={`/annotate/${props.batch.id}/segment/${props.segment.id}`}
+        title="Annotate"
+        size="small"
+      />
+      <MR.ActionButton
+        children={<I.Architecture />}
+        component={RR.Link}
+        title="Annotate"
+        to={`/annotate/${props.batch.id}/segment/${props.segment.id}`}
+        size="small"
+      />
     </M.Stack>
   )
 }
@@ -42,7 +48,8 @@ function PreloadedAnnotationTool(props: {
   images: Map<number, Segment.t_image>
   audios: Map<number, Segment.t_audio>
 }) {
-  const { client } = MR.useMaipl()
+  const maipl = MR.useMaipl()
+  const notify = MR.useNotify()
   const segmentId = RR.useParams()?.segmentId
   const queryClient = RQ.useQueryClient()
 
@@ -80,7 +87,8 @@ function PreloadedAnnotationTool(props: {
   const annotations = RQ.useQuery({
     initialData: [],
     queryKey: ["annotations", segment?.id],
-    queryFn: () => Annotation.readSegment(client, props.batch.id, segment!.id),
+    queryFn: () =>
+      Annotation.readSegment(maipl.client, props.batch.id, segment!.id),
     onSuccess(data) {
       setRegions(new Map(data.map(a => [a.id, a.region])))
     },
@@ -124,26 +132,39 @@ function PreloadedAnnotationTool(props: {
   const saveMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Annotation.updateSegment>) =>
       Annotation.updateSegment(...vars),
-    onSuccess: () => {
-      queryClient.refetchQueries(["annotations", segment?.id])
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not save annotations
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("AnnotationTool saveMutation error", err, vars)
+      }
     },
-    onError: err => {
-      console.error("AnnotationTool save error", err)
+    onSuccess: segments => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Saved {segments.length} annotations
+        </M.Alert>
+      ))
+      queryClient.refetchQueries(["annotations", segment?.id])
     },
   })
 
   const onSave = () => {
-    if (segment == null) return
-    saveMutation.mutate([
-      client,
-      props.batch.id,
-      segment.id,
-      Array.from(regions.values(), region => ({
-        id: region.id,
-        created_at: new Date(),
-        region,
-      })),
-    ])
+    if (saveMutation.isIdle && segment != null) {
+      return saveMutation.mutateAsync([
+        maipl.client,
+        props.batch.id,
+        segment.id,
+        Array.from(regions.values(), region => ({
+          id: region.id,
+          created_at: new Date(),
+          region,
+        })),
+      ])
+    }
   }
 
   // no segments in batch
@@ -213,9 +234,10 @@ function PreloadedAnnotationTool(props: {
               <MyAudioControls direction="row" spacing={2} />
               <M.Stack direction="row" spacing={2}>
                 <M.Button
+                  children="Save"
+                  disabled={saveMutation.isLoading}
                   onClick={onSave}
                   variant="contained"
-                  children="Save"
                 />
               </M.Stack>
               <M.Stack flexGrow={1} />
@@ -239,38 +261,35 @@ function ToolPalette(props: M.StackProps) {
   const { command, toolState } = useSpecviz()
   return (
     <M.Stack {...props}>
-      <M.Tooltip title="Annotate">
-        <M.Button
-          size="small"
-          onClick={_ => command.tool("annotate")}
-          className={toolState === "annotate" ? "active" : ""}
-          children={<I.AddLocation />}
-        />
-      </M.Tooltip>
-      <M.Tooltip title="Select">
-        <M.Button
-          size="small"
-          onClick={_ => command.tool("select")}
-          className={toolState === "select" ? "active" : ""}
-          children={<I.SelectAllOutlined />}
-        />
-      </M.Tooltip>
-      <M.Tooltip title="Zoom">
-        <M.Button
-          size="small"
-          onClick={_ => command.tool("zoom")}
-          className={toolState === "zoom" ? "active" : ""}
-          children={<I.ZoomInOutlined />}
-        />
-      </M.Tooltip>
-      <M.Tooltip title="Pan">
-        <M.Button
-          size="small"
-          onClick={_ => command.tool("pan")}
-          className={toolState === "pan" ? "active" : ""}
-          children={<I.PanToolOutlined />}
-        />
-      </M.Tooltip>
+      <MR.ActionButton
+        children={<I.AddLocation />}
+        className={toolState === "annotate" ? "active" : ""}
+        onClick={_ => command.tool("annotate")}
+        title="Annotate"
+        size="small"
+      />
+
+      <MR.ActionButton
+        children={<I.SelectAllOutlined />}
+        className={toolState === "select" ? "active" : ""}
+        onClick={_ => command.tool("select")}
+        size="small"
+        title="Select"
+      />
+      <MR.ActionButton
+        children={<I.ZoomInOutlined />}
+        className={toolState === "zoom" ? "active" : ""}
+        onClick={_ => command.tool("zoom")}
+        size="small"
+        title="Zoom"
+      />
+      <MR.ActionButton
+        children={<I.PanToolOutlined />}
+        className={toolState === "pan" ? "active" : ""}
+        onClick={_ => command.tool("pan")}
+        size="small"
+        title="Pan"
+      />
     </M.Stack>
   )
 }

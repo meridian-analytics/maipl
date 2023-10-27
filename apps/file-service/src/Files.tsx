@@ -42,46 +42,38 @@ function Actions(props: {
 
   return (
     <M.Stack direction="row" spacing={2}>
-      <M.Tooltip title="Upload Files">
-        <M.IconButton
-          children={<I.DriveFolderUpload />}
-          component={RR.Link}
-          to="/files/upload"
-        />
-      </M.Tooltip>
-      <M.Tooltip title="Create new file">
-        <M.IconButton
-          children={<I.NoteAdd />}
-          component={RR.Link}
-          to="/files/new"
-        />
-      </M.Tooltip>
-      <M.Tooltip
+      <MR.ActionButton
+        children={<I.DriveFolderUpload />}
+        component={RR.Link}
+        title="Upload Files"
+        to="/files/upload"
+      />
+      <MR.ActionButton
+        children={<I.NoteAdd />}
+        component={RR.Link}
+        title="Create new file"
+        to="/files/new"
+      />
+      <MR.ActionButton
+        children={<I.Edit />}
+        disabled={props.selection.size != 1}
+        onClick={onEdit}
         title={
           props.selection.size == 1
             ? "Edit selected file"
             : "Select a single file to edit"
         }
-      >
-        <M.IconButton
-          disabled={props.selection.size != 1}
-          children={<I.Edit />}
-          onClick={onEdit}
-        />
-      </M.Tooltip>
-      <M.Tooltip
+      />
+      <MR.ActionButton
+        children={<I.DeleteForever />}
+        disabled={props.selection.size == 0}
+        onClick={onDelete}
         title={
           props.selection.size == 0
             ? "Delete"
             : `Delete ${props.selection.size} files`
         }
-      >
-        <M.IconButton
-          disabled={props.selection.size == 0}
-          children={<I.DeleteForever />}
-          onClick={onDelete}
-        />
-      </M.Tooltip>
+      />
     </M.Stack>
   )
 }

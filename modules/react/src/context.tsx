@@ -8,7 +8,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import * as A from "axios"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import * as Ui from "./ui.tsx"
+import * as MR from "./index.ts"
 
 type t_context = {
   client: Client.t
@@ -44,7 +44,7 @@ function MaiplProvider(props: { children: R.ReactNode; poolSize?: number }) {
   return (
     <RQ.QueryClientProvider client={queryClient}>
       <RR.BrowserRouter>
-        <M.ThemeProvider theme={Ui.theme}>
+        <M.ThemeProvider theme={MR.theme}>
           <M.CssBaseline />
           <MaiplContextProvider
             children={props.children}
@@ -143,21 +143,21 @@ function MaiplContextProvider(props: {
   // provider
   return (
     <MaiplContext.Provider value={context}>
-      {client.isGuest ? (
-        <MaiplContext.Provider value={context}>
+      <MR.NotificationProvider>
+        {client.isGuest ? (
           <RR.Routes>
             <RR.Route path="/auth" element={<CompleteAuthFlow />} />
             <RR.Route path="*" element={<BeginAuthFlow />} />
           </RR.Routes>
-        </MaiplContext.Provider>
-      ) : (
-        <RR.Routes>
-          <RR.Route path="/dashboard" element={<Ui.Dashboard />} />
-          <RR.Route path="/profile" element={<Ui.Profile />} />
-          <RR.Route path="*" element={props.children} />
-        </RR.Routes>
-      )}
-      {K.MAIPL_REACT_QUERY_DEVTOOLS && <ReactQueryDevtools />}
+        ) : (
+          <RR.Routes>
+            <RR.Route path="/dashboard" element={<MR.Dashboard />} />
+            <RR.Route path="/profile" element={<MR.Profile />} />
+            <RR.Route path="*" element={props.children} />
+          </RR.Routes>
+        )}
+        {K.MAIPL_REACT_QUERY_DEVTOOLS && <ReactQueryDevtools />}
+      </MR.NotificationProvider>
     </MaiplContext.Provider>
   )
 }
@@ -195,10 +195,10 @@ function BeginAuthFlow() {
  * Context.CompleteAuthFlow
  * Complete exchange of Authorization Code for tokens
  * 1. the url is MAIPL_MYAPP_FRONTEND/auth/?next={next}&code={code}
- * 1. exchange {code} and {verifier} for {access} and {refresh}
- * 2. persist {access} and {refresh}
- * 3. remove {verifier} from localStorage
- * 3. redirect to {next}
+ * 2. exchange {code} and {verifier} for {access} and {refresh}
+ * 3. persist {access} and {refresh}
+ * 4. remove {verifier} from localStorage
+ * 5. redirect to {next}
  */
 function CompleteAuthFlow() {
   const [searchParams, _setSearchParams] = RR.useSearchParams()

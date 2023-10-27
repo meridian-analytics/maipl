@@ -18,6 +18,9 @@ export type t_meta =
       score_max?: number
       task: number
     }
+  | {
+      maipl: "file"
+    }
 
 /** Meta.discover: attempt to automatically read meta information */
 export async function discover(

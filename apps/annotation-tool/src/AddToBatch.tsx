@@ -1,6 +1,7 @@
 import { Batch, Segment } from "@maipl/api"
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
+import * as RQ from "@tanstack/react-query"
 
 function union<T>(a: Array<T>, b: Array<T>): Array<T> {
   const r = new Set(a)
@@ -13,7 +14,7 @@ export default function AddToBatch(props: {
   segments: Array<Segment.t>
 }) {
   const { client, user } = MR.useMaipl()
-  const { segments } = props
+  const notify = MR.useNotify()
 
   const {
     debouncedFilter,
@@ -32,29 +33,55 @@ export default function AddToBatch(props: {
     size: pagination.pageSize,
   })
 
-  const onAdd = async () => {
-    const segmentIds = segments.map(s => s.id)
-    await Promise.all(
-      Array.from(selection.values(), batch =>
-        Batch.patch(client, {
-          id: batch.id,
-          segments: union(batch.segments, segmentIds),
-        }),
-      ),
-    )
-    setSelection(new Map())
-    props.onClose()
+  const onAdd = () => {
+    if (addMutation.isIdle) {
+      return addMutation.mutateAsync()
+    }
   }
+
+  const addMutation = RQ.useMutation({
+    mutationFn: () => {
+      const segmentIds = props.segments.map(s => s.id)
+      return Promise.all(
+        Array.from(selection.values(), batch =>
+          Batch.patch(client, {
+            id: batch.id,
+            segments: union(batch.segments, segmentIds),
+          }),
+        ),
+      )
+    },
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: could not add segments to selected batches.
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("AddToBatch addMutation error", err, vars)
+      }
+    },
+    onSuccess: () => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Added {props.segments.length} segments to {selection.size}{" "}
+          batches.
+        </M.Alert>
+      ))
+      setSelection(new Map())
+      props.onClose()
+    },
+  })
 
   return (
     <MR.Modal onClose={props.onClose}>
       <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography variant="h5">
-          Selected Segments ({segments.length})
+          Selected Segments ({props.segments.length})
         </M.Typography>
         <MR.Segments.Table
           {...MR.useTable<Segment.t>()}
-          rows={segments}
+          rows={props.segments}
           sx={{ maxHeight: "35vh" }}
           visibility={{
             select: false,
@@ -77,17 +104,17 @@ export default function AddToBatch(props: {
         />
         <M.Stack direction="row-reverse" spacing={2}>
           <M.Button
-            variant="contained"
-            color="primary"
-            onClick={onAdd}
             children="Submit"
-            disabled={selection.size == 0}
+            color="primary"
+            disabled={selection.size == 0 || addMutation.isLoading}
+            onClick={onAdd}
+            variant="contained"
           />
           <M.Button
-            variant="outlined"
+            children="Cancel"
             color="primary"
             onClick={props.onClose}
-            children="Cancel"
+            variant="outlined"
           />
         </M.Stack>
       </M.Stack>

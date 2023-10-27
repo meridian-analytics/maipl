@@ -14,15 +14,9 @@ function TaskActions(props: { task: Task.t }) {
   const [anchorEl, setAnchorEl] = R.useState<HTMLElement | null>(null)
   const buttonId = R.useId()
   const menuId = R.useId()
-  const { client } = MR.useMaipl()
+  const maipl = MR.useMaipl()
+  const notify = MR.useNotify()
   const open = anchorEl != null
-
-  const startMutation = RQ.useMutation({
-    mutationFn: (vars: Parameters<typeof Task.start>) => Task.start(...vars),
-    onSettled: () => {
-      queryClient.refetchQueries(["tasks"])
-    },
-  })
 
   const onClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget)
@@ -32,13 +26,35 @@ function TaskActions(props: { task: Task.t }) {
     setAnchorEl(null)
   }
 
-  const onStart = async () => {
-    try {
-      await startMutation.mutateAsync([client, props.task.id])
-    } catch (error) {
-      console.error("Tasks onStart error", error)
+  const onStart = () => {
+    if (startMutation.isIdle) {
+      return startMutation.mutateAsync([maipl.client, props.task.id])
     }
   }
+
+  const startMutation = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof Task.start>) => Task.start(...vars),
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not start task #{vars[1]}
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("Tasks startMutation error", err, vars)
+      }
+    },
+    onSuccess: task => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Started task #{task.id} ...
+        </M.Alert>
+      ))
+    },
+    onSettled: () => {
+      queryClient.refetchQueries(["tasks"])
+    },
+  })
 
   return (
     <>
@@ -54,6 +70,7 @@ function TaskActions(props: { task: Task.t }) {
         anchorEl={anchorEl}
         id={menuId}
         open={open}
+        onClick={onClose}
         onClose={onClose}
         MenuListProps={{
           "aria-labelledby": buttonId,
@@ -71,7 +88,7 @@ function TaskActions(props: { task: Task.t }) {
           to={`/tasks/${props.task.id}/detections`}
         />
         <M.MenuItem
-          disabled={props.task.status != "CREATED" && startMutation.isIdle}
+          disabled={props.task.status != "CREATED" || startMutation.isLoading}
           onClick={onStart}
           children="Start"
         />
@@ -149,13 +166,12 @@ export default function TasksTable(props: {
       </RR.Routes>
       <M.Stack direction="row" spacing={2}>
         <M.Stack flexGrow={1} />
-        <M.Tooltip title="Create Task">
-          <M.IconButton
-            children={<I.AddCircle />}
-            component={RR.Link}
-            to={"/tasks/new"}
-          />
-        </M.Tooltip>
+        <MR.ActionButton
+          children={<I.AddCircle />}
+          component={RR.Link}
+          title="Create Task"
+          to={"/tasks/new"}
+        />
       </M.Stack>
       <MR.Tasks.Table
         columns={[

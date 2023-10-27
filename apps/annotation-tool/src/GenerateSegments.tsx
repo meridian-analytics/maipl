@@ -1,7 +1,9 @@
 import { File, Segment } from "@maipl/api"
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
+import * as RQ from "@tanstack/react-query"
 import * as R from "react"
+import * as RR from "react-router-dom"
 
 function* makeSegments(
   file: File.t,
@@ -39,8 +41,8 @@ function GenerateSegments(props: {
   onClose: () => void
   files: Array<File.t>
 }) {
-  const { files } = props
-  const { client } = MR.useMaipl()
+  const maipl = MR.useMaipl()
+  const notify = MR.useNotify()
 
   const [length, setLength] = R.useState(60)
   const [step, setStep] = R.useState(60)
@@ -49,24 +51,51 @@ function GenerateSegments(props: {
 
   const segments = R.useMemo(
     () =>
-      files.flatMap(f => Array.from(makeSegments(f, length, step, pad, tag))),
-    [files, length, step, pad, tag],
+      props.files.flatMap(f =>
+        Array.from(makeSegments(f, length, step, pad, tag)),
+      ),
+    [props.files, length, step, pad, tag],
   )
 
-  const onCreate = async () => {
-    await Promise.all(segments.map(s => Segment.create(client, s)))
-    props.onClose()
+  const onCreate = () => {
+    if (createMutation.isIdle) {
+      return createMutation.mutateAsync()
+    }
   }
+
+  const createMutation = RQ.useMutation({
+    mutationFn: () =>
+      Promise.all(segments.map(s => Segment.create(maipl.client, s))),
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not create segments
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("GenerateSegments createMutation error", err, vars)
+      }
+    },
+    onSuccess: segments => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Generated {segments.length}{" "}
+          <M.Link children="segments" component={RR.Link} to="/segments" />
+        </M.Alert>
+      ))
+      props.onClose()
+    },
+  })
 
   return (
     <MR.Modal onClose={props.onClose}>
       <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography variant="h5">
-          Selected Files ({files.length})
+          Selected Files ({props.files.length})
         </M.Typography>
         <MR.Files.Table
           {...MR.useTable<File.t>()}
-          rows={files}
+          rows={props.files}
           sx={{ maxHeight: "35vh" }}
           visibility={{
             basename: false,
@@ -130,7 +159,7 @@ function GenerateSegments(props: {
           <M.Button
             children="Create"
             color="primary"
-            disabled={segments.length === 0}
+            disabled={segments.length === 0 || createMutation.isLoading}
             onClick={onCreate}
             variant="contained"
           />

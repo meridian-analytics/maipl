@@ -11,18 +11,18 @@ export default function DetectionsLoader(props: {
 }) {
   const params = RR.useParams()
   const taskId = F.safeParseInteger(params.taskId, null)
-  const { client } = MR.useMaipl()
+  const maipl = MR.useMaipl()
 
   const { data: task, error } = RQ.useQuery({
     enabled: taskId != null,
     queryKey: ["tasks", taskId],
-    queryFn: () => Task.get(client, taskId!),
+    queryFn: () => Task.get(maipl.client, taskId!),
   })
 
   const { data: model, error: modelError } = RQ.useQuery({
     enabled: task != null,
     queryKey: ["files", task?.model_file],
-    queryFn: () => File.get(client, task?.model_file!),
+    queryFn: () => File.get(maipl.client, task?.model_file!),
   })
 
   return (
@@ -47,6 +47,7 @@ function Detections(props: {
   sx?: M.SxProps
 }) {
   const maipl = MR.useMaipl()
+  const notify = MR.useNotify()
   const table = MR.Detections.useTable()
 
   const filter = R.useMemo<Detection.t_list_request>(() => {
@@ -70,6 +71,42 @@ function Detections(props: {
     table.pagination.pageIndex,
     table.pagination.pageSize,
   ])
+
+  const onExport = () => {
+    if (exportMutation.isIdle) {
+      return exportMutation.mutateAsync([
+        maipl.client,
+        {
+          ...filter,
+          task: props.task.id,
+          model: props.model.id,
+        },
+      ])
+    }
+  }
+
+  const exportMutation = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof Detection.export>) =>
+      Detection.export(...vars),
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not export detections for task #{vars[1].task}
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("DetectionsLoader exportMutation error", err, vars)
+      }
+    },
+    onSuccess: () => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Exported detections for task #{props.task.id}
+        </M.Alert>
+      ))
+      props.onClose()
+    },
+  })
 
   const { data: detections, error: detectionsError } =
     MR.Detections.useQuery(filter)
@@ -136,19 +173,8 @@ function Detections(props: {
         <M.Button
           children="Save as .CSV"
           color="primary"
-          onClick={async () => {
-            // todo: use react-query mutation
-            try {
-              const res = await Detection.export(maipl.client, {
-                ...filter,
-                task: props.task.id,
-                model: props.model.id,
-              })
-              console.log(res)
-            } catch (err) {
-              console.error("Detection.export err", err)
-            }
-          }}
+          disabled={exportMutation.isLoading}
+          onClick={onExport}
           variant="contained"
         />
         <M.Button

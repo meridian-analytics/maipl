@@ -36,7 +36,12 @@ export default function EditTaskLoader(props: {
       ) : modelError != null ? (
         <M.Typography>{(modelError as Error).message}</M.Typography>
       ) : (
-        <EditTask task={task} model={model} onClose={props.onClose} />
+        <EditTask
+          key={task?.id}
+          task={task}
+          model={model}
+          onClose={props.onClose}
+        />
       )}
     </MR.Modal>
   )
@@ -48,16 +53,20 @@ function EditTask(props: {
   onClose: () => void
 }) {
   const queryClient = RQ.useQueryClient()
-  const { client } = MR.useMaipl()
-  const { task } = props
-  const [batchSize, setBatchSize] = R.useState(() => task?.batch_size ?? 32)
-  const [buffer, setBuffer] = R.useState(() => task?.buffer ?? 0)
-  const [description, setDescription] = R.useState<string>(
-    () => task?.description ?? "",
+  const maipl = MR.useMaipl()
+  const notify = MR.useNotify()
+  const [batchSize, setBatchSize] = R.useState(
+    () => props.task?.batch_size ?? 32,
   )
-  const [modelFile, setModelFile] = R.useState(() => task?.model_file ?? -1)
-  const [stepSize, setStepSize] = R.useState(() => task?.step_size ?? 0)
-  const [threshold, setThreshold] = R.useState(() => task?.threshold ?? 0)
+  const [buffer, setBuffer] = R.useState(() => props.task?.buffer ?? 0)
+  const [description, setDescription] = R.useState<string>(
+    () => props.task?.description ?? "",
+  )
+  const [modelFile, setModelFile] = R.useState(
+    () => props.task?.model_file ?? -1,
+  )
+  const [stepSize, setStepSize] = R.useState(() => props.task?.step_size ?? 0)
+  const [threshold, setThreshold] = R.useState(() => props.task?.threshold ?? 0)
 
   const { data: models } = MR.Files.useQuery({
     maipl_folder: "model",
@@ -77,10 +86,12 @@ function EditTask(props: {
   } = MR.Files.useTable({
     selection: R.useMemo(
       () =>
-        task == null
+        props.task == null
           ? new Map<number, File.t>()
-          : new Map(task.filelist.map(id => [id, true as unknown as File.t])),
-      [task],
+          : new Map(
+              props.task.filelist.map(id => [id, true as unknown as File.t]),
+            ),
+      [props.task],
     ),
   })
 
@@ -94,42 +105,65 @@ function EditTask(props: {
 
   const createMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Task.create>) => {
-      // todo: validate
-      if (modelFile == -1) {
-        throw Error("no model selected")
-      }
-      if (selection.size == 0) {
-        throw Error("no files selected")
-      }
       return Task.create(...vars)
     },
-    onSuccess: () => {
-      queryClient.refetchQueries(["tasks"])
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not create task
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("EditTask createMutation error", err, vars)
+      }
     },
-    onError: err => {
-      console.log("Model Runner Task Create Error", err)
+    onSuccess: task => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Created task #{task.id}
+        </M.Alert>
+      ))
+      queryClient.refetchQueries(["tasks"])
+      props.onClose()
     },
   })
 
-  const onSave = () => {
-    createMutation.mutate([
-      client,
-      {
-        batch_size: batchSize,
-        buffer,
-        description,
-        filelist: Array.from(selection.keys()),
-        model_file: modelFile,
-        step_size: stepSize,
-        threshold,
-      },
-    ])
+  const onCreate = () => {
+    // todo: validate
+    if (modelFile == -1) {
+      return notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: No model selected
+        </M.Alert>
+      ))
+    }
+    if (selection.size == 0) {
+      return notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: No input files selected
+        </M.Alert>
+      ))
+    }
+    if (createMutation.isIdle) {
+      return createMutation.mutateAsync([
+        maipl.client,
+        {
+          batch_size: batchSize,
+          buffer,
+          description,
+          filelist: Array.from(selection.keys()),
+          model_file: modelFile,
+          step_size: stepSize,
+          threshold,
+        },
+      ])
+    }
   }
 
   return (
     <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
       <M.Typography variant="h6">
-        {task == null ? "New Task" : `Copy Task #${task.id}`}
+        {props.task == null ? "New Task" : `Copy Task #${props.task.id}`}
       </M.Typography>
       <M.FormControl size="small">
         <M.InputLabel>Model</M.InputLabel>
@@ -242,7 +276,7 @@ function EditTask(props: {
           children="Create"
           color="primary"
           disabled={createMutation.isLoading}
-          onClick={onSave}
+          onClick={onCreate}
           variant="contained"
         />
         <M.Button

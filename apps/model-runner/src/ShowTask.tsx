@@ -21,10 +21,7 @@ export default function ShowTaskLoader(props: {
   const { data: model, error: modelError } = RQ.useQuery({
     enabled: task != null,
     queryKey: ["files", task?.model_file],
-    queryFn: () => {
-      console.log("fetching file", task?.model_file)
-      return File.get(client, task?.model_file!)
-    },
+    queryFn: () => File.get(client, task?.model_file!),
   })
 
   return (
