@@ -9,8 +9,11 @@ export function filesize(bytes: number): string {
   return loop(bytes, 0)
 }
 
+export function pluralize(word: string, count: number): string {
+  return `${word}${count == 1 ? "" : "s"}`
+}
+
 export function fuzzyTime(date: Date): string {
-  const pluralize = (n: number, s: string) => `${n} ${s}${n === 1 ? "" : "s"}`
   const delta = new Date().getTime() - date.getTime()
   const second = 1000
   const minute = second * 60
@@ -23,19 +26,19 @@ export function fuzzyTime(date: Date): string {
   }
   if (delta < hour) {
     const minutes = Math.floor(delta / minute)
-    return `${pluralize(minutes, "minute")} ago`
+    return `${minutes} ${pluralize("minute", minutes)} ago`
   }
   if (delta < day) {
     const hours = Math.floor(delta / hour)
-    return `${pluralize(hours, "hour")} ago`
+    return `${hours} ${pluralize("hour", hours)} ago`
   }
   if (delta < week) {
     const days = Math.floor(delta / day)
-    return `${pluralize(days, "day")} ago`
+    return `${days} ${pluralize("day", days)} ago`
   }
   if (delta < month) {
     const weeks = Math.floor(delta / week)
-    return `${pluralize(weeks, "week")} ago`
+    return `${weeks} ${pluralize("week", weeks)} ago`
   }
   return iso8601(date)
 }
