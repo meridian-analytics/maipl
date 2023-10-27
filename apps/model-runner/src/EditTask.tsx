@@ -36,7 +36,12 @@ export default function EditTaskLoader(props: {
       ) : modelError != null ? (
         <M.Typography>{(modelError as Error).message}</M.Typography>
       ) : (
-        <EditTask task={task} model={model} onClose={props.onClose} />
+        <EditTask
+          key={task?.id}
+          task={task}
+          model={model}
+          onClose={props.onClose}
+        />
       )}
     </MR.Modal>
   )

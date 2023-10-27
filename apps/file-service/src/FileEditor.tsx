@@ -28,6 +28,7 @@ export default function FileEditor(props: {
         <M.Typography>{(error as Error).message}</M.Typography>
       ) : (
         <FileEditor_
+          key={file?.id}
           file={file}
           folder={props.folder}
           onClose={props.onClose}
