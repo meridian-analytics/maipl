@@ -115,7 +115,7 @@ function FileEditor_(props: {
       {
         file: new window.File([value ?? ""], path),
         maipl_folder: folder,
-        // todo: meta: { maipl: "file", ... }
+        meta: { maipl: "file" },
         path,
         tag,
       },
