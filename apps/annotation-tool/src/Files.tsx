@@ -16,13 +16,12 @@ function Actions(props: {
 
   return (
     <M.Stack direction="row" spacing={2}>
-      <M.Tooltip title="Generate Segments">
-        <M.IconButton
-          disabled={props.selection.size == 0}
-          children={<I.ContentCut />}
-          onClick={onGenerate}
-        />
-      </M.Tooltip>
+      <MR.ActionButton
+        children={<I.ContentCut />}
+        disabled={props.selection.size == 0}
+        onClick={onGenerate}
+        title="Generate Segments"
+      />
     </M.Stack>
   )
 }

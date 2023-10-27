@@ -149,13 +149,12 @@ export default function TasksTable(props: {
       </RR.Routes>
       <M.Stack direction="row" spacing={2}>
         <M.Stack flexGrow={1} />
-        <M.Tooltip title="Create Task">
-          <M.IconButton
-            children={<I.AddCircle />}
-            component={RR.Link}
-            to={"/tasks/new"}
-          />
-        </M.Tooltip>
+        <MR.ActionButton
+          children={<I.AddCircle />}
+          component={RR.Link}
+          title="Create Task"
+          to={"/tasks/new"}
+        />
       </M.Stack>
       <MR.Tasks.Table
         columns={[

@@ -33,32 +33,26 @@ function Actions(props: {
 
   return (
     <M.Stack direction="row" spacing={2}>
-      <M.Tooltip
+      <MR.ActionButton
+        children={<I.ContentPasteGo />}
+        disabled={props.selection.size == 0}
+        onClick={onAdd}
         title={
           props.selection.size == 0
             ? "Add to batch …"
             : `Add ${props.selection.size} segments to batch…`
         }
-      >
-        <M.IconButton
-          disabled={props.selection.size == 0}
-          children={<I.ContentPasteGo />}
-          onClick={onAdd}
-        />
-      </M.Tooltip>
-      <M.Tooltip
+      />
+      <MR.ActionButton
+        children={<I.DeleteForever />}
+        disabled={props.selection.size == 0 || deleteMutation.isLoading}
+        onClick={onDelete}
         title={
           props.selection.size == 0
             ? "Delete …"
             : `Delete ${props.selection.size} segments …`
         }
-      >
-        <M.IconButton
-          disabled={props.selection.size == 0}
-          children={<I.DeleteForever />}
-          onClick={onDelete}
-        />
-      </M.Tooltip>
+      />
     </M.Stack>
   )
 }

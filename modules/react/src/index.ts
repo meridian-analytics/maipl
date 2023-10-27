@@ -19,6 +19,7 @@ export {
 } from "./table.tsx"
 
 export {
+  ActionButton,
   Dashboard,
   Filter,
   MaiplFolderPicker,

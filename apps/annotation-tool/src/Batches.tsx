@@ -164,13 +164,12 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
           variant="outlined"
         />
         <M.Stack flexGrow={1} />
-        <M.Tooltip title="Create Batch">
-          <M.IconButton
-            children={<I.AddCircle />}
-            component={RR.Link}
-            to="/batches/new"
-          />
-        </M.Tooltip>
+        <MR.ActionButton
+          children={<I.AddCircle />}
+          component={RR.Link}
+          title="Create Batch"
+          to="/batches/new"
+        />
       </M.Stack>
       <MR.Batches.Table
         rows={batches.data}
