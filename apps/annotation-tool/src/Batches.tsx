@@ -9,21 +9,9 @@ import EditBatch from "./EditBatch.tsx"
 
 function BatchActions(props: { batch: Batch.t_list_item }) {
   const queryClient = RQ.useQueryClient()
-  const [anchorEl, setAnchorEl] = R.useState<HTMLElement | null>(null)
-  const buttonId = R.useId()
-  const menuId = R.useId()
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
-  const open = anchorEl != null
   const status = Batch.status(props.batch)
-
-  const onClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
-
-  const onClose = () => {
-    setAnchorEl(null)
-  }
 
   const onDelete = () => {
     const message = `Are you sure you want to delete batch: ${props.batch.batch_name}?`
@@ -131,61 +119,42 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
   })
 
   return (
-    <>
-      <M.IconButton
-        aria-controls={open ? menuId : undefined}
-        aria-expanded={open ? "true" : undefined}
-        aria-haspopup="true"
-        children={<I.ContentPasteSearch />}
-        id={buttonId}
-        onClick={onClick}
+    <MR.Menu icon={<I.Settings />}>
+      <M.MenuItem
+        children="Submit for processing..."
+        disabled={
+          processMutation.isLoading ||
+          status == Batch.t_status.empty ||
+          status == Batch.t_status.processing ||
+          status == Batch.t_status.success
+        }
+        onClick={onProcess}
       />
-      <M.Menu
-        anchorEl={anchorEl}
-        id={menuId}
-        open={open}
-        onClick={onClose}
-        onClose={onClose}
-        MenuListProps={{
-          "aria-labelledby": buttonId,
-        }}
-      >
-        <M.MenuItem
-          children="Submit for processing..."
-          disabled={
-            processMutation.isLoading ||
-            status == Batch.t_status.empty ||
-            status == Batch.t_status.processing ||
-            status == Batch.t_status.success
-          }
-          onClick={onProcess}
-        />
-        <M.Divider />
-        <M.MenuItem
-          children="Detail"
-          component={RR.Link}
-          to={`/batches/${props.batch.id}`}
-        />
-        <M.MenuItem onClick={onShare} children="Share" />
-        <M.Divider />
-        <M.MenuItem
-          children="Create Annotations"
-          component={RR.Link}
-          to={`/annotate/${props.batch.id}`}
-        />
-        <M.MenuItem
-          children="Export Annotations"
-          disabled={exportMutation.isLoading}
-          onClick={onExport}
-        />
-        <M.Divider />
-        <M.MenuItem
-          children="Delete"
-          disabled={deleteMutation.isLoading}
-          onClick={onDelete}
-        />
-      </M.Menu>
-    </>
+      <M.Divider />
+      <M.MenuItem
+        children="Detail"
+        component={RR.Link}
+        to={`/batches/${props.batch.id}`}
+      />
+      <M.MenuItem onClick={onShare} children="Share" />
+      <M.Divider />
+      <M.MenuItem
+        children="Create Annotations"
+        component={RR.Link}
+        to={`/annotate/${props.batch.id}`}
+      />
+      <M.MenuItem
+        children="Export Annotations"
+        disabled={exportMutation.isLoading}
+        onClick={onExport}
+      />
+      <M.Divider />
+      <M.MenuItem
+        children="Delete"
+        disabled={deleteMutation.isLoading}
+        onClick={onDelete}
+      />
+    </MR.Menu>
   )
 }
 

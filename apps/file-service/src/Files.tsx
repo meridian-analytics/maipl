@@ -62,11 +62,6 @@ function SelectionActions(props: {
 }
 
 function FileActions(props: { file: File.t }) {
-  const [anchorEl, setAnchorEl] = R.useState<HTMLElement | null>(null)
-  const buttonId = R.useId()
-  const menuId = R.useId()
-  const open = anchorEl != null
-
   // todo: not all files should be editable
   // this is a basic filter for now. maybe use mime types?
   const isEditable =
@@ -74,52 +69,25 @@ function FileActions(props: { file: File.t }) {
     props.file.extname != ".mp3" &&
     props.file.extname != ".ogg"
 
-  const onClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
-
-  const onClose = () => {
-    setAnchorEl(null)
-  }
-
   return (
-    <>
-      <M.IconButton
-        aria-controls={open ? menuId : undefined}
-        aria-expanded={open ? "true" : undefined}
-        aria-haspopup="true"
-        children={<I.ContentPasteSearch />}
-        id={buttonId}
-        onClick={onClick}
+    <MR.Menu icon={<I.Settings />}>
+      <M.MenuItem
+        children="Download"
+        component={M.Link}
+        download={props.file.basename}
+        href={props.file.file}
+        rel="noreferrer"
+        target="_blank"
+        underline="none"
       />
-      <M.Menu
-        anchorEl={anchorEl}
-        id={menuId}
-        open={open}
-        onClick={onClose}
-        onClose={onClose}
-        MenuListProps={{
-          "aria-labelledby": buttonId,
-        }}
-      >
-        <M.MenuItem
-          children="Download"
-          component={M.Link}
-          download={props.file.basename}
-          href={props.file.file}
-          rel="noreferrer"
-          target="_blank"
-          underline="none"
-        />
-        <M.Divider />
-        <M.MenuItem
-          component={RR.Link}
-          disabled={!isEditable}
-          to={`/files/${props.file.id}/edit`}
-          children="Edit"
-        />
-      </M.Menu>
-    </>
+      <M.Divider />
+      <M.MenuItem
+        component={RR.Link}
+        disabled={!isEditable}
+        to={`/files/${props.file.id}/edit`}
+        children="Edit"
+      />
+    </MR.Menu>
   )
 }
 
