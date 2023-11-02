@@ -9,6 +9,13 @@ function union<T>(a: Array<T>, b: Array<T>): Array<T> {
   return Array.from(r)
 }
 
+function difference<T>(a: Array<T>, b: Array<T>): Array<T> {
+  const r = new Set<T>()
+  const setB = new Set<T>(b)
+  for (const v of a) if (!setB.has(v)) r.add(v)
+  return Array.from(r)
+}
+
 export default function AddToBatch(props: {
   onClose: () => void
   segments: Array<Segment.t>
@@ -43,31 +50,44 @@ export default function AddToBatch(props: {
     mutationFn: () => {
       const segmentIds = props.segments.map(s => s.id)
       return Promise.all(
-        Array.from(selection.values(), batch =>
-          Batch.patch(client, {
+        Array.from(selection.values(), batch => {
+          const newSegments = difference(segmentIds, batch.segments)
+          // only update if there are new segments
+          if (newSegments.length == 0) return 0
+          return Batch.patch(client, {
             id: batch.id,
-            segments: union(batch.segments, segmentIds),
-          }),
-        ),
+            segments: union(batch.segments, newSegments),
+            task_id: null,
+          }).then(() => newSegments.length)
+        }),
       )
     },
     onError: (err, vars) => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="error">
-          Error: could not add segments to selected batches.
+          Error: Could not add segments to selected batches
         </M.Alert>
       ))
       if (import.meta.env.DEV) {
         console.error("AddToBatch addMutation error", err, vars)
       }
     },
-    onSuccess: () => {
-      notify(onClose => (
-        <M.Alert onClose={onClose} severity="success">
-          Success: Added {props.segments.length} segments to {selection.size}{" "}
-          batches.
-        </M.Alert>
-      ))
+    onSuccess: (counts, _vars) => {
+      const sum = counts.reduce((r, c) => r + c, 0)
+      if (sum == 0) {
+        notify(onClose => (
+          <M.Alert onClose={onClose} severity="warning">
+            Info: All selected segments already exist in each selected batch
+          </M.Alert>
+        ))
+      } else {
+        notify(onClose => (
+          <M.Alert onClose={onClose} severity="success">
+            Success: Added {sum} segments to{" "}
+            {counts.filter(c => c !== 0).length} batches
+          </M.Alert>
+        ))
+      }
       setSelection(new Map())
       props.onClose()
     },

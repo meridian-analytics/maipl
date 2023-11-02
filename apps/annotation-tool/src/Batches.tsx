@@ -15,6 +15,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
   const open = anchorEl != null
+  const status = Batch.status(props.batch)
 
   const onClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget)
@@ -113,7 +114,20 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
           Success: Started processing batch "{props.batch.batch_name} ..."
         </M.Alert>
       ))
+      queryClient.refetchQueries(["batches"])
     },
+  })
+
+  // temporary quality of life feature:
+  // user is unsure when the batch is done processing
+  // automatically refresh once in 30 seconds, the processing should be complete by then
+  R.useEffect(() => {
+    const t = window.setTimeout(() => {
+      queryClient.refetchQueries(["batches"])
+    }, 30000)
+    return () => {
+      window.clearTimeout(t)
+    }
   })
 
   return (
@@ -138,7 +152,12 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
       >
         <M.MenuItem
           children="Submit for processing..."
-          disabled={processMutation.isLoading}
+          disabled={
+            processMutation.isLoading ||
+            status == Batch.t_status.empty ||
+            status == Batch.t_status.processing ||
+            status == Batch.t_status.success
+          }
           onClick={onProcess}
         />
         <M.Divider />
@@ -170,6 +189,39 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
   )
 }
 
+function BatchStatus(props: { batch: Batch.t_list_item }) {
+  switch (Batch.status(props.batch)) {
+    case Batch.t_status.empty:
+      return <M.Chip label="Empty" size="small" variant="outlined" />
+    case Batch.t_status.error:
+      return (
+        <M.Chip color="error" label="Error" size="small" variant="outlined" />
+      )
+    case Batch.t_status.processing:
+      return (
+        <M.Chip
+          color="info"
+          label="Processing"
+          size="small"
+          variant="outlined"
+        />
+      )
+    case Batch.t_status.success:
+      return (
+        <M.Chip color="success" label="Ready" size="small" variant="outlined" />
+      )
+    case Batch.t_status.unprocessed:
+      return (
+        <M.Chip
+          color="warning"
+          label="Unprocessed"
+          size="small"
+          variant="outlined"
+        />
+      )
+  }
+}
+
 export default function BatchesTable(props: { sx?: M.SxProps }) {
   const { user } = MR.useMaipl()
   const navigate = RR.useNavigate()
@@ -194,6 +246,11 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
 
   const columns = R.useMemo(
     () => [
+      MR.Batches.column.display({
+        id: "status",
+        header: "Status",
+        cell: info => <BatchStatus batch={info.row.original} />,
+      }),
       MR.Batches.column.display({
         id: "actions",
         header: "",
