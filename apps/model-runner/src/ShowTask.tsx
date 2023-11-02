@@ -33,7 +33,12 @@ export default function ShowTaskLoader(props: {
       ) : task == null || model == null ? (
         <M.CircularProgress />
       ) : (
-        <ShowTask task={task} model={model} onClose={props.onClose} />
+        <ShowTask
+          key={task.id}
+          task={task}
+          model={model}
+          onClose={props.onClose}
+        />
       )}
     </MR.Modal>
   )
