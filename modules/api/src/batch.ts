@@ -99,7 +99,7 @@ type t_list_item = Omit<t, "parameters" | "user"> & {
 }
 
 /** Batch.t_create_request */
-type t_create_request = Omit<t, "id" | "created_at" | "progress" | "user">
+type t_create_request = Omit<t, "id" | "created_at" | "progress" | "user" | "task_id" | "task_status">
 
 /** Batch.t_create_response */
 type t_create_response = Omit<t, "created_at"> & { created_at: string }
