@@ -212,7 +212,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
           extname: false,
           channels: false,
           sample_rate: false,
-          created_at: true,
+          user_id: false,
         }}
       />
     </M.Stack>

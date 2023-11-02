@@ -4,7 +4,6 @@ import * as A from "axios"
 import * as Client from "./client.ts"
 import * as Meta from "./meta.ts"
 import { t_page, t_page_params } from "./types.ts"
-import * as User from "./user.ts"
 
 type t_maipl_folder =
   | "public"
@@ -42,8 +41,8 @@ type t = {
   tag: string
   /** Date when the file was last updated */
   updated_at: Date
-  /** Owner of the file */
-  user: User.t
+  /** Owner identifier */
+  user_id: number
 }
 
 /** File.t_usage */

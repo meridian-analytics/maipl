@@ -88,6 +88,9 @@ const Table = BaseTable([
       return value == null ? "-" : iso8601(value)
     },
   }),
+  column.accessor("user_id", {
+    header: "Owner",
+  }),
 ] as Array<ColumnDef<Segment.t>>)
 
 export { Table, column, useTable, useQuery }

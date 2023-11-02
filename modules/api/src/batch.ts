@@ -7,7 +7,6 @@ import * as File from "./file.ts"
 import * as Segment from "./segment.ts"
 import * as Task from "./task.ts"
 import { t_page, t_page_params } from "./types.ts"
-import * as User from "./user.ts"
 
 /** Batch.t: batch details with pre-fetched segments and user */
 type t = {
@@ -30,7 +29,7 @@ type t = {
   /** List of segment identifiers */
   segments: Array<number>
   /** Batch owner */
-  user: User.t
+  user_id: number
   /** celery task, for processing */
   task_id: null | string
   /**
@@ -93,13 +92,13 @@ enum t_status {
 }
 
 /** Batch.t_list_item: a summarized batch, returned by Batch.list */
-type t_list_item = Omit<t, "parameters" | "user"> & {
-  /** Batch owner id */
-  user: number
-}
+type t_list_item = Omit<t, "parameters">
 
 /** Batch.t_create_request */
-type t_create_request = Omit<t, "id" | "created_at" | "progress" | "user" | "task_id" | "task_status">
+type t_create_request = Omit<
+  t,
+  "id" | "created_at" | "progress" | "user_id" | "task_id" | "task_status"
+>
 
 /** Batch.t_create_response */
 type t_create_response = Omit<t, "created_at"> & { created_at: string }
@@ -126,9 +125,7 @@ type t_list_response = t_page<
 /** Batch.t_update_request
  * form is not editable at this time
  */
-type t_update_request = Omit<t, "created_at" | "form" | "user"> & {
-  user: number
-}
+type t_update_request = Omit<t, "created_at" | "form">
 
 /** Batch.audios: get list of batch audios */
 const audios = async (client: Client.t, id: number) => {

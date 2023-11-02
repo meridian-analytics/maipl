@@ -7,7 +7,7 @@ type t = {
   /** Segment identifier */
   id: number
   /** Owner identifier */
-  user: number
+  user_id: number
   /** Audio file. Null if not processed. */
   audio: null | string
   /** Batches that use this segment */
@@ -61,7 +61,7 @@ type t_image = {
 /** Segment.t_create_request */
 type t_create_request = Omit<
   t,
-  "id" | "audio" | "batches" | "created_at" | "user"
+  "id" | "audio" | "batches" | "created_at" | "user_id"
 >
 
 /** Segment.t_create_response */
