@@ -38,15 +38,17 @@ function tokens
 
 ```ts
 type t
-type t_list_item
-type t_parameters
 type t_create_request
 type t_create_response
-type t_get_response
 type t_filter_params
+type t_get_response
+type t_list_item
 type t_list_request
 type t_list_response
+type t_parameters
 type t_update_request
+
+enum t_status
 
 function audios
 function create
@@ -57,6 +59,7 @@ function images
 function list
 function patch
 function process
+function status
 function update
 ```
 

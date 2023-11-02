@@ -31,6 +31,16 @@ type t = {
   segments: Array<number>
   /** Batch owner */
   user: User.t
+  /** celery task, for processing */
+  task_id: null | string
+  /**
+   * celery task status
+   *
+   * backend bug:
+   * If task_id is set, task_status should never be null.
+   * However the task_status is not immediately available after task creation and so it is possibly null.
+   */
+  task_status: null | t_celery_status
 }
 
 /** Batch.t_parameters */
@@ -61,6 +71,25 @@ type t_parameters = {
   vmin: number
   /** Window length in seconds */
   window_length: number
+}
+
+/** Batch.t_celery_status */
+enum t_celery_status {
+  failure = "FAILURE",
+  pending = "PENDING",
+  retry = "RETRY",
+  revoked = "REVOKED",
+  started = "STARTED",
+  success = "SUCCESS",
+}
+
+/** Batch.t_status */
+enum t_status {
+  empty = "EMPTY",
+  error = "ERROR",
+  processing = "PROCESSING",
+  success = "SUCCESS",
+  unprocessed = "UNPROCESSED",
 }
 
 /** Batch.t_list_item: a summarized batch, returned by Batch.list */
@@ -249,6 +278,26 @@ const process = async (client: Client.t, id: number): Promise<number> => {
   return response.id
 }
 
+/** Batch.status: derivew batch status from celery task */
+const status = (batch: t_list_item): t_status => {
+  if (batch.segments.length == 0) return t_status.empty
+  else if (batch.task_id == null) return t_status.unprocessed
+  else
+    switch (batch.task_status) {
+      case null:
+      case t_celery_status.started:
+        return t_status.processing
+      case t_celery_status.pending:
+        return t_status.unprocessed
+      case t_celery_status.failure:
+      case t_celery_status.retry:
+      case t_celery_status.revoked:
+        return t_status.error
+      case t_celery_status.success:
+        return t_status.success
+    }
+}
+
 /** Batch.update: update an existing batch */
 const update = async (client: Client.t, body: t_update_request) => {
   await client.put(
@@ -277,5 +326,7 @@ export {
   list,
   patch,
   process,
+  status,
+  t_status, // enum is type *and* value
   update,
 }
