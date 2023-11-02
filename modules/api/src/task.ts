@@ -80,7 +80,7 @@ type t_list_request = t_filter_params
 type t_list_response = Array<t_get_response>
 
 /** Task.create: create a new task */
-const create = async (client: Client.t, body: t_create_request) => {
+const create = async (client: Client.t, body: t_create_request): Promise<t> => {
   const response = await client
     .post<t_create_response>(
       `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/run/tasks/`,
@@ -91,11 +91,11 @@ const create = async (client: Client.t, body: t_create_request) => {
     ...response,
     created_at: new Date(response.created_at),
     updated_at: new Date(response.updated_at),
-  } as t
+  }
 }
 
 /** Task.get: get task details */
-const get = async (client: Client.t, id: number) => {
+const get = async (client: Client.t, id: number): Promise<t> => {
   const response = await client
     .get<t_get_response>(
       `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/run/tasks/${id}/`,
@@ -105,11 +105,14 @@ const get = async (client: Client.t, id: number) => {
     ...response,
     created_at: new Date(response.created_at),
     updated_at: new Date(response.updated_at),
-  } as t
+  }
 }
 
 /** Task.list: get list of tasks */
-const list = async (client: Client.t, params?: t_list_request) => {
+const list = async (
+  client: Client.t,
+  params?: t_list_request,
+): Promise<Array<t>> => {
   const response = await client
     .get<t_list_response>(
       `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/run/tasks/`,
@@ -120,11 +123,11 @@ const list = async (client: Client.t, params?: t_list_request) => {
     ...item,
     created_at: new Date(item.created_at),
     updated_at: new Date(item.updated_at),
-  })) as Array<t>
+  }))
 }
 
 /** Task.start: start a task; enqueue with task runner */
-const start = async (client: Client.t, id: number) => {
+const start = async (client: Client.t, id: number): Promise<t> => {
   const response = await client
     .post<t_get_response>(
       `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/run/tasks/${id}/`,
@@ -134,7 +137,7 @@ const start = async (client: Client.t, id: number) => {
     ...response,
     created_at: new Date(response.created_at),
     updated_at: new Date(response.updated_at),
-  } as t
+  }
 }
 
 export {

@@ -77,7 +77,7 @@ type t_update_segment_response = Array<
 >
 
 /** Annotation.create: create a new batch */
-const create = async (client: Client.t, body: t_create_request) => {
+const create = async (client: Client.t, body: t_create_request): Promise<t> => {
   const response = await client
     .post<t_create_response>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/annotation/`,
@@ -87,7 +87,7 @@ const create = async (client: Client.t, body: t_create_request) => {
   return {
     ...response,
     created_at: new Date(response.created_at),
-  } as t
+  }
 }
 
 /** Annotation.updateSegment */
@@ -96,7 +96,7 @@ const updateSegment = async (
   batch: number,
   segment: number,
   body: t_update_segment_request,
-) => {
+): Promise<Array<t>> => {
   const response = await client
     .put<t_update_segment_response>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/annotation/batch/${batch}/segment/${segment}/`,
@@ -106,7 +106,7 @@ const updateSegment = async (
   return response.map(a => ({
     ...a,
     created_at: new Date(a.created_at),
-  })) as Array<t>
+  }))
 }
 
 /** Annotation.readSegment */
@@ -114,7 +114,7 @@ const readSegment = async (
   client: Client.t,
   batch: number,
   segment: number,
-) => {
+): Promise<Array<t>> => {
   const response = await client
     .get<t_read_segment_response>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/annotation/batch/${batch}/segment/${segment}/`,
@@ -123,18 +123,21 @@ const readSegment = async (
   return response.map(a => ({
     ...a,
     created_at: new Date(a.created_at),
-  })) as Array<t>
+  }))
 }
 
 /** Annotation.delete: delete an existing batch */
-const delete_ = async (client: Client.t, id: string) => {
-  await client.delete(
+const delete_ = (client: Client.t, id: string): Promise<void> => {
+  return client.delete(
     `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/annotation/${id}/`,
   )
 }
 
 /** Annotation.list: get paginated list of segments */
-const list = async (client: Client.t, params: t_list_request) => {
+const list = async (
+  client: Client.t,
+  params: t_list_request,
+): Promise<t_page<t>> => {
   const response = await client
     .get<t_list_response>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/annotation/`,
@@ -154,7 +157,7 @@ const list = async (client: Client.t, params: t_list_request) => {
       ...item,
       created_at: new Date(item.created_at),
     })),
-  } as t_page<t>
+  }
 }
 
 export {

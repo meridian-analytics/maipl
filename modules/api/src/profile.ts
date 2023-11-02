@@ -6,16 +6,19 @@ import * as User from "./user.ts"
 type t_update_request = Omit<User.t, "id">
 
 /** Profile.get: get profile for current user */
-const get = async (client: Client.t) => {
+const get = (client: Client.t): Promise<User.t> => {
   return client
     .get<User.t>(`${K.MAIPL_AUTH_BACKEND}/api/user/profile/`)
     .then(r => r.data)
 }
 
 /** Profile.update: update profile for current user */
-const update = async (client: Client.t, body: t_update_request) => {
-  await client
-    .put(`${K.MAIPL_AUTH_BACKEND}/api/user/profile/`, {
+const update = async (
+  client: Client.t,
+  body: t_update_request,
+): Promise<User.t> => {
+  return client
+    .put<User.t>(`${K.MAIPL_AUTH_BACKEND}/api/user/profile/`, {
       email: body.email,
       first_name: body.first_name,
       last_name: body.last_name,

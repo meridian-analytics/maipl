@@ -37,14 +37,14 @@ type t_tokens_request = {
 }
 
 /** Auth.login */
-async function login(body: t_login_request) {
+function login(body: t_login_request): Promise<t_code> {
   return Client.guest
     .post<t_code>(`${K.MAIPL_AUTH_BACKEND}/api/auth/login/`, body)
     .then(r => r.data)
 }
 
 /** Auth.refresh: obtain new access token using refresh token */
-async function refresh(refresh: string) {
+function refresh(refresh: string): Promise<t_access> {
   return Client.guest
     .post<t_access>(`${K.MAIPL_AUTH_BACKEND}/api/auth/token/refresh/`, {
       refresh,
@@ -53,7 +53,7 @@ async function refresh(refresh: string) {
 }
 
 /** Auth.tokens: exchange authorization code for token pair */
-async function tokens(body: t_tokens_request) {
+function tokens(body: t_tokens_request): Promise<t_pair> {
   return Client.guest
     .post<t_pair>(`${K.MAIPL_AUTH_BACKEND}/api/auth/token/`, body)
     .then(r => r.data)

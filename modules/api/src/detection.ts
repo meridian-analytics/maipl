@@ -47,7 +47,7 @@ type t_export_request = Require<t_filter_params, "task" | "model">
 type t_export_response = Array<t_get_response>
 
 /** Detection.get: get detection details */
-const get = async (client: Client.t, id: number) => {
+const get = async (client: Client.t, id: number): Promise<t> => {
   const response = await client
     .get<t_get_response>(
       `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/run/detections/${id}/`,
@@ -56,7 +56,7 @@ const get = async (client: Client.t, id: number) => {
   return {
     ...response,
     created_at: new Date(response.created_at),
-  } as t
+  }
 }
 
 /** Detection.list: get list of detections */
@@ -65,7 +65,7 @@ const export_ = async (
   params: t_export_request,
   filename?: string,
   tag?: string,
-) => {
+): Promise<File.t> => {
   const { data: detections } = await client.get<Array<t_get_response>>(
     `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/run/detections/export/`,
     {
@@ -109,7 +109,10 @@ const export_ = async (
   })
 }
 
-const list = async (client: Client.t, params?: t_list_request) => {
+const list = async (
+  client: Client.t,
+  params?: t_list_request,
+): Promise<t_page<t>> => {
   const response = await client
     .get<t_list_response>(
       `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/run/detections/`,
@@ -130,7 +133,7 @@ const list = async (client: Client.t, params?: t_list_request) => {
       ...item,
       created_at: new Date(item.created_at),
     })),
-  } as t_page<t>
+  }
 }
 
 export {
