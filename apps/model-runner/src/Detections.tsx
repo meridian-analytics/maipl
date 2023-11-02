@@ -98,7 +98,7 @@ function Detections(props: {
         console.error("DetectionsLoader exportMutation error", err, vars)
       }
     },
-    onSuccess: (file) => {
+    onSuccess: file => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="success">
           Success: Exported detections to{" "}
