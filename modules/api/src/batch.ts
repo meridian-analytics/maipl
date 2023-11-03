@@ -5,9 +5,7 @@ import * as Annotation from "./annotation.ts"
 import * as Client from "./client.ts"
 import * as File from "./file.ts"
 import * as Segment from "./segment.ts"
-import * as Task from "./task.ts"
 import { t_page, t_page_params } from "./types.ts"
-import * as User from "./user.ts"
 
 /** Batch.t: batch details with pre-fetched segments and user */
 type t = {
@@ -30,7 +28,7 @@ type t = {
   /** List of segment identifiers */
   segments: Array<number>
   /** Batch owner */
-  user: User.t
+  user_id: number
   /** celery task, for processing */
   task_id: null | string
   /**
@@ -93,13 +91,13 @@ enum t_status {
 }
 
 /** Batch.t_list_item: a summarized batch, returned by Batch.list */
-type t_list_item = Omit<t, "parameters" | "user"> & {
-  /** Batch owner id */
-  user: number
-}
+type t_list_item = Omit<t, "parameters">
 
 /** Batch.t_create_request */
-type t_create_request = Omit<t, "id" | "created_at" | "progress" | "user" | "task_id" | "task_status">
+type t_create_request = Omit<
+  t,
+  "id" | "created_at" | "progress" | "user_id" | "task_id" | "task_status"
+>
 
 /** Batch.t_create_response */
 type t_create_response = Omit<t, "created_at"> & { created_at: string }
@@ -123,15 +121,24 @@ type t_list_response = t_page<
   Omit<t_list_item, "created_at"> & { created_at: string }
 >
 
+/** Batch.t_process_response */
+type t_process_response = {
+  /** Celery task identifier */
+  task_id: number
+  /** Celery response message */
+  message: string
+}
+
 /** Batch.t_update_request
  * form is not editable at this time
  */
-type t_update_request = Omit<t, "created_at" | "form" | "user"> & {
-  user: number
-}
+type t_update_request = Omit<t, "created_at" | "form">
 
 /** Batch.audios: get list of batch audios */
-const audios = async (client: Client.t, id: number) => {
+const audios = async (
+  client: Client.t,
+  id: number,
+): Promise<Array<Segment.t_audio>> => {
   return client
     .get<Array<Segment.t_audio>>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/audio/`,
@@ -145,7 +152,7 @@ const audios = async (client: Client.t, id: number) => {
 }
 
 /** Batch.create: create a new batch */
-const create = async (client: Client.t, body: t_create_request) => {
+const create = async (client: Client.t, body: t_create_request): Promise<t> => {
   const response = await client
     .post<t_create_response>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/`,
@@ -155,11 +162,11 @@ const create = async (client: Client.t, body: t_create_request) => {
   return {
     ...response,
     created_at: new Date(response.created_at),
-  } as t
+  }
 }
 
 /** Batch.export: export an existing batch */
-const export_ = async (client: Client.t, id: number) => {
+const export_ = async (client: Client.t, id: number): Promise<File.t> => {
   const { data: annotations } = await Annotation.list(client, {
     batch: id,
     size: 100, // todo: limited to 100. backend task?
@@ -202,14 +209,17 @@ const export_ = async (client: Client.t, id: number) => {
 }
 
 /** Batch.delete: delete an existing batch */
-const delete_ = async (client: Client.t, id: number) => {
-  await client.delete(
+const delete_ = (client: Client.t, id: number): Promise<void> => {
+  return client.delete(
     `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/`,
   )
 }
 
 /** Batch.images: get list of batch images */
-const images = async (client: Client.t, id: number) => {
+const images = (
+  client: Client.t,
+  id: number,
+): Promise<Array<Segment.t_image>> => {
   return client
     .get<Array<Segment.t_image>>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/image/`,
@@ -223,7 +233,10 @@ const images = async (client: Client.t, id: number) => {
 }
 
 /** Batch.list: get paginated list of batches */
-const list = async (client: Client.t, params: t_list_request) => {
+const list = async (
+  client: Client.t,
+  params: t_list_request,
+): Promise<t_page<t_list_item>> => {
   const response = await client
     .get<t_list_response>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/`,
@@ -242,11 +255,11 @@ const list = async (client: Client.t, params: t_list_request) => {
       ...item,
       created_at: new Date(item.created_at),
     })),
-  } as t_page<t_list_item>
+  }
 }
 
 /** Batch.get: get batch details */
-const get = async (client: Client.t, id: number) => {
+const get = async (client: Client.t, id: number): Promise<t> => {
   const response = await client
     .get<t_get_response>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/`,
@@ -255,14 +268,17 @@ const get = async (client: Client.t, id: number) => {
   return {
     ...response,
     created_at: new Date(response.created_at),
-  } as t
+  }
 }
 
 type Patch<T extends { id: number }> = Pick<T, "id"> & Partial<Omit<T, "id">>
 
 /** Batch.patch: partial update existing batch */
-const patch = async (client: Client.t, body: Patch<t_update_request>) => {
-  await client.patch(
+const patch = (
+  client: Client.t,
+  body: Patch<t_update_request>,
+): Promise<void> => {
+  return client.patch(
     `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${body.id}/`,
     body,
   )
@@ -271,11 +287,14 @@ const patch = async (client: Client.t, body: Patch<t_update_request>) => {
 /** Batch.process: submit a batch for processing */
 const process = async (client: Client.t, id: number): Promise<number> => {
   const response = await client
-    .post<Task.t>(`${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/process/`, {
-      batch_id: id,
-    })
+    .post<t_process_response>(
+      `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/process/`,
+      {
+        batch_id: id,
+      },
+    )
     .then(r => r.data)
-  return response.id
+  return response.task_id
 }
 
 /** Batch.status: derivew batch status from celery task */
@@ -299,8 +318,8 @@ const status = (batch: t_list_item): t_status => {
 }
 
 /** Batch.update: update an existing batch */
-const update = async (client: Client.t, body: t_update_request) => {
-  await client.put(
+const update = (client: Client.t, body: t_update_request): Promise<void> => {
+  return client.put(
     `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${body.id}/`,
     body,
   )
@@ -316,6 +335,7 @@ export {
   type t_filter_params,
   type t_list_request,
   type t_list_response,
+  type t_process_response,
   type t_update_request,
   audios,
   create,

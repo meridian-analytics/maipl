@@ -7,7 +7,7 @@ type t = {
   /** Segment identifier */
   id: number
   /** Owner identifier */
-  user: number
+  user_id: number
   /** Audio file. Null if not processed. */
   audio: null | string
   /** Batches that use this segment */
@@ -61,7 +61,7 @@ type t_image = {
 /** Segment.t_create_request */
 type t_create_request = Omit<
   t,
-  "id" | "audio" | "batches" | "created_at" | "user"
+  "id" | "audio" | "batches" | "created_at" | "user_id"
 >
 
 /** Segment.t_create_response */
@@ -89,7 +89,10 @@ type t_list_request = t_page_params & t_filter_params
 type t_list_response = t_page<Omit<t, "created_at"> & { created_at: string }>
 
 /** Segment.list: get paginated list of segments */
-const list = async (client: Client.t, params: t_list_request) => {
+const list = async (
+  client: Client.t,
+  params: t_list_request,
+): Promise<t_page<t>> => {
   const response = await client
     .get<t_list_response>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/segment/`,
@@ -112,11 +115,11 @@ const list = async (client: Client.t, params: t_list_request) => {
       end: Number(item.end), // todo: backend not returning number
       start: Number(item.start), // todo: backend not returning number
     })),
-  } as t_page<t>
+  }
 }
 
 /** Segment.get: get batch details */
-const get = async (client: Client.t, id: number) => {
+const get = async (client: Client.t, id: number): Promise<t> => {
   const response = await client
     .get<t_get_response>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/segment/${id}/`,
@@ -125,11 +128,11 @@ const get = async (client: Client.t, id: number) => {
   return {
     ...response,
     created_at: new Date(response.created_at),
-  } as t
+  }
 }
 
 /** Segment.create: create a new batch */
-const create = async (client: Client.t, body: t_create_request) => {
+const create = async (client: Client.t, body: t_create_request): Promise<t> => {
   const time = (n: number) => Number(n.toFixed(3)) // todo: backend too strict
   const response = await client
     .post<t_create_response>(
@@ -144,12 +147,12 @@ const create = async (client: Client.t, body: t_create_request) => {
   return {
     ...response,
     created_at: new Date(response.created_at),
-  } as t
+  }
 }
 
 /** Segment.delete: delete an existing batch */
-const delete_ = async (client: Client.t, id: number) => {
-  await client.delete(
+const delete_ = (client: Client.t, id: number): Promise<void> => {
+  return client.delete(
     `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/segment/${id}/`,
   )
 }

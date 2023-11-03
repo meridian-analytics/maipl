@@ -4,7 +4,6 @@ import * as A from "axios"
 import * as Client from "./client.ts"
 import * as Meta from "./meta.ts"
 import { t_page, t_page_params } from "./types.ts"
-import * as User from "./user.ts"
 
 type t_maipl_folder =
   | "public"
@@ -42,8 +41,8 @@ type t = {
   tag: string
   /** Date when the file was last updated */
   updated_at: Date
-  /** Owner of the file */
-  user: User.t
+  /** Owner identifier */
+  user_id: number
 }
 
 /** File.t_usage */
@@ -102,9 +101,6 @@ type t_create_response = Omit<t, "created_at" | "updated_at" | "meta"> & {
 /** File.t_delete_request */
 type t_delete_request = Array<number>
 
-/** File.t_delete_response */
-type t_delete_response = void
-
 /** File.t_get_request */
 type t_get_request = number
 
@@ -162,8 +158,8 @@ const create = async (
 }
 
 /** File.delete: delete files by ids */
-const delete_ = async (client: Client.t, ids: t_delete_request) => {
-  await client.delete<t_delete_response>(`${K.MAIPL_FILE_BACKEND}/api/file/`, {
+const delete_ = (client: Client.t, ids: t_delete_request): Promise<void> => {
+  return client.delete(`${K.MAIPL_FILE_BACKEND}/api/file/`, {
     params: {
       ids: ids.join(","),
     },
@@ -171,7 +167,10 @@ const delete_ = async (client: Client.t, ids: t_delete_request) => {
 }
 
 /** File.list: get paginated list of files */
-const list = async (client: Client.t, params: t_list_request) => {
+const list = async (
+  client: Client.t,
+  params: t_list_request,
+): Promise<t_page<t>> => {
   const response = await client
     .get<t_list_response>(`${K.MAIPL_FILE_BACKEND}/api/file/`, {
       params: {
@@ -188,11 +187,11 @@ const list = async (client: Client.t, params: t_list_request) => {
       updated_at: new Date(file.updated_at),
       meta: Meta.safeParse(file.meta),
     })),
-  } as t_page<t>
+  }
 }
 
 /** File.get: get file by id */
-const get = async (client: Client.t, id: t_get_request) => {
+const get = async (client: Client.t, id: t_get_request): Promise<t> => {
   const response = await client
     .get<t_get_response>(`${K.MAIPL_FILE_BACKEND}/api/file/${id}/`)
     .then(r => r.data)
@@ -201,7 +200,7 @@ const get = async (client: Client.t, id: t_get_request) => {
     created_at: new Date(response.created_at),
     updated_at: new Date(response.updated_at),
     meta: Meta.safeParse(response.meta),
-  } as t
+  }
 }
 
 /** File.discoverMeta: attempt automatic discovery of metadata from a system file */
@@ -268,7 +267,7 @@ const update = async (
 }
 
 /** File.usage: get usage report */
-const usage = async (client: Client.t) => {
+const usage = (client: Client.t): Promise<t_usage> => {
   return client
     .get<t_usage>(`${K.MAIPL_FILE_BACKEND}/api/file/usage/`)
     .then(r => r.data)
@@ -279,7 +278,6 @@ export {
   type t_create_request,
   type t_create_response,
   type t_delete_request,
-  type t_delete_response,
   type t_get_request,
   type t_get_response,
   type t_list_request,

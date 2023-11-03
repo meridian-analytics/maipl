@@ -31,6 +31,7 @@ export {
   Dashboard,
   Filter,
   MaiplFolderPicker,
+  Menu,
   Modal,
   Navbar,
   Profile,

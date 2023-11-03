@@ -98,10 +98,17 @@ function Detections(props: {
         console.error("DetectionsLoader exportMutation error", err, vars)
       }
     },
-    onSuccess: () => {
+    onSuccess: file => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="success">
-          Success: Exported detections for task #{props.task.id}
+          Success: Exported detections to{" "}
+          <M.Link
+            children={`${file.maipl_folder}/${file.basename}`}
+            download={file.basename}
+            href={file.file}
+            rel="noreferrer"
+            target="_blank"
+          />
         </M.Alert>
       ))
       props.onClose()

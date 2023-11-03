@@ -153,6 +153,9 @@ export default function SegmentsTable(props: { sx?: M.SxProps }) {
         selection={selection}
         setPagination={setPagination}
         setSelection={setSelection}
+        visibility={{
+          user_id: false,
+        }}
       />
     </M.Stack>
   )

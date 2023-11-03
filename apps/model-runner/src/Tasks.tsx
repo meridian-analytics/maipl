@@ -11,20 +11,8 @@ import ShowTask from "./ShowTask.tsx"
 
 function TaskActions(props: { task: Task.t }) {
   const queryClient = RQ.useQueryClient()
-  const [anchorEl, setAnchorEl] = R.useState<HTMLElement | null>(null)
-  const buttonId = R.useId()
-  const menuId = R.useId()
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
-  const open = anchorEl != null
-
-  const onClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
-
-  const onClose = () => {
-    setAnchorEl(null)
-  }
 
   const onStart = () => {
     if (startMutation.isIdle) {
@@ -57,63 +45,44 @@ function TaskActions(props: { task: Task.t }) {
   })
 
   return (
-    <>
-      <M.IconButton
-        aria-controls={open ? menuId : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? "true" : undefined}
-        children={<I.ContentPasteSearch />}
-        id={buttonId}
-        onClick={onClick}
+    <MR.Menu icon={<I.Settings />}>
+      <M.MenuItem
+        children="Details"
+        component={RR.Link}
+        to={`/tasks/${props.task.id}`}
       />
-      <M.Menu
-        anchorEl={anchorEl}
-        id={menuId}
-        open={open}
-        onClick={onClose}
-        onClose={onClose}
-        MenuListProps={{
-          "aria-labelledby": buttonId,
-        }}
-      >
-        <M.MenuItem
-          children="Details"
-          component={RR.Link}
-          to={`/tasks/${props.task.id}`}
-        />
-        <M.MenuItem
-          children="Detections"
-          disabled={props.task.detections == null}
-          component={RR.Link}
-          to={`/tasks/${props.task.id}/detections`}
-        />
-        <M.MenuItem
-          disabled={props.task.status != "CREATED" || startMutation.isLoading}
-          onClick={onStart}
-          children="Start"
-        />
-        <M.MenuItem
-          disabled={
-            props.task.status != "PENDING" && props.task.status != "STARTED"
-          }
-          onClick={() => {}}
-          children="Cancel"
-        />
-        <M.Divider />
-        <M.MenuItem
-          children="Copy"
-          component={RR.Link}
-          to={`/tasks/${props.task.id}/copy`}
-        />
-        <M.MenuItem
-          disabled={
-            props.task.status == "PENDING" || props.task.status == "STARTED"
-          }
-          onClick={() => {}}
-          children="Delete"
-        />
-      </M.Menu>
-    </>
+      <M.MenuItem
+        children="Detections"
+        disabled={props.task.detections == null}
+        component={RR.Link}
+        to={`/tasks/${props.task.id}/detections`}
+      />
+      <M.MenuItem
+        disabled={props.task.status != "CREATED" || startMutation.isLoading}
+        onClick={onStart}
+        children="Start"
+      />
+      <M.MenuItem
+        disabled={
+          props.task.status != "PENDING" && props.task.status != "STARTED"
+        }
+        onClick={() => {}}
+        children="Cancel"
+      />
+      <M.Divider />
+      <M.MenuItem
+        children="Copy"
+        component={RR.Link}
+        to={`/tasks/${props.task.id}/copy`}
+      />
+      <M.MenuItem
+        disabled={
+          props.task.status == "PENDING" || props.task.status == "STARTED"
+        }
+        onClick={() => {}}
+        children="Delete"
+      />
+    </MR.Menu>
   )
 }
 

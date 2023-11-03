@@ -92,6 +92,9 @@ const Table = BaseTable([
   column.accessor("tag", {
     header: "Tag",
   }),
+  column.accessor("user_id", {
+    header: "Owner",
+  }),
 ] as Array<ColumnDef<File.t>>)
 
 export { Table, column, useQuery, useTable }

@@ -21,14 +21,17 @@ type t_get_request = number
 type t_list_request = t_page_params
 
 /** User.get: Get user details by identifier */
-const get = async (client: Client.t, id: t_get_request) => {
+const get = async (client: Client.t, id: t_get_request): Promise<t> => {
   return client
     .get<t>(`${K.MAIPL_AUTH_BACKEND}/api/user/${id}/`)
     .then(r => r.data)
 }
 
 /** User.list: Get paginated list of all users */
-const list = async (client: Client.t, params: t_list_request) => {
+const list = async (
+  client: Client.t,
+  params: t_list_request,
+): Promise<t_page<t>> => {
   return client
     .get<t_page<t>>(`${K.MAIPL_AUTH_BACKEND}/api/user/`, { params })
     .then(r => r.data)

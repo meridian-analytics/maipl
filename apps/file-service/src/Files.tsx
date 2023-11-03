@@ -9,13 +9,12 @@ import * as RR from "react-router-dom"
 import FileEditor from "./FileEditor.tsx"
 import FileUpload from "./FileUpload.tsx"
 
-function Actions(props: {
+function SelectionActions(props: {
   selection: ReturnType<typeof MR.Files.useTable>["selection"]
   setSelection: ReturnType<typeof MR.Files.useTable>["setSelection"]
 }) {
   const { client } = MR.useMaipl()
   const queryClient = RQ.useQueryClient()
-  const navigate = RR.useNavigate()
 
   const onDelete = async () => {
     const message = [
@@ -34,12 +33,6 @@ function Actions(props: {
     }
   }
 
-  const onEdit = async () => {
-    for (const file of props.selection.values()) {
-      return navigate(`/files/${file.id}/edit`) // return first
-    }
-  }
-
   return (
     <M.Stack direction="row" spacing={2}>
       <MR.ActionButton
@@ -55,16 +48,6 @@ function Actions(props: {
         to="/files/new"
       />
       <MR.ActionButton
-        children={<I.Edit />}
-        disabled={props.selection.size != 1}
-        onClick={onEdit}
-        title={
-          props.selection.size == 1
-            ? "Edit selected file"
-            : "Select a single file to edit"
-        }
-      />
-      <MR.ActionButton
         children={<I.DeleteForever />}
         disabled={props.selection.size == 0}
         onClick={onDelete}
@@ -75,6 +58,36 @@ function Actions(props: {
         }
       />
     </M.Stack>
+  )
+}
+
+function FileActions(props: { file: File.t }) {
+  // todo: not all files should be editable
+  // this is a basic filter for now. maybe use mime types?
+  const isEditable =
+    props.file.extname != ".wav" &&
+    props.file.extname != ".mp3" &&
+    props.file.extname != ".ogg"
+
+  return (
+    <MR.Menu icon={<I.Settings />}>
+      <M.MenuItem
+        children="Download"
+        component={M.Link}
+        download={props.file.basename}
+        href={props.file.file}
+        rel="noreferrer"
+        target="_blank"
+        underline="none"
+      />
+      <M.Divider />
+      <M.MenuItem
+        component={RR.Link}
+        disabled={!isEditable}
+        to={`/files/${props.file.id}/edit`}
+        children="Edit"
+      />
+    </MR.Menu>
   )
 }
 
@@ -125,6 +138,11 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
             },
           },
         ),
+        MR.Files.column.display({
+          id: "actions",
+          header: "",
+          cell: info => <FileActions file={info.row.original} />,
+        }),
       ] as Array<MR.ColumnDef<File.t>>,
     [],
   )
@@ -196,7 +214,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
           variant="outlined"
         />
         <M.Stack flexGrow={1} />
-        <Actions selection={selection} setSelection={setSelection} />
+        <SelectionActions selection={selection} setSelection={setSelection} />
       </M.Stack>
       <MR.Files.Table
         columns={extraColumns}
@@ -212,7 +230,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
           extname: false,
           channels: false,
           sample_rate: false,
-          created_at: true,
+          user_id: false,
         }}
       />
     </M.Stack>
