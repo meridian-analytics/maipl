@@ -8,7 +8,7 @@ import theme from "./theme.tsx"
 RDC.createRoot(document.getElementById("root") as HTMLElement).render(
   <R.StrictMode>
     <M.ThemeProvider theme={theme}>
-      <RR.BrowserRouter>
+      <RR.BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
         <M.CssBaseline />
         <Signin />
       </RR.BrowserRouter>
