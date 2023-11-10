@@ -30,7 +30,7 @@ export default function Dashboard() {
     <M.Stack
       alignItems="center"
       justifyContent="center"
-      sx={{ height: "100vh", maxHeight: "100%", overflow: "hidden" }}
+      sx={{ height: "100vh", overflow: "hidden" }}
     >
       <M.Stack direction="row" maxWidth="lg" spacing={2}>
         <NavButton
