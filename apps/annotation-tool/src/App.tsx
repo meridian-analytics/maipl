@@ -39,7 +39,7 @@ function LocalNavigation() {
 
 export default function App() {
   return (
-    <MR.MaiplProvider>
+    <MR.MaiplProvider basename={import.meta.env.BASE_URL || "/"}>
       <M.Stack
         sx={{
           backgroundColor: M.colors.grey[50],

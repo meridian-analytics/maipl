@@ -11,6 +11,7 @@ function safeNumber(value: string, orElse: number): number {
 export default V.defineConfig(config => {
   const env = V.loadEnv(config.mode, "./")
   return {
+    base: env.VITE_BASE_URL || "/",
     build: {
       emptyOutDir: true,
     },

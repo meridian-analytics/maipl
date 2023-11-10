@@ -28,7 +28,11 @@ const MaiplContext = R.createContext<t_context>({
   },
 })
 
-function MaiplProvider(props: { children: R.ReactNode; poolSize?: number }) {
+function MaiplProvider(props: {
+  basename?: string
+  children: R.ReactNode
+  poolSize?: number
+}) {
   // react-query
   const queryClient = R.useMemo(
     () =>
@@ -43,7 +47,7 @@ function MaiplProvider(props: { children: R.ReactNode; poolSize?: number }) {
   )
   return (
     <RQ.QueryClientProvider client={queryClient}>
-      <RR.BrowserRouter>
+      <RR.BrowserRouter basename={props.basename}>
         <M.ThemeProvider theme={MR.theme}>
           <M.CssBaseline />
           <MaiplContextProvider

@@ -19,8 +19,20 @@ const Signin = () => {
     Auth.login({ email, password, next, challenge })
       .then(auth => {
         try {
-          const origin = new URL(next).origin
-          const redirect = new URL("/auth", origin)
+          const { origin, pathname } = new URL(next)
+          const app = pathname.split("/").at(1) ?? ""
+          // todo: frontend should specify its own redirect url
+          const redirect = new URL(
+            [
+              "authentication-service",
+              "annotation-tool",
+              "file-service",
+              "model-runner",
+            ].includes(app)
+              ? `/${app}/auth`
+              : "/auth",
+            origin,
+          )
           redirect.searchParams.set("next", next)
           redirect.searchParams.set("code", auth.code)
           window.location.replace(String(redirect))
