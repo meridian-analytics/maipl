@@ -10,6 +10,15 @@ import * as R from "react"
 import * as RR from "react-router-dom"
 import * as MR from "./index.ts"
 
+// todo: move to js extensions module
+function invariant(condition: unknown, message?: string): asserts condition {
+  if (condition) return
+  const e = import.meta.env.PROD
+    ? "Invariant violation"
+    : `Invariant violation: ${message ?? "truthy value expected"}`
+  throw Error(e)
+}
+
 type t_context = {
   client: Client.t
   enqueue: typeof Async.Pool.prototype.add
@@ -30,9 +39,21 @@ const MaiplContext = R.createContext<t_context>({
 
 function MaiplProvider(props: {
   basename?: string
-  children: R.ReactNode
   poolSize?: number
+  routes: Array<RR.RouteObject>
 }) {
+  return (
+    <MaiplRootProvider>
+      <MaiplContextProvider
+        basename={props.basename}
+        poolSize={props.poolSize}
+        routes={props.routes}
+      />
+    </MaiplRootProvider>
+  )
+}
+
+function MaiplRootProvider(props: { children: R.ReactNode }) {
   // react-query
   const queryClient = R.useMemo(
     () =>
@@ -47,22 +68,18 @@ function MaiplProvider(props: {
   )
   return (
     <RQ.QueryClientProvider client={queryClient}>
-      <RR.BrowserRouter basename={props.basename}>
-        <M.ThemeProvider theme={MR.theme}>
-          <M.CssBaseline />
-          <MaiplContextProvider
-            children={props.children}
-            poolSize={props.poolSize}
-          />
-        </M.ThemeProvider>
-      </RR.BrowserRouter>
+      <M.ThemeProvider theme={MR.theme}>
+        <M.CssBaseline />
+        <MR.NotificationProvider>{props.children}</MR.NotificationProvider>
+      </M.ThemeProvider>
     </RQ.QueryClientProvider>
   )
 }
 
 function MaiplContextProvider(props: {
-  children: R.ReactNode
+  basename?: string
   poolSize?: number
+  routes: Array<RR.RouteObject>
 }) {
   // tokens
   const [access, setAccess] = R.useState(() => localStorage.getItem("access"))
@@ -144,24 +161,39 @@ function MaiplContextProvider(props: {
     },
   }
 
+  const router = RR.createBrowserRouter(
+    client.isGuest
+      ? [
+          {
+            path: "/auth",
+            element: <CompleteAuthFlow />,
+          },
+          {
+            path: "*",
+            element: <BeginAuthFlow />,
+          },
+        ]
+      : [
+          {
+            path: "/dashboard",
+            element: <MR.Dashboard />,
+          },
+          {
+            path: "/profile",
+            element: <MR.Profile />,
+          },
+          ...props.routes,
+        ],
+    {
+      basename: props.basename || import.meta.env.BASE_URL || "/",
+    },
+  )
+
   // provider
   return (
     <MaiplContext.Provider value={context}>
-      <MR.NotificationProvider>
-        {client.isGuest ? (
-          <RR.Routes>
-            <RR.Route path="/auth" element={<CompleteAuthFlow />} />
-            <RR.Route path="*" element={<BeginAuthFlow />} />
-          </RR.Routes>
-        ) : (
-          <RR.Routes>
-            <RR.Route path="/dashboard" element={<MR.Dashboard />} />
-            <RR.Route path="/profile" element={<MR.Profile />} />
-            <RR.Route path="*" element={props.children} />
-          </RR.Routes>
-        )}
-        {K.MAIPL_REACT_QUERY_DEVTOOLS && <ReactQueryDevtools />}
-      </MR.NotificationProvider>
+      <RR.RouterProvider router={router} />
+      {K.MAIPL_REACT_QUERY_DEVTOOLS && <ReactQueryDevtools />}
     </MaiplContext.Provider>
   )
 }
@@ -169,6 +201,7 @@ function MaiplContextProvider(props: {
 /**
  * Context.BeginAuthFlow
  * Initialize a PKCE Authorization Code Flow
+ * useHref is used to ensure proper BASE_URL is used
  * 1. the url is MAIPL_MYAPP_FRONTEND/path/to/anything
  * 2. generate PKCE {verifier} and {challenge}
  * 3. persist {verifier} to localStorage
@@ -176,6 +209,17 @@ function MaiplContextProvider(props: {
  * 5. redirect to MAIPL_AUTH_FRONTEND/signin/?next={next}&challenge={challenge}
  */
 function BeginAuthFlow() {
+  const next = String(
+    new URL(
+      RR.useHref({
+        pathname: "/auth",
+        search: `?${new URLSearchParams({
+          next: RR.useHref(RR.useLocation()),
+        })}`,
+      }),
+      window.location.href,
+    ),
+  )
   R.useEffect(() => {
     async function redirect() {
       // create verifier and challenge
@@ -183,7 +227,7 @@ function BeginAuthFlow() {
       localStorage.setItem("code_verifier", verifier)
       // redirect
       const query = new URLSearchParams({
-        next: window.location.href,
+        next,
         challenge: await PKCE.createChallenge(verifier),
       })
       window.location.replace(`${K.MAIPL_AUTH_FRONTEND}/signin?${query}`)
@@ -211,12 +255,15 @@ function CompleteAuthFlow() {
   const verifier = localStorage.getItem("code_verifier")
   R.useEffect(() => {
     async function redirect() {
-      // null checks
-      if (verifier == null) throw Error("code verifier not found")
-      if (code == null) throw Error("authorization code not found")
-      if (next == null) throw Error("redirect url not found")
+      // invariants
+      invariant(verifier, "code verifier not found")
+      invariant(code, "authorization code not found")
+      invariant(next, "redirect url not found")
       // get tokens
       const { access, refresh } = await Auth.tokens({ code, verifier })
+      // persist
+      invariant(access, "access token not found")
+      invariant(refresh, "refresh token not found")
       localStorage.removeItem("code_verifier")
       localStorage.setItem("access", access)
       localStorage.setItem("refresh", refresh)
@@ -232,4 +279,4 @@ function CompleteAuthFlow() {
 
 const useMaipl = () => R.useContext(MaiplContext)
 
-export { type t_context, MaiplProvider, useMaipl }
+export { type t_context, MaiplProvider, MaiplRootProvider, useMaipl }

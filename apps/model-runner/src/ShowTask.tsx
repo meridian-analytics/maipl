@@ -5,27 +5,30 @@ import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as RR from "react-router-dom"
 
-export default function ShowTaskLoader(props: {
-  onClose: () => void
-}) {
+export default function ShowTaskLoader() {
+  const maipl = MR.useMaipl()
+  const navigate = RR.useNavigate()
   const params = RR.useParams()
   const taskId = F.safeParseInteger(params.taskId, null)
-  const { client } = MR.useMaipl()
 
   const { data: task, error } = RQ.useQuery({
     enabled: taskId != null,
     queryKey: ["tasks", taskId],
-    queryFn: () => Task.get(client, taskId!),
+    queryFn: () => Task.get(maipl.client, taskId!),
   })
 
   const { data: model, error: modelError } = RQ.useQuery({
     enabled: task != null,
     queryKey: ["files", task?.model_file],
-    queryFn: () => File.get(client, task?.model_file!),
+    queryFn: () => File.get(maipl.client, task?.model_file!),
   })
 
+  const onClose = () => {
+    navigate(-1)
+  }
+
   return (
-    <MR.Modal onClose={props.onClose}>
+    <MR.Modal onClose={onClose}>
       {error != null ? (
         <M.Typography>{(error as Error).message}</M.Typography>
       ) : modelError != null ? (
@@ -33,12 +36,7 @@ export default function ShowTaskLoader(props: {
       ) : task == null || model == null ? (
         <M.CircularProgress />
       ) : (
-        <ShowTask
-          key={task.id}
-          task={task}
-          model={model}
-          onClose={props.onClose}
-        />
+        <ShowTask key={task.id} task={task} model={model} onClose={onClose} />
       )}
     </MR.Modal>
   )
@@ -179,7 +177,7 @@ function ShowTask(props: {
           children="Copy"
           color="primary"
           component={RR.Link}
-          to={`/tasks/${task.id}/copy`}
+          to={`/${task.id}/copy`}
           variant="contained"
         />
         <M.Button

@@ -3,8 +3,41 @@ import * as M from "@mui/material"
 import * as RR from "react-router-dom"
 import AnnotationTool from "./AnnotationTool.tsx"
 import Batches from "./Batches.tsx"
+import EditBatch from "./EditBatch.tsx"
 import Files from "./Files.tsx"
 import Segments from "./Segments.tsx"
+
+export default function App() {
+  return (
+    <MR.MaiplProvider
+      routes={[
+        {
+          path: "/",
+          element: <Layout />,
+          children: routes,
+        },
+      ]}
+    />
+  )
+}
+
+function Layout() {
+  return (
+    <M.Stack
+      sx={{
+        backgroundColor: M.colors.grey[50],
+        height: "100vh",
+        maxHeight: "100vh",
+      }}
+    >
+      <MR.Notifications />
+      <MR.Navbar>
+        <LocalNavigation />
+      </MR.Navbar>
+      <RR.Outlet />
+    </M.Stack>
+  )
+}
 
 function LocalNavigation() {
   const batchId = RR.useMatch("/annotate/:batchId/*")?.params?.batchId
@@ -37,32 +70,41 @@ function LocalNavigation() {
   )
 }
 
-export default function App() {
-  return (
-    <MR.MaiplProvider basename={import.meta.env.BASE_URL || "/"}>
-      <M.Stack
-        sx={{
-          backgroundColor: M.colors.grey[50],
-          height: "100vh",
-          maxHeight: "100vh",
-        }}
-      >
-        <MR.Notifications />
-        <MR.Navbar>
-          <LocalNavigation />
-        </MR.Navbar>
-        <RR.Routes>
-          <RR.Route path="/" element={<RR.Navigate to="/files" replace />} />
-          <RR.Route path="files" element={<Files />} />
-          <RR.Route path="batches/*" element={<Batches />} />
-          <RR.Route path="segments" element={<Segments />} />
-          <RR.Route path="annotate/:batchId" element={<AnnotationTool />} />
-          <RR.Route
-            path="annotate/:batchId/segment/:segmentId"
-            element={<AnnotationTool />}
-          />
-        </RR.Routes>
-      </M.Stack>
-    </MR.MaiplProvider>
-  )
-}
+const routes: Array<RR.RouteObject> = [
+  {
+    index: true,
+    element: <RR.Navigate to="/files" replace />,
+  },
+  {
+    path: "files",
+    element: <Files />,
+  },
+  {
+    path: "batches",
+    element: <Batches />,
+    children: [
+      {
+        path: ":batchId",
+        element: <EditBatch isNew={false} />,
+      },
+      {
+        path: "new",
+        element: <EditBatch isNew={true} />,
+      },
+    ],
+  },
+  {
+    path: "segments",
+    element: <Segments />,
+  },
+  {
+    path: "annotate/:batchId",
+    element: <AnnotationTool />,
+    children: [
+      {
+        path: "segment/:segmentId",
+        element: <AnnotationTool />,
+      },
+    ],
+  },
+]

@@ -6,18 +6,17 @@ import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
 
-export default function EditTaskLoader(props: {
-  onClose: () => void
-}) {
+export default function EditTaskLoader() {
+  const maipl = MR.useMaipl()
+  const navigate = RR.useNavigate()
   const params = RR.useParams()
   const taskId = F.safeParseInteger(params.taskId, null)
-  const { client } = MR.useMaipl()
 
   const { data: task, error } = RQ.useQuery({
     enabled: taskId != null,
     queryKey: ["tasks", taskId],
     queryFn: () => {
-      return Task.get(client, taskId!)
+      return Task.get(maipl.client, taskId!)
     },
   })
 
@@ -25,23 +24,22 @@ export default function EditTaskLoader(props: {
     enabled: task != null,
     queryKey: ["files", task?.model_file],
     queryFn: () => {
-      return File.get(client, task?.model_file!)
+      return File.get(maipl.client, task?.model_file!)
     },
   })
 
+  const onClose = () => {
+    navigate(-1)
+  }
+
   return (
-    <MR.Modal onClose={props.onClose}>
+    <MR.Modal onClose={onClose}>
       {error != null ? (
         <M.Typography>{(error as Error).message}</M.Typography>
       ) : modelError != null ? (
         <M.Typography>{(modelError as Error).message}</M.Typography>
       ) : (
-        <EditTask
-          key={task?.id}
-          task={task}
-          model={model}
-          onClose={props.onClose}
-        />
+        <EditTask key={task?.id} task={task} model={model} onClose={onClose} />
       )}
     </MR.Modal>
   )

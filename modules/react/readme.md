@@ -13,6 +13,7 @@ type t_context
 
 function useMaipl
 function MaiplProvider
+function MaiplRootProvider
 ```
 
 <small>[back to top](#top)</small>
