@@ -1,18 +1,23 @@
 # build
 FROM node:18 as build
 WORKDIR /build
-COPY apps apps
-COPY modules modules
-COPY package.json package.json
-COPY pnpm-lock.yaml pnpm-lock.yaml
-COPY pnpm-workspace.yaml pnpm-workspace.yaml
-COPY tsconfig.json tsconfig.json
 
 # pnpm
 RUN corepack enable
 RUN corepack prepare pnpm@latest --activate
-RUN pnpm i --recursive
-RUN pnpm run @build
+
+# dependencies
+COPY package.json package.json
+COPY pnpm-lock.yaml pnpm-lock.yaml
+COPY pnpm-workspace.yaml pnpm-workspace.yaml
+RUN pnpm install --frozen-lockfile
+
+# build
+COPY apps apps
+COPY modules modules
+COPY tsconfig.json tsconfig.json
+RUN pnpm --recursive install
+RUN pnpm @build
 
 # deploy
 FROM nginx:alpine
