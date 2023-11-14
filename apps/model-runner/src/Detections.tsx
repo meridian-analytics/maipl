@@ -6,9 +6,8 @@ import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
 
-export default function DetectionsLoader(props: {
-  onClose: () => void
-}) {
+export default function DetectionsLoader() {
+  const navigate = RR.useNavigate()
   const params = RR.useParams()
   const taskId = F.safeParseInteger(params.taskId, null)
   const maipl = MR.useMaipl()
@@ -25,8 +24,12 @@ export default function DetectionsLoader(props: {
     queryFn: () => File.get(maipl.client, task?.model_file!),
   })
 
+  const onClose = () => {
+    navigate(-1)
+  }
+
   return (
-    <MR.Modal onClose={props.onClose}>
+    <MR.Modal onClose={onClose}>
       {error != null ? (
         <M.Typography>{(error as Error).message}</M.Typography>
       ) : modelError != null ? (
@@ -34,7 +37,7 @@ export default function DetectionsLoader(props: {
       ) : task == null || model == null ? (
         <M.CircularProgress />
       ) : (
-        <Detections model={model} onClose={props.onClose} task={task} />
+        <Detections model={model} onClose={onClose} task={task} />
       )}
     </MR.Modal>
   )

@@ -5,7 +5,6 @@ import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import EditBatch from "./EditBatch.tsx"
 
 function BatchActions(props: { batch: Batch.t_list_item }) {
   const queryClient = RQ.useQueryClient()
@@ -192,8 +191,7 @@ function BatchStatus(props: { batch: Batch.t_list_item }) {
 }
 
 export default function BatchesTable(props: { sx?: M.SxProps }) {
-  const { user } = MR.useMaipl()
-  const navigate = RR.useNavigate()
+  const maipl = MR.useMaipl()
 
   const {
     filter,
@@ -207,7 +205,7 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
   const { data: batches } = MR.Batches.useQuery({
     // filters
     name: debouncedFilter.get("name"),
-    user: user?.id,
+    user: maipl.user?.id,
     // pagination
     page: pagination.pageIndex + 1, // bug: when query changes, page needs to be reset
     size: pagination.pageSize,
@@ -229,10 +227,6 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
     [],
   )
 
-  const onClose = () => {
-    navigate("/batches")
-  }
-
   return (
     <M.Stack
       spacing={2}
@@ -244,16 +238,7 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
         ...props.sx,
       }}
     >
-      <RR.Routes>
-        <RR.Route
-          path="new"
-          element={<EditBatch isNew={true} onClose={onClose} />}
-        />
-        <RR.Route
-          path=":batchId"
-          element={<EditBatch isNew={false} onClose={onClose} />}
-        />
-      </RR.Routes>
+      <RR.Outlet />
       <M.Stack direction="row" spacing={2}>
         <M.TextField
           label="Name"

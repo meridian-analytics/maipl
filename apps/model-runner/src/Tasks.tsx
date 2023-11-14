@@ -5,9 +5,6 @@ import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import Detections from "./Detections.tsx"
-import EditTask from "./EditTask.tsx"
-import ShowTask from "./ShowTask.tsx"
 
 function TaskActions(props: { task: Task.t }) {
   const queryClient = RQ.useQueryClient()
@@ -49,13 +46,13 @@ function TaskActions(props: { task: Task.t }) {
       <M.MenuItem
         children="Details"
         component={RR.Link}
-        to={`/tasks/${props.task.id}`}
+        to={`/${props.task.id}`}
       />
       <M.MenuItem
         children="Detections"
         disabled={props.task.detections == null}
         component={RR.Link}
-        to={`/tasks/${props.task.id}/detections`}
+        to={`/${props.task.id}/detections`}
       />
       <M.MenuItem
         disabled={props.task.status != "CREATED" || startMutation.isLoading}
@@ -73,7 +70,7 @@ function TaskActions(props: { task: Task.t }) {
       <M.MenuItem
         children="Copy"
         component={RR.Link}
-        to={`/tasks/${props.task.id}/copy`}
+        to={`/${props.task.id}/copy`}
       />
       <M.MenuItem
         disabled={
@@ -89,7 +86,6 @@ function TaskActions(props: { task: Task.t }) {
 export default function TasksTable(props: {
   sx?: M.SxProps
 }) {
-  const navigate = RR.useNavigate()
   const queryClient = RQ.useQueryClient()
   const { pagination, selection, setPagination, setSelection } =
     MR.Tasks.useTable()
@@ -115,31 +111,14 @@ export default function TasksTable(props: {
         ...props.sx,
       }}
     >
-      <RR.Routes>
-        <RR.Route
-          path="new"
-          element={<EditTask onClose={() => navigate("/tasks")} />}
-        />
-        <RR.Route
-          path=":taskId/copy"
-          element={<EditTask onClose={() => navigate("/tasks")} />}
-        />
-        <RR.Route
-          path=":taskId/detections"
-          element={<Detections onClose={() => navigate("/tasks")} />}
-        />
-        <RR.Route
-          path=":taskId"
-          element={<ShowTask onClose={() => navigate("/tasks")} />}
-        />
-      </RR.Routes>
+      <RR.Outlet />
       <M.Stack direction="row" spacing={2}>
         <M.Stack flexGrow={1} />
         <MR.ActionButton
           children={<I.AddCircle />}
           component={RR.Link}
           title="Create Task"
-          to={"/tasks/new"}
+          to={"/new"}
         />
       </M.Stack>
       <MR.Tasks.Table

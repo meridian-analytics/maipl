@@ -8,30 +8,35 @@ import * as Monaco from "monaco-editor"
 import * as R from "react"
 import * as RR from "react-router-dom"
 
-export default function FileEditor(props: {
-  folder: File.t_maipl_folder
-  onClose: () => void
-}) {
+export default function FileEditor() {
+  const navigate = RR.useNavigate()
   const params = RR.useParams()
-  const fileId = F.safeParseInteger(params.fileId, null)
+  const [search, _setSearch] = RR.useSearchParams()
 
-  const { client } = MR.useMaipl()
+  const fileId = F.safeParseInteger(params.fileId, null)
+  const folder = (search.get("folder") ?? "public") as File.t_maipl_folder
+
+  const maipl = MR.useMaipl()
   const { data: file, error } = RQ.useQuery({
     enabled: fileId != null,
     queryKey: ["files", fileId],
-    queryFn: () => File.get(client, fileId!),
+    queryFn: () => File.get(maipl.client, fileId!),
   })
 
+  const onClose = () => {
+    navigate(-1)
+  }
+
   return (
-    <MR.Modal onClose={props.onClose}>
+    <MR.Modal onClose={onClose}>
       {error != null ? (
         <M.Typography>{(error as Error).message}</M.Typography>
       ) : (
         <FileEditor_
-          key={file?.id}
+          key={fileId}
           file={file}
-          folder={props.folder}
-          onClose={props.onClose}
+          folder={folder}
+          onClose={onClose}
         />
       )}
     </MR.Modal>

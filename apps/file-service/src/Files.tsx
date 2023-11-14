@@ -6,8 +6,6 @@ import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import FileEditor from "./FileEditor.tsx"
-import FileUpload from "./FileUpload.tsx"
 
 function SelectionActions(props: {
   selection: ReturnType<typeof MR.Files.useTable>["selection"]
@@ -39,13 +37,19 @@ function SelectionActions(props: {
         children={<I.DriveFolderUpload />}
         component={RR.Link}
         title="Upload Files"
-        to="/files/upload"
+        to={{
+          pathname: "upload",
+          search: RR.useLocation().search,
+        }}
       />
       <MR.ActionButton
         children={<I.NoteAdd />}
         component={RR.Link}
         title="Create new file"
-        to="/files/new"
+        to={{
+          pathname: "new",
+          search: RR.useLocation().search,
+        }}
       />
       <MR.ActionButton
         children={<I.DeleteForever />}
@@ -84,7 +88,7 @@ function FileActions(props: { file: File.t }) {
       <M.MenuItem
         component={RR.Link}
         disabled={!isEditable}
-        to={`/files/${props.file.id}/edit`}
+        to={`${props.file.id}/edit`}
         children="Edit"
       />
     </MR.Menu>
@@ -92,18 +96,17 @@ function FileActions(props: { file: File.t }) {
 }
 
 export default function FilesTable(props: { sx?: M.SxProps }) {
-  const navigate = RR.useNavigate()
-
   const {
     debouncedFilter,
     filter,
-    folder,
     pagination,
     selection,
-    setFolder,
     setPagination,
     setSelection,
   } = MR.Files.useTable()
+
+  const [search, setSearch] = RR.useSearchParams()
+  const folder = (search.get("folder") ?? "public") as File.t_maipl_folder
 
   const extraColumns = R.useMemo(
     () =>
@@ -155,10 +158,6 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
     size: pagination.pageSize,
   })
 
-  const onClose = async () => {
-    navigate("/files")
-  }
-
   return (
     <M.Stack
       spacing={2}
@@ -170,20 +169,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
         ...props.sx,
       }}
     >
-      <RR.Routes>
-        <RR.Route
-          path="upload"
-          element={<FileUpload folder={folder} onClose={onClose} />}
-        />
-        <RR.Route
-          path="new"
-          element={<FileEditor folder={folder} onClose={onClose} />}
-        />
-        <RR.Route
-          path=":fileId/edit"
-          element={<FileEditor folder={folder} onClose={onClose} />}
-        />
-      </RR.Routes>
+      <RR.Outlet />
       <M.Stack direction="row" spacing={2}>
         <MR.MaiplFolderPicker
           folder={folder}
@@ -195,7 +181,10 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
             "model",
             "raw",
           ]}
-          setFolder={setFolder}
+          setFolder={(folder: File.t_maipl_folder) => {
+            setSearch({ folder }, { replace: true })
+            setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
+          }}
         />
         <M.TextField
           size="small"

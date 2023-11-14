@@ -6,6 +6,7 @@ import * as RQ from "@tanstack/react-query"
 import * as RT from "@tanstack/react-table"
 import * as R from "react"
 import * as DZ from "react-dropzone"
+import * as RR from "react-router-dom"
 
 const style = {
   base: {
@@ -48,15 +49,19 @@ const column = RT.createColumnHelper<FileState>()
 
 const AcceptedFiles = MR.Table<FileState, string>()
 
-export default function FileUpload(props: {
-  folder: File.t_maipl_folder
-  onClose: () => void
-}) {
+export default function FileUpload() {
   const queryClient = RQ.useQueryClient()
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
   const [tag, setTag] = R.useState("")
   const [status, setStatus] = R.useState<UploadStatus>(() => new Map())
+  const [search, _setSearch] = RR.useSearchParams()
+  const navigate = RR.useNavigate()
+  const folder = (search.get("folder") ?? "public") as File.t_maipl_folder
+
+  const onClose = () => {
+    navigate(-1)
+  }
 
   // table
   const table = MR.useTable<FileState, string>()
@@ -141,7 +146,7 @@ export default function FileUpload(props: {
                 maipl.client,
                 {
                   file,
-                  maipl_folder: props.folder,
+                  maipl_folder: folder,
                   meta: await File.discoverMeta(file),
                   path: file.path ?? file.name,
                   tag,
@@ -196,9 +201,9 @@ export default function FileUpload(props: {
   )
 
   return dz.acceptedFiles.length == 0 ? (
-    <MR.Modal onClose={props.onClose}>
+    <MR.Modal onClose={onClose}>
       <M.Stack spacing={2}>
-        <M.Typography variant="h5" children="Upload Files" />
+        <M.Typography variant="h5" children={`Upload files to: /${folder}`} />
         <M.Box my={5}>
           <M.Box {...dz.getRootProps({ sx: dzStyle })}>
             <input {...dz.getInputProps()} />
@@ -210,7 +215,7 @@ export default function FileUpload(props: {
       </M.Stack>
     </MR.Modal>
   ) : (
-    <MR.Modal onClose={props.onClose}>
+    <MR.Modal onClose={onClose}>
       <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography
           children={`${table.selection.size} files to be uploaded (${filesize(
@@ -253,7 +258,7 @@ export default function FileUpload(props: {
           <M.Stack flexGrow={1} />
           <M.Button
             children={uploadMutation.isLoading ? "Cancel" : "Close"}
-            onClick={props.onClose} // todo: implement cancel and abord upload
+            onClick={onClose} // todo: implement cancel and abort upload
             variant="outlined"
           />
           <M.Button

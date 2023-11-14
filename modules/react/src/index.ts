@@ -1,4 +1,9 @@
-export { type t_context, MaiplProvider, useMaipl } from "./context.tsx"
+export {
+  type t_context,
+  MaiplProvider,
+  MaiplRootProvider,
+  useMaipl,
+} from "./context.tsx"
 
 export { useDebounce, useFilter } from "./hooks.ts"
 

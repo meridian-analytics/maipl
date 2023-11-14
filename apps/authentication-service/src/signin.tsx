@@ -1,49 +1,71 @@
 import { Auth } from "@maipl/api"
+import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
+import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
 
-const Signin = () => {
+// todo: move to js extensions module
+function invariant(condition: unknown, message?: string): asserts condition {
+  if (condition) return
+  const e = import.meta.env.PROD
+    ? "Invariant violation"
+    : `Invariant violation: ${message ?? "truthy value expected"}`
+  throw Error(e)
+}
+
+export default function Signin() {
+  const notify = MR.useNotify()
   const [email, setEmail] = R.useState("")
   const [password, setPassword] = R.useState("")
   const [searchParams, _setSearchParams] = RR.useSearchParams()
   const next = searchParams.get("next")
   const challenge = searchParams.get("challenge")
 
-  async function login(event: R.FormEvent) {
+  const login = (event: R.FormEvent) => {
     event.preventDefault()
-    if (next == null) throw Error("redirect url not found")
-    if (challenge == null) throw Error("pkce challenge not found")
+    if (loginMutation.isIdle) {
+      return loginMutation.mutateAsync([
+        {
+          email,
+          password,
+          next: next!, // validated by invariant
+          challenge: challenge!, // validated by invariant
+        },
+      ])
+    }
+  }
 
-    Auth.login({ email, password, next, challenge })
-      .then(auth => {
+  const loginMutation = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof Auth.login>) => {
+      invariant(next, "redirect url not found")
+      invariant(challenge, "pkce challenge not found")
+      return Auth.login(...vars).then(auth => {
         try {
-          const { origin, pathname } = new URL(next)
-          const app = pathname.split("/").at(1) ?? ""
-          // todo: frontend should specify its own redirect url
-          const redirect = new URL(
-            [
-              "authentication-service",
-              "annotation-tool",
-              "file-service",
-              "model-runner",
-            ].includes(app)
-              ? `/${app}/auth`
-              : "/auth",
-            origin,
-          )
-          redirect.searchParams.set("next", next)
+          const redirect = new URL(next)
           redirect.searchParams.set("code", auth.code)
-          window.location.replace(String(redirect))
-        } catch (error) {
+          return String(redirect)
+        } catch (err) {
           throw Error(`invalid redirect url: ${next}`)
         }
       })
-      .catch(error => {
-        console.error("login error", error)
-      })
-  }
+    },
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not login
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("Signin loginMutation error", err, vars)
+      }
+      loginMutation.reset()
+    },
+    onSuccess: redirect => {
+      window.location.replace(redirect)
+    },
+  })
 
   return (
     <M.Grid container component="main" sx={{ height: "100vh" }}>
@@ -112,6 +134,9 @@ const Signin = () => {
               label="Remember me"
             />
             <M.Button
+              disabled={
+                loginMutation.isLoading || email == "" || password == ""
+              }
               type="submit"
               fullWidth
               variant="contained"
@@ -136,5 +161,3 @@ const Signin = () => {
     </M.Grid>
   )
 }
-
-export default Signin

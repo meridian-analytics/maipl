@@ -10,10 +10,11 @@ import * as R from "react"
 import * as RR from "react-router-dom"
 import * as BatchParameters from "./schema/BatchParametersSchema.ts"
 
-function EditBatch(props: { isNew: boolean; onClose: () => void }) {
+function EditBatch(props: { isNew: boolean }) {
   const params = RR.useParams()
   const batchId = safeParseInteger(params.batchId, null)
   const maipl = MR.useMaipl()
+  const navigate = RR.useNavigate()
 
   const { data: batch, error } = RQ.useQuery({
     queryKey: ["batches", batchId],
@@ -21,16 +22,20 @@ function EditBatch(props: { isNew: boolean; onClose: () => void }) {
     enabled: batchId != null,
   })
 
+  const onClose = () => {
+    navigate(-1)
+  }
+
   if (error) {
     return (
-      <MR.Modal onClose={props.onClose}>
+      <MR.Modal onClose={onClose}>
         <M.Typography>{(error as Error).message}</M.Typography>
       </MR.Modal>
     )
   }
 
   return props.isNew || batchId != null ? (
-    <EditBatch_ key={batch?.id} onClose={props.onClose} batch={batch} />
+    <EditBatch_ key={batch?.id} onClose={onClose} batch={batch} />
   ) : (
     <></>
   )
