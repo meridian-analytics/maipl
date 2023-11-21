@@ -183,7 +183,7 @@ function Detections(props: {
         <M.Button
           children="Save as .CSV"
           color="primary"
-          disabled={exportMutation.isLoading}
+          disabled={exportMutation.isPending}
           onClick={onExport}
           variant="contained"
         />

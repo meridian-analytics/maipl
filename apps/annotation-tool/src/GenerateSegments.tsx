@@ -159,7 +159,7 @@ function GenerateSegments(props: {
           <M.Button
             children="Create"
             color="primary"
-            disabled={segments.length === 0 || createMutation.isLoading}
+            disabled={segments.length === 0 || createMutation.isPending}
             onClick={onCreate}
             variant="contained"
           />

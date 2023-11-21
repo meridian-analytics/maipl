@@ -86,28 +86,34 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
     initialData: {},
   })
 
-  const selectTemplate = RQ.useQuery({
+  const templateQuery = RQ.useQuery({
     enabled: template != "__",
     queryFn: () => fetch(template).then(res => res.text()),
     queryKey: ["templates", template],
-    onError: err => {
+    initialData: "",
+  })
+
+  R.useEffect(() => {
+    if (templateQuery.error) {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="error">
           Error: Could not load template "{template}"
         </M.Alert>
       ))
       if (import.meta.env.DEV) {
-        console.error("EditBatch selectTemplate error", err)
+        console.error("EditBatch selectTemplate error", templateQuery.error)
       }
-    },
-    onSuccess: data => {
+    }
+  }, [templateQuery.error, notify, template])
+
+  R.useEffect(() => {
+    if (templateQuery.data != null) {
       console.warn(
         "EditBatch selectTemplate warning: validate template not implemented",
       ) // todo
-      setForm(data)
-    },
-    initialData: "",
-  })
+      setForm(templateQuery.data)
+    }
+  }, [templateQuery.data, setForm])
 
   const createMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Batch.create>) =>
@@ -135,7 +141,7 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
           }
         </M.Alert>
       ))
-      queryClient.refetchQueries(["batches"])
+      queryClient.refetchQueries({ queryKey: ["batches"] })
       props.onClose()
     },
   })
@@ -203,9 +209,9 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
                 ))}
               </M.Select>
             </M.FormControl>
-            {selectTemplate.isLoading ? (
+            {templateQuery.isLoading ? (
               <I.CloudSyncOutlined />
-            ) : selectTemplate.isError ? (
+            ) : templateQuery.isError ? (
               <I.SyncProblemOutlined color="error" />
             ) : form instanceof Error ? (
               <I.AssignmentLateOutlined color="error" />
@@ -240,7 +246,7 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
             <M.Button
               children="Create"
               color="primary"
-              disabled={createMutation.isLoading}
+              disabled={createMutation.isPending}
               onClick={onCreate}
               variant="contained"
             />

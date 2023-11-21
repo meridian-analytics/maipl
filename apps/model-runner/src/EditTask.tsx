@@ -121,7 +121,7 @@ function EditTask(props: {
           Success: Created task #{task.id}
         </M.Alert>
       ))
-      queryClient.refetchQueries(["tasks"])
+      queryClient.refetchQueries({ queryKey: ["tasks"] })
       props.onClose()
     },
   })
@@ -273,14 +273,14 @@ function EditTask(props: {
         <M.Button
           children="Create"
           color="primary"
-          disabled={createMutation.isLoading}
+          disabled={createMutation.isPending}
           onClick={onCreate}
           variant="contained"
         />
         <M.Button
           children="Cancel"
           color="primary"
-          disabled={createMutation.isLoading}
+          disabled={createMutation.isPending}
           onClick={props.onClose}
           variant="outlined"
         />

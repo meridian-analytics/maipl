@@ -37,7 +37,7 @@ function TaskActions(props: { task: Task.t }) {
       ))
     },
     onSettled: () => {
-      queryClient.refetchQueries(["tasks"])
+      queryClient.refetchQueries({ queryKey: ["tasks"] })
     },
   })
 
@@ -55,7 +55,7 @@ function TaskActions(props: { task: Task.t }) {
         to={`/${props.task.id}/detections`}
       />
       <M.MenuItem
-        disabled={props.task.status != "CREATED" || startMutation.isLoading}
+        disabled={props.task.status != "CREATED" || startMutation.isPending}
         onClick={onStart}
         children="Start"
       />
@@ -95,10 +95,10 @@ export default function TasksTable(props: {
   // hack: refresh tasks every 30 seconds
   R.useEffect(() => {
     const t = setTimeout(() => {
-      queryClient.refetchQueries(["tasks", "list"])
+      queryClient.refetchQueries({ queryKey: ["tasks", "list"] })
     }, 30000)
     return () => clearTimeout(t)
-  })
+  }, [queryClient])
 
   return (
     <M.Stack

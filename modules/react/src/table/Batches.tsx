@@ -46,7 +46,6 @@ function useQuery(props: Batch.t_list_request) {
   const { client, user } = useMaipl()
   return RQ.useQuery({
     enabled: user != null,
-    keepPreviousData: true,
     queryKey: ["batches", "list", props],
     queryFn: () => Batch.list(client, props),
     initialData: () =>

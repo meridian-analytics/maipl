@@ -46,7 +46,6 @@ function useTable(props?: {
 function useQuery(props: Segment.t_list_request) {
   const { client } = useMaipl()
   return RQ.useQuery({
-    keepPreviousData: true,
     queryKey: ["segments", "list", props],
     queryFn: () => Segment.list(client, props),
     initialData: () =>

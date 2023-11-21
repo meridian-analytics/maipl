@@ -55,7 +55,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
           Success: Deleted batch "{props.batch.batch_name}"
         </M.Alert>
       ))
-      queryClient.refetchQueries(["batches"])
+      queryClient.refetchQueries({ queryKey: ["batches"] })
     },
   })
 
@@ -78,7 +78,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
           Success: Exported "{props.batch.batch_name}" to {file.path}`
         </M.Alert>
       ))
-      queryClient.refetchQueries(["files"])
+      queryClient.refetchQueries({ queryKey: ["files"] })
     },
   })
 
@@ -101,7 +101,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
           Success: Started processing batch "{props.batch.batch_name} ..."
         </M.Alert>
       ))
-      queryClient.refetchQueries(["batches"])
+      queryClient.refetchQueries({ queryKey: ["batches"] })
     },
   })
 
@@ -110,19 +110,19 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
   // automatically refresh once in 30 seconds, the processing should be complete by then
   R.useEffect(() => {
     const t = window.setTimeout(() => {
-      queryClient.refetchQueries(["batches"])
+      queryClient.refetchQueries({ queryKey: ["batches"] })
     }, 30000)
     return () => {
       window.clearTimeout(t)
     }
-  })
+  }, [queryClient])
 
   return (
     <MR.Menu icon={<I.Settings />}>
       <M.MenuItem
         children="Submit for processing..."
         disabled={
-          processMutation.isLoading ||
+          processMutation.isPending ||
           status == Batch.t_status.empty ||
           status == Batch.t_status.processing ||
           status == Batch.t_status.success
@@ -144,13 +144,13 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
       />
       <M.MenuItem
         children="Export Annotations"
-        disabled={exportMutation.isLoading}
+        disabled={exportMutation.isPending}
         onClick={onExport}
       />
       <M.Divider />
       <M.MenuItem
         children="Delete"
-        disabled={deleteMutation.isLoading}
+        disabled={deleteMutation.isPending}
         onClick={onDelete}
       />
     </MR.Menu>

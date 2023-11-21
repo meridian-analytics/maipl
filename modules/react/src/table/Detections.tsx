@@ -45,7 +45,6 @@ function useTable(props?: {
 function useQuery(filter?: Detection.t_list_request) {
   const { client } = useMaipl()
   return RQ.useQuery({
-    keepPreviousData: true,
     queryKey: ["detections", "list", filter],
     queryFn: () => Detection.list(client, filter),
     initialData: () =>

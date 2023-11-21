@@ -189,14 +189,14 @@ export default function FileUpload() {
           </M.Alert>
         )
       })
-      queryClient.refetchQueries(["files"])
+      queryClient.refetchQueries({ queryKey: ["files"] })
     },
   })
 
   // checkbox enabled?
   const rowCanSelect = R.useCallback(
     (file: FileState) =>
-      !uploadMutation.isLoading && status.get(file.path) !== "ok",
+      !uploadMutation.isPending && status.get(file.path) !== "ok",
     [uploadMutation, status],
   )
 
@@ -248,7 +248,7 @@ export default function FileUpload() {
         />
         <M.Stack direction="row" spacing={2}>
           <M.TextField
-            disabled={uploadMutation.isLoading}
+            disabled={uploadMutation.isPending}
             label="Tag (optional)"
             onChange={e => setTag(e.currentTarget.value)}
             size="small"
@@ -257,13 +257,13 @@ export default function FileUpload() {
           />
           <M.Stack flexGrow={1} />
           <M.Button
-            children={uploadMutation.isLoading ? "Cancel" : "Close"}
+            children={uploadMutation.isPending ? "Cancel" : "Close"}
             onClick={onClose} // todo: implement cancel and abort upload
             variant="outlined"
           />
           <M.Button
-            children={uploadMutation.isLoading ? "Please wait ..." : "Upload"}
-            disabled={uploadMutation.isLoading || table.selection.size == 0}
+            children={uploadMutation.isPending ? "Please wait ..." : "Upload"}
+            disabled={uploadMutation.isPending || table.selection.size == 0}
             onClick={onUpload}
             variant="contained"
           />

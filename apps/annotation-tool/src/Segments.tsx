@@ -50,7 +50,7 @@ function Actions(props: {
         </M.Alert>
       ))
       props.setSelection(new Map())
-      queryClient.refetchQueries(["segments"])
+      queryClient.refetchQueries({ queryKey: ["segments"] })
     },
   })
 
@@ -68,7 +68,7 @@ function Actions(props: {
       />
       <MR.ActionButton
         children={<I.DeleteForever />}
-        disabled={props.selection.size == 0 || deleteMutation.isLoading}
+        disabled={props.selection.size == 0 || deleteMutation.isPending}
         onClick={onDelete}
         title={
           props.selection.size == 0

@@ -74,32 +74,37 @@ function FileEditor_(props: {
       )
     }, [props.file, path])
 
-  RQ.useQuery({
-    initialData: "",
+  const valueQuery = RQ.useQuery({
     enabled: props.file != null,
     queryKey: ["files", props.file?.file],
-    queryFn: () => {
+    queryFn: context => {
       lastSavedValue.current = null
-      return fetch(props.file!.file)
+      return fetch(props.file!.file, { signal: context.signal })
         .then(r => r.arrayBuffer())
         .then(buffer => new TextDecoder("utf-8").decode(buffer))
     },
-    onSuccess: value => {
-      lastSavedValue.current = value
-      setValue(value)
-    },
-    onError: err => {
+  })
+
+  R.useEffect(() => {
+    if (valueQuery.error) {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="error">
           Error: Could not load file "{props.file?.path}"
         </M.Alert>
       ))
       if (import.meta.env.DEV) {
-        console.error("FileEditor could not load file", err)
+        console.error("FileEditor could not load file", valueQuery.error)
       }
       setValue("")
-    },
-  })
+    }
+  }, [valueQuery.error, notify, props.file, setValue])
+
+  R.useEffect(() => {
+    if (valueQuery.data != null) {
+      lastSavedValue.current = valueQuery.data
+      setValue(valueQuery.data)
+    }
+  }, [valueQuery.data, lastSavedValue, setValue])
 
   const createMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof File.create>) => File.create(...vars),
@@ -119,7 +124,7 @@ function FileEditor_(props: {
           Success: Created file "{file.path}"
         </M.Alert>
       ))
-      queryClient.refetchQueries(["files"])
+      queryClient.refetchQueries({ queryKey: ["files"] })
       props.onClose()
     },
   })
@@ -132,7 +137,7 @@ function FileEditor_(props: {
           Success: Updated file "{file.path}""
         </M.Alert>
       ))
-      queryClient.refetchQueries(["files"])
+      queryClient.refetchQueries({ queryKey: ["files"] })
       props.onClose()
     },
     onError: (err, vars) => {
@@ -187,7 +192,7 @@ function FileEditor_(props: {
     } else {
       return tag != props.file.tag || value != lastSavedValue.current
     }
-  }, [props.file?.tag, tag, value])
+  }, [props.file, tag, value, lastSavedValue])
 
   return (
     <MR.Modal
@@ -260,7 +265,7 @@ function FileEditor_(props: {
             <M.Button
               color="success"
               children="Create"
-              disabled={hasUnsavedChanges == false || createMutation.isLoading}
+              disabled={hasUnsavedChanges == false || createMutation.isPending}
               onClick={onCreate}
               variant="contained"
             />
@@ -268,7 +273,7 @@ function FileEditor_(props: {
             <M.Button
               color="success"
               children="Save"
-              disabled={hasUnsavedChanges == false || updateMutation.isLoading}
+              disabled={hasUnsavedChanges == false || updateMutation.isPending}
               onClick={onUpdate}
               variant="contained"
             />

@@ -89,11 +89,14 @@ function PreloadedAnnotationTool(props: {
     queryKey: ["annotations", segment?.id],
     queryFn: () =>
       Annotation.readSegment(maipl.client, props.batch.id, segment!.id),
-    onSuccess(data) {
-      setRegions(new Map(data.map(a => [a.id, a.region])))
-    },
     enabled: segment != null,
   })
+
+  R.useEffect(() => {
+    if (annotations.data) {
+      setRegions(new Map(annotations.data.map(a => [a.id, a.region])))
+    }
+  }, [annotations.data, setRegions])
 
   const axes = useAxes(() => {
     return {
@@ -148,7 +151,7 @@ function PreloadedAnnotationTool(props: {
           Success: Saved {segments.length} annotations
         </M.Alert>
       ))
-      queryClient.refetchQueries(["annotations", segment?.id])
+      queryClient.refetchQueries({ queryKey: ["annotations", segment?.id] })
     },
   })
 
@@ -235,7 +238,7 @@ function PreloadedAnnotationTool(props: {
               <M.Stack direction="row" spacing={2}>
                 <M.Button
                   children="Save"
-                  disabled={saveMutation.isLoading}
+                  disabled={saveMutation.isPending}
                   onClick={onSave}
                   variant="contained"
                 />

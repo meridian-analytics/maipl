@@ -15,7 +15,7 @@
     "@rjsf/mui": "^5.13.0",
     "@rjsf/utils": "^5.13.0",
     "@rjsf/validator-ajv8": "^5.13.0",
-    "@tanstack/react-query": "^4.35.7",
+    "@tanstack/react-query": "^5.8.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
@@ -24,7 +24,7 @@
     "specviz-react": "git+https://git-dev.cs.dal.ca/meridian/specviz-react"
   },
   "devDependencies": {
-    "@tanstack/react-query-devtools": "^4.35.7",
+    "@tanstack/react-query-devtools": "^5.8.4",
     "@types/json-schema": "^7.0.13",
     "@types/react": "^18.2.25",
     "@types/react-dom": "^18.2.10",

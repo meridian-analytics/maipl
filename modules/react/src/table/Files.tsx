@@ -53,7 +53,6 @@ function useQuery(props: File.t_list_request) {
   const { client, user } = useMaipl()
   return RQ.useQuery({
     enabled: user != null,
-    keepPreviousData: true,
     queryKey: ["files", "list", props],
     queryFn: () => File.list(client, props),
     initialData: () =>

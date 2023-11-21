@@ -126,7 +126,7 @@ export default function AddToBatch(props: {
           <M.Button
             children="Submit"
             color="primary"
-            disabled={selection.size == 0 || addMutation.isLoading}
+            disabled={selection.size == 0 || addMutation.isPending}
             onClick={onAdd}
             variant="contained"
           />

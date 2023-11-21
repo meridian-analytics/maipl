@@ -31,7 +31,6 @@ function useTable(props?: {
 function useQuery(props?: Task.t_list_request) {
   const { client } = useMaipl()
   return RQ.useQuery({
-    keepPreviousData: true,
     queryKey: ["tasks", "list", props],
     queryFn: () => Task.list(client, props),
     initialData: [],

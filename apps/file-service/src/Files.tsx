@@ -27,7 +27,7 @@ function SelectionActions(props: {
       props.setSelection(new Map())
       // bug: how to handle when deleting all items on last page?
       // setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
-      queryClient.refetchQueries(["files"])
+      queryClient.refetchQueries({ queryKey: ["files"] })
     }
   }
 
