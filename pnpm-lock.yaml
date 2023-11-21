@@ -69,8 +69,8 @@ importers:
         specifier: ^4.0.11
         version: 4.0.11(react@18.2.0)
       react-router-dom:
-        specifier: ^6.16.0
-        version: 6.16.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^6.19.0
+        version: 6.19.0(react-dom@18.2.0)(react@18.2.0)
       specviz-react:
         specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react
         version: git-dev.cs.dal.ca/meridian/specviz-react/7d3e03eebb6bb31c54dd0e38a2d4fa9d989d30ea
@@ -124,8 +124,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       react-router-dom:
-        specifier: ^6.16.0
-        version: 6.16.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^6.19.0
+        version: 6.19.0(react-dom@18.2.0)(react@18.2.0)
     devDependencies:
       '@tanstack/react-query-devtools':
         specifier: ^5.8.4
@@ -191,8 +191,8 @@ importers:
         specifier: ^14.2.3
         version: 14.2.3(react@18.2.0)
       react-router-dom:
-        specifier: ^6.16.0
-        version: 6.16.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^6.19.0
+        version: 6.19.0(react-dom@18.2.0)(react@18.2.0)
     devDependencies:
       '@tanstack/react-query-devtools':
         specifier: ^5.8.4
@@ -246,8 +246,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       react-router-dom:
-        specifier: ^6.16.0
-        version: 6.16.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^6.19.0
+        version: 6.19.0(react-dom@18.2.0)(react@18.2.0)
     devDependencies:
       '@tanstack/react-query-devtools':
         specifier: ^5.8.4
@@ -361,8 +361,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       react-router-dom:
-        specifier: ^6.16.0
-        version: 6.16.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^6.19.0
+        version: 6.19.0(react-dom@18.2.0)(react@18.2.0)
 
   modules/tree:
     dependencies:
@@ -1267,8 +1267,8 @@ packages:
     resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
     dev: false
 
-  /@remix-run/router@1.9.0:
-    resolution: {integrity: sha512-bV63itrKBC0zdT27qYm6SDZHlkXwFL1xMBuhkn+X7l0+IIhNaH5wuuvZKp6eKhCD4KFhujhfhCT1YxXW6esUIA==}
+  /@remix-run/router@1.12.0:
+    resolution: {integrity: sha512-2hXv036Bux90e1GXTWSMfNzfDDK8LA8JYEWfyHxzvwdp6GyoWEovKc9cotb3KCKmkdwsIBuFGX7ScTWyiHv7Eg==}
     engines: {node: '>=14.0.0'}
     dev: false
 
@@ -1997,26 +1997,26 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: true
 
-  /react-router-dom@6.16.0(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-aTfBLv3mk/gaKLxgRDUPbPw+s4Y/O+ma3rEN1u8EgEpLpPe6gNjIsWt9rxushMHHMb7mSwxRGdGlGdvmFsyPIg==}
+  /react-router-dom@6.19.0(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-N6dWlcgL2w0U5HZUUqU2wlmOrSb3ighJmtQ438SWbhB1yuLTXQ8yyTBMK3BSvVjp7gBtKurT554nCtMOgxCZmQ==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       react: '>=16.8'
       react-dom: '>=16.8'
     dependencies:
-      '@remix-run/router': 1.9.0
+      '@remix-run/router': 1.12.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      react-router: 6.16.0(react@18.2.0)
+      react-router: 6.19.0(react@18.2.0)
     dev: false
 
-  /react-router@6.16.0(react@18.2.0):
-    resolution: {integrity: sha512-VT4Mmc4jj5YyjpOi5jOf0I+TYzGpvzERy4ckNSvSh2RArv8LLoCxlsZ2D+tc7zgjxcY34oTz2hZaeX5RVprKqA==}
+  /react-router@6.19.0(react@18.2.0):
+    resolution: {integrity: sha512-0W63PKCZ7+OuQd7Tm+RbkI8kCLmn4GPjDbX61tWljPxWgqTKlEpeQUwPkT1DRjYhF8KSihK0hQpmhU4uxVMcdw==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       react: '>=16.8'
     dependencies:
-      '@remix-run/router': 1.9.0
+      '@remix-run/router': 1.12.0
       react: 18.2.0
     dev: false
 
