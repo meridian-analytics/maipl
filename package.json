@@ -5,7 +5,7 @@
     "@check": "biome check .",
     "@format": "biome format --write .",
     "@build": "tsc && pnpm -F \"./apps/*\" build",
-    "@preview": "pnpm -F \"./apps/*\" preview",
+    "@preview": "docker compose up --build",
     "@start": "pnpm -F \"./apps/*\" start",
     "@tsc": "tsc"
   },
