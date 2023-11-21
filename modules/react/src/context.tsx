@@ -193,7 +193,9 @@ function MaiplContextProvider(props: {
   return (
     <MaiplContext.Provider value={context}>
       <RR.RouterProvider router={router} />
-      {K.MAIPL_REACT_QUERY_DEVTOOLS && <ReactQueryDevtools />}
+      {K.MAIPL_REACT_QUERY_DEVTOOLS && (
+        <ReactQueryDevtools buttonPosition="bottom-left" />
+      )}
     </MaiplContext.Provider>
   )
 }
