@@ -106,6 +106,14 @@ function FileEditor_(props: {
     }
   }, [valueQuery.data, lastSavedValue, setValue])
 
+  R.useEffect(() => {
+    if (props.file) {
+      setPath(props.file.path)
+      setFolder(props.file.maipl_folder)
+      setTag(props.file.tag)
+    }
+  }, [props.file, setPath, setFolder, setTag])
+
   const createMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof File.create>) => File.create(...vars),
     onError: (err, vars) => {
