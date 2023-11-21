@@ -32,10 +32,10 @@ function useTable(props?: {
   const filter = useFilter({ path: props?.path ?? "", tag: props?.tag ?? "" })
   const debouncedFilter = useDebounce(filter, props?.debounceDelay)
 
-  // hack: fixes bug above in queryParams
+  // biome-ignore lint/correctness/useExhaustiveDependencies: hack fixes bug above in queryParams
   R.useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
-  }, [debouncedFilter.get("path"), debouncedFilter.get("tag")])
+  }, [setPagination, debouncedFilter.get("path"), debouncedFilter.get("tag")])
 
   return {
     folder,

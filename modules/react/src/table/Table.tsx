@@ -105,7 +105,14 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
         ...(columns ?? []),
         ...(props.columns ?? []),
       ],
-      [columns, props.columns, props.rowCanSelect, props.selection],
+      [
+        columnHelper,
+        columns,
+        props.columns,
+        props.rowCanSelect,
+        props.selection,
+        props.setSelection,
+      ],
     )
 
     // hack: react-table should be paginating preloaded arrays

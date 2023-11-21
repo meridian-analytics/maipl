@@ -120,7 +120,7 @@ function MaiplContextProvider(props: {
         return undefined as R
       }
     },
-    [refresh],
+    [refresh, setAccess, setRefresh],
   )
 
   // client
@@ -222,6 +222,7 @@ function BeginAuthFlow() {
   )
   R.useEffect(() => {
     async function redirect() {
+      // todo next invariant
       // create verifier and challenge
       const verifier = PKCE.createVerifier()
       localStorage.setItem("code_verifier", verifier)
@@ -235,7 +236,7 @@ function BeginAuthFlow() {
     redirect().catch(err => {
       console.error("failed to redirect to login", err)
     })
-  }, [])
+  }, [next])
   return <></>
 }
 
@@ -273,7 +274,7 @@ function CompleteAuthFlow() {
     redirect().catch(err => {
       console.error("failed to redirect after login", err)
     })
-  }, [next, code])
+  }, [next, code, verifier])
   return <></>
 }
 

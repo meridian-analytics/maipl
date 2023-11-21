@@ -79,7 +79,7 @@ function PreloadedAnnotationTool(props: {
         ),
       }),
     ],
-    [],
+    [props.batch],
   )
 
   const [regions, setRegions] = useRegionState()
