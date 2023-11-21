@@ -1,10 +1,12 @@
 # build
-FROM node:18 as build
+FROM node:20-alpine as build
 WORKDIR /build
 
 # pnpm
 RUN corepack enable
-RUN corepack prepare pnpm@latest --activate
+
+# git
+RUN apk add git
 
 # dependencies
 COPY package.json package.json
