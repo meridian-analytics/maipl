@@ -1,19 +1,11 @@
 import { Auth } from "@maipl/api"
+import * as JS from "@maipl/js"
 import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
-
-// todo: move to js extensions module
-function invariant(condition: unknown, message?: string): asserts condition {
-  if (condition) return
-  const e = import.meta.env.PROD
-    ? "Invariant violation"
-    : `Invariant violation: ${message ?? "truthy value expected"}`
-  throw Error(e)
-}
 
 export default function Signin() {
   const notify = MR.useNotify()
@@ -39,8 +31,8 @@ export default function Signin() {
 
   const loginMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Auth.login>) => {
-      invariant(next, "redirect url not found")
-      invariant(challenge, "pkce challenge not found")
+      JS.invariant(next, "redirect url not found")
+      JS.invariant(challenge, "pkce challenge not found")
       return Auth.login(...vars).then(auth => {
         try {
           const redirect = new URL(next)

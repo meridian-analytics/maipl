@@ -10,6 +10,7 @@
     "@maipl/async": "workspace:*",
     "@maipl/constants": "workspace:*",
     "@maipl/format": "workspace:*",
+    "@maipl/js": "workspace:^",
     "@maipl/pkce": "workspace:*",
     "@mui/icons-material": "^5.14.18",
     "@mui/material": "^5.14.18",

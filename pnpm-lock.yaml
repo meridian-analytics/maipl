@@ -105,6 +105,9 @@ importers:
       '@maipl/api':
         specifier: workspace:*
         version: link:../../modules/api
+      '@maipl/js':
+        specifier: workspace:^
+        version: link:../../modules/js
       '@maipl/react':
         specifier: workspace:*
         version: link:../../modules/react
@@ -301,6 +304,8 @@ importers:
 
   modules/format: {}
 
+  modules/js: {}
+
   modules/pkce:
     dependencies:
       '@maipl/buffer':
@@ -327,6 +332,9 @@ importers:
       '@maipl/format':
         specifier: workspace:*
         version: link:../format
+      '@maipl/js':
+        specifier: workspace:^
+        version: link:../js
       '@maipl/pkce':
         specifier: workspace:*
         version: link:../pkce

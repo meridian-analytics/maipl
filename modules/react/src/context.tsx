@@ -1,6 +1,7 @@
 import { Auth, Client, Profile, User } from "@maipl/api"
 import * as Async from "@maipl/async"
 import * as K from "@maipl/constants"
+import * as JS from "@maipl/js"
 import * as PKCE from "@maipl/pkce"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
@@ -9,15 +10,6 @@ import * as A from "axios"
 import * as R from "react"
 import * as RR from "react-router-dom"
 import * as MR from "./index.ts"
-
-// todo: move to js extensions module
-function invariant(condition: unknown, message?: string): asserts condition {
-  if (condition) return
-  const e = import.meta.env.PROD
-    ? "Invariant violation"
-    : `Invariant violation: ${message ?? "truthy value expected"}`
-  throw Error(e)
-}
 
 type t_context = {
   client: Client.t
@@ -259,14 +251,14 @@ function CompleteAuthFlow() {
   R.useEffect(() => {
     async function redirect() {
       // invariants
-      invariant(verifier, "code verifier not found")
-      invariant(code, "authorization code not found")
-      invariant(next, "redirect url not found")
+      JS.invariant(verifier, "code verifier not found")
+      JS.invariant(code, "authorization code not found")
+      JS.invariant(next, "redirect url not found")
       // get tokens
       const { access, refresh } = await Auth.tokens({ code, verifier })
       // persist
-      invariant(access, "access token not found")
-      invariant(refresh, "refresh token not found")
+      JS.invariant(access, "access token not found")
+      JS.invariant(refresh, "refresh token not found")
       localStorage.removeItem("code_verifier")
       localStorage.setItem("access", access)
       localStorage.setItem("refresh", refresh)
