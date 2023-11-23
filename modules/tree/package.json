@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "dependencies": {
-    "@maipl/format": "workspace:*"
+    "@maipl/format": "workspace:^"
   },
   "exports": {
     ".": "./src/index.ts"

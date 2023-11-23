@@ -27,13 +27,13 @@ importers:
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.38)(react@18.2.0)
       '@maipl/api':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../modules/api
       '@maipl/format':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../modules/format
       '@maipl/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../modules/react
       '@mui/icons-material':
         specifier: ^5.14.18
@@ -103,13 +103,13 @@ importers:
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.38)(react@18.2.0)
       '@maipl/api':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../modules/api
       '@maipl/js':
         specifier: workspace:^
         version: link:../../modules/js
       '@maipl/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../modules/react
       '@mui/icons-material':
         specifier: ^5.14.18
@@ -155,19 +155,19 @@ importers:
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.38)(react@18.2.0)
       '@maipl/api':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../modules/api
       '@maipl/format':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../modules/format
       '@maipl/js':
         specifier: workspace:^
         version: link:../../modules/js
       '@maipl/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../modules/react
       '@maipl/tree':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../modules/tree
       '@monaco-editor/react':
         specifier: ^4.6.0
@@ -231,13 +231,13 @@ importers:
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.38)(react@18.2.0)
       '@maipl/api':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../modules/api
       '@maipl/format':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../modules/format
       '@maipl/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../modules/react
       '@mui/icons-material':
         specifier: ^5.14.18
@@ -277,16 +277,16 @@ importers:
   modules/api:
     dependencies:
       '@maipl/buffer':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../buffer
       '@maipl/constants':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../constants
       '@maipl/csv':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../csv
       '@maipl/format':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../format
       '@maipl/js':
         specifier: workspace:^
@@ -302,7 +302,7 @@ importers:
   modules/constants:
     dependencies:
       '@maipl/format':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../format
     devDependencies:
       vite:
@@ -318,7 +318,7 @@ importers:
   modules/pkce:
     dependencies:
       '@maipl/buffer':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../buffer
 
   modules/react:
@@ -330,22 +330,22 @@ importers:
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.38)(react@18.2.0)
       '@maipl/api':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../api
       '@maipl/async':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../async
       '@maipl/constants':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../constants
       '@maipl/format':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../format
       '@maipl/js':
         specifier: workspace:^
         version: link:../js
       '@maipl/pkce':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../pkce
       '@mui/icons-material':
         specifier: ^5.14.18
@@ -384,7 +384,7 @@ importers:
   modules/tree:
     dependencies:
       '@maipl/format':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../format
 
 packages:
