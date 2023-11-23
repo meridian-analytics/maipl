@@ -160,6 +160,9 @@ importers:
       '@maipl/format':
         specifier: workspace:*
         version: link:../../modules/format
+      '@maipl/js':
+        specifier: workspace:^
+        version: link:../../modules/js
       '@maipl/react':
         specifier: workspace:*
         version: link:../../modules/react
@@ -282,6 +285,9 @@ importers:
       '@maipl/format':
         specifier: workspace:*
         version: link:../format
+      '@maipl/js':
+        specifier: workspace:^
+        version: link:../js
       axios:
         specifier: ^1.5.1
         version: 1.5.1

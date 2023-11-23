@@ -212,18 +212,19 @@ function FileEditor_(props: {
           {props.file == null ? "Create new file ..." : props.file.basename}
         </M.Typography>
         <M.Stack direction="row" spacing={2}>
-          <MR.MaiplFolderPicker
-            folder={folder}
-            folders={[
-              "public",
-              "annotation",
-              "config",
-              "dataset",
-              "model",
-              "raw",
-            ]}
-            setFolder={setFolder}
+          <MR.Picker
             disabled={true}
+            label="Folder"
+            setValue={setFolder}
+            value={folder}
+            values={[
+              File.t_maipl_folder.public,
+              File.t_maipl_folder.annotation,
+              File.t_maipl_folder.config,
+              File.t_maipl_folder.dataset,
+              File.t_maipl_folder.model,
+              File.t_maipl_folder.raw,
+            ]}
           />
           <M.TextField
             fullWidth

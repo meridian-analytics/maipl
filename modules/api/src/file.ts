@@ -1,17 +1,29 @@
 import { hexDigest, sha256 } from "@maipl/buffer"
 import * as K from "@maipl/constants"
+import * as JS from "@maipl/js"
 import * as A from "axios"
 import * as Client from "./client.ts"
 import * as Meta from "./meta.ts"
 import { t_page, t_page_params } from "./types.ts"
 
-type t_maipl_folder =
-  | "public"
-  | "annotation"
-  | "config"
-  | "dataset"
-  | "model"
-  | "raw"
+export function invariantMaiplFolder(
+  folder: string,
+): asserts folder is t_maipl_folder {
+  JS.invariant(
+    folder in t_maipl_folder,
+    `"${folder}" is not a valid maipl folder`,
+  )
+}
+
+/** File.t_maipl_folder */
+enum t_maipl_folder {
+  public = "public",
+  annotation = "annotation",
+  config = "config",
+  dataset = "dataset",
+  model = "model",
+  raw = "raw",
+}
 
 /** File.t represents files that have already been uploaded */
 type t = {
@@ -282,7 +294,7 @@ export {
   type t_get_response,
   type t_list_request,
   type t_list_response,
-  type t_maipl_folder,
+  t_maipl_folder, // enum
   type t_update_request,
   type t_update_response,
   type t_usage,

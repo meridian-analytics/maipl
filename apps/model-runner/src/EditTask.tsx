@@ -67,7 +67,7 @@ function EditTask(props: {
   const [threshold, setThreshold] = R.useState(() => props.task?.threshold ?? 0)
 
   const { data: models } = MR.Files.useQuery({
-    maipl_folder: "model",
+    maipl_folder: File.t_maipl_folder.model,
     page: 1, // bug: when query changes, page needs to be reset
     size: 100,
   })
@@ -231,10 +231,15 @@ function EditTask(props: {
         Input Files
       </M.Typography>
       <M.Stack direction="row" spacing={2}>
-        <MR.MaiplFolderPicker
-          folder={folder}
-          folders={["public", "dataset", "raw"]}
-          setFolder={setFolder}
+        <MR.Picker
+          label="Folder"
+          setValue={setFolder}
+          value={folder}
+          values={[
+            File.t_maipl_folder.public,
+            File.t_maipl_folder.dataset,
+            File.t_maipl_folder.raw,
+          ]}
         />
         <M.TextField
           size="small"

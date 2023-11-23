@@ -66,17 +66,18 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
         />
       )}
       <M.Stack direction="row" spacing={2}>
-        <MR.MaiplFolderPicker
-          folder={folder}
-          folders={[
-            "public",
-            "annotation",
-            "config",
-            "dataset",
-            "model",
-            "raw",
+        <MR.Picker
+          label="Folder"
+          setValue={setFolder}
+          value={folder}
+          values={[
+            File.t_maipl_folder.public,
+            File.t_maipl_folder.annotation,
+            File.t_maipl_folder.config,
+            File.t_maipl_folder.dataset,
+            File.t_maipl_folder.model,
+            File.t_maipl_folder.raw,
           ]}
-          setFolder={setFolder}
         />
         <M.TextField
           label="Path"

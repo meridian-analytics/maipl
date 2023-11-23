@@ -171,20 +171,21 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
     >
       <RR.Outlet />
       <M.Stack direction="row" spacing={2}>
-        <MR.MaiplFolderPicker
-          folder={folder}
-          folders={[
-            "public",
-            "annotation",
-            "config",
-            "dataset",
-            "model",
-            "raw",
-          ]}
-          setFolder={(folder: File.t_maipl_folder) => {
+        <MR.Picker
+          label="Folder"
+          setValue={folder => {
             setSearch({ folder }, { replace: true })
             setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
           }}
+          value={folder}
+          values={[
+            File.t_maipl_folder.public,
+            File.t_maipl_folder.annotation,
+            File.t_maipl_folder.config,
+            File.t_maipl_folder.dataset,
+            File.t_maipl_folder.model,
+            File.t_maipl_folder.raw,
+          ]}
         />
         <M.TextField
           size="small"

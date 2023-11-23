@@ -8,6 +8,7 @@
     "@maipl/constants": "workspace:*",
     "@maipl/csv": "workspace:*",
     "@maipl/format": "workspace:*",
+    "@maipl/js": "workspace:^",
     "axios": "^1.5.1"
   },
   "exports": {

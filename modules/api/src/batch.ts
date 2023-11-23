@@ -198,7 +198,7 @@ const export_ = async (client: Client.t, id: number): Promise<File.t> => {
       filename,
       { type: "text/csv" },
     ),
-    maipl_folder: "annotation",
+    maipl_folder: File.t_maipl_folder.annotation,
     meta: {
       maipl: "annotations",
       batch: id,

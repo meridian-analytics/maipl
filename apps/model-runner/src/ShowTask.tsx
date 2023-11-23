@@ -133,10 +133,15 @@ function ShowTask(props: {
         Input Files
       </M.Typography>
       <M.Stack direction="row" spacing={2}>
-        <MR.MaiplFolderPicker
-          folder={folder}
-          folders={["public", "dataset", "raw"]}
-          setFolder={setFolder}
+        <MR.Picker
+          label="Folder"
+          setValue={setFolder}
+          value={folder}
+          values={[
+            File.t_maipl_folder.public,
+            File.t_maipl_folder.dataset,
+            File.t_maipl_folder.raw,
+          ]}
         />
         <M.TextField
           size="small"

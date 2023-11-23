@@ -35,10 +35,10 @@ export {
   ActionButton,
   Dashboard,
   Filter,
-  MaiplFolderPicker,
   Menu,
   Modal,
   Navbar,
+  Picker,
   Profile,
   theme,
 } from "./ui.tsx"
