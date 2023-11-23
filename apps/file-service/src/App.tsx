@@ -1,21 +1,13 @@
 import * as MR from "@maipl/react"
+import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import FileEditor from "./FileEditor.tsx"
-import FileUpload from "./FileUpload.tsx"
-import Files from "./Files.tsx"
+import { EditFile, NewFile } from "./FileEditor.tsx"
+import * as FileUpload from "./FileUpload.tsx"
+import * as Files from "./Files.tsx"
 
 export default function App() {
-  return (
-    <MR.MaiplProvider
-      routes={[
-        {
-          element: <Layout />,
-          children: routes,
-        },
-      ]}
-    />
-  )
+  return <MR.MaiplProvider router={router} />
 }
 
 function Layout() {
@@ -34,23 +26,64 @@ function Layout() {
   )
 }
 
-const routes: Array<RR.RouteObject> = [
+const router: MR.t_router = context => [
   {
-    path: "/",
-    element: <Files />,
+    element: <Layout />,
     children: [
       {
-        path: "upload",
-        element: <FileUpload />,
-      },
-      {
-        path: "new",
-        element: <FileEditor />,
-      },
-      {
-        path: ":fileId/edit",
-        element: <FileEditor />,
+        path: "/",
+        element: Files.element,
+        errorElement: <ErrorModal />,
+        loader: Files.loader(context),
+        children: [
+          {
+            path: "upload",
+            element: FileUpload.element,
+            errorElement: <ErrorModal />,
+            loader: FileUpload.loader(context),
+          },
+          {
+            path: "new",
+            element: NewFile.element,
+            errorElement: <ErrorModal />,
+            loader: NewFile.loader(context),
+          },
+          {
+            path: ":fileId/edit",
+            element: EditFile.element,
+            errorElement: <ErrorModal />,
+            loader: EditFile.loader(context),
+          },
+        ],
       },
     ],
   },
 ]
+
+function ErrorModal() {
+  const error = RR.useRouteError() as Error
+  const navigate = RR.useNavigate()
+  return (
+    <MR.Modal onClose={() => navigate(-1)}>
+      <M.Stack spacing={2} padding={2}>
+        <M.Stack direction="row" alignItems="center" spacing={2}>
+          <I.PestControl fontSize="large" />
+          <M.Typography variant="h4">Bugger!</M.Typography>
+        </M.Stack>
+        <M.Alert severity="error">
+          {import.meta.env.PROD
+            ? "Oops, something went wrong..."
+            : error.message}
+        </M.Alert>
+        <M.Stack direction="row-reverse">
+          <M.Button
+            color="primary"
+            children="Go Back"
+            size="small"
+            variant="contained"
+          />
+        </M.Stack>
+      </M.Stack>
+    </MR.Modal>
+  )
+}

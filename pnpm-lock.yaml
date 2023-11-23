@@ -199,6 +199,9 @@ importers:
       react-router-dom:
         specifier: ^6.19.0
         version: 6.19.0(react-dom@18.2.0)(react@18.2.0)
+      react-router-typesafe:
+        specifier: ^1.4.4
+        version: 1.4.4(react-router-dom@6.19.0)(react@18.2.0)(typescript@5.3.2)
     devDependencies:
       '@tanstack/react-query-devtools':
         specifier: ^5.8.4
@@ -2022,6 +2025,18 @@ packages:
       react-router: 6.19.0(react@18.2.0)
     dev: false
 
+  /react-router-typesafe@1.4.4(react-router-dom@6.19.0)(react@18.2.0)(typescript@5.3.2):
+    resolution: {integrity: sha512-XYYwRabe7UoEBZ229Jeg2U4dfU3XvUToX9FTUkJjzDSN+2B4fAIeEKsr961PsA/xJ5bSCd7LwDf0A1deniAdRw==}
+    peerDependencies:
+      react: '>= 17'
+      react-router-dom: '>= 6.4.0'
+      typescript: '>= 4.9'
+    dependencies:
+      react: 18.2.0
+      react-router-dom: 6.19.0(react-dom@18.2.0)(react@18.2.0)
+      typescript: 5.3.2
+    dev: false
+
   /react-router@6.19.0(react@18.2.0):
     resolution: {integrity: sha512-0W63PKCZ7+OuQd7Tm+RbkI8kCLmn4GPjDbX61tWljPxWgqTKlEpeQUwPkT1DRjYhF8KSihK0hQpmhU4uxVMcdw==}
     engines: {node: '>=14.0.0'}
@@ -2134,7 +2149,6 @@ packages:
     resolution: {integrity: sha512-6l+RyNy7oAHDfxC4FzSJcz9vnjTKxrLpDG5M2Vu4SHRVNg6xzqZp6LYSR9zjqQTu8DU/f5xwxUdADOkbrIX2gQ==}
     engines: {node: '>=14.17'}
     hasBin: true
-    dev: true
 
   /undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}

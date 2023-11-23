@@ -1,5 +1,7 @@
 export {
+  type t_client,
   type t_context,
+  type t_router,
   MaiplProvider,
   MaiplRootProvider,
   useMaipl,
@@ -8,8 +10,9 @@ export {
 export { useDebounce, useFilter } from "./hooks.ts"
 
 export {
-  type t_notification,
   type t_notification_context,
+  type t_notification,
+  type t_notify,
   NotificationProvider,
   Notifications,
   useNotify,

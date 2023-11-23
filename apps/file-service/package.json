@@ -20,7 +20,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
-    "react-router-dom": "^6.19.0"
+    "react-router-dom": "^6.19.0",
+    "react-router-typesafe": "^1.4.4"
   },
   "devDependencies": {
     "@tanstack/react-query-devtools": "^5.8.4",

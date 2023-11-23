@@ -6,6 +6,20 @@ import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
+import * as RRT from "react-router-typesafe"
+
+export const element = <Files />
+
+export const loader = (_maipl: MR.t_context) =>
+  (async ({ request }) => {
+    // folder query param
+    const url = new URL(request.url)
+    const search = url.searchParams
+    const folder = search.get("folder") ?? "public"
+    File.invariantMaiplFolder(folder)
+    // payload
+    return { folder }
+  }) satisfies RR.LoaderFunction
 
 function SelectionActions(props: {
   selection: ReturnType<typeof MR.Files.useTable>["selection"]
@@ -95,7 +109,7 @@ function FileActions(props: { file: File.t }) {
   )
 }
 
-export default function FilesTable(props: { sx?: M.SxProps }) {
+export default function Files(props: { sx?: M.SxProps }) {
   const {
     debouncedFilter,
     filter,
@@ -105,8 +119,8 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
     setSelection,
   } = MR.Files.useTable()
 
-  const [search, setSearch] = RR.useSearchParams()
-  const folder = (search.get("folder") ?? "public") as File.t_maipl_folder
+  const [_search, setSearch] = RR.useSearchParams()
+  const { folder } = RRT.useLoaderData<ReturnType<typeof loader>>()
 
   const extraColumns = R.useMemo(
     () =>

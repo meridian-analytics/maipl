@@ -8,17 +8,7 @@ import Files from "./Files.tsx"
 import Segments from "./Segments.tsx"
 
 export default function App() {
-  return (
-    <MR.MaiplProvider
-      routes={[
-        {
-          path: "/",
-          element: <Layout />,
-          children: routes,
-        },
-      ]}
-    />
-  )
+  return <MR.MaiplProvider router={router} />
 }
 
 function Layout() {
@@ -70,40 +60,46 @@ function LocalNavigation() {
   )
 }
 
-const routes: Array<RR.RouteObject> = [
+const router: MR.t_router = () => [
   {
-    index: true,
-    element: <RR.Navigate to="/files" replace />,
-  },
-  {
-    path: "files",
-    element: <Files />,
-  },
-  {
-    path: "batches",
-    element: <Batches />,
+    path: "/",
+    element: <Layout />,
     children: [
       {
-        path: ":batchId",
-        element: <EditBatch isNew={false} />,
+        index: true,
+        element: <RR.Navigate to="/files" replace />,
       },
       {
-        path: "new",
-        element: <EditBatch isNew={true} />,
+        path: "files",
+        element: <Files />,
       },
-    ],
-  },
-  {
-    path: "segments",
-    element: <Segments />,
-  },
-  {
-    path: "annotate/:batchId",
-    element: <AnnotationTool />,
-    children: [
       {
-        path: "segment/:segmentId",
+        path: "batches",
+        element: <Batches />,
+        children: [
+          {
+            path: ":batchId",
+            element: <EditBatch isNew={false} />,
+          },
+          {
+            path: "new",
+            element: <EditBatch isNew={true} />,
+          },
+        ],
+      },
+      {
+        path: "segments",
+        element: <Segments />,
+      },
+      {
+        path: "annotate/:batchId",
         element: <AnnotationTool />,
+        children: [
+          {
+            path: "segment/:segmentId",
+            element: <AnnotationTool />,
+          },
+        ],
       },
     ],
   },

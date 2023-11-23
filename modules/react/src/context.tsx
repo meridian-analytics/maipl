@@ -11,12 +11,16 @@ import * as R from "react"
 import * as RR from "react-router-dom"
 import * as MR from "./index.ts"
 
+type t_client = Client.t
+
 type t_context = {
-  client: Client.t
+  client: t_client
   enqueue: typeof Async.Pool.prototype.add
   user: null | User.t
   logout: () => void
 }
+
+type t_router = (context: t_context) => Array<RR.RouteObject>
 
 const MaiplContext = R.createContext<t_context>({
   client: Client.guest,
@@ -32,14 +36,14 @@ const MaiplContext = R.createContext<t_context>({
 function MaiplProvider(props: {
   basename?: string
   poolSize?: number
-  routes: Array<RR.RouteObject>
+  router: t_router
 }) {
   return (
     <MaiplRootProvider>
       <MaiplContextProvider
         basename={props.basename}
         poolSize={props.poolSize}
-        routes={props.routes}
+        router={props.router}
       />
     </MaiplRootProvider>
   )
@@ -71,7 +75,7 @@ function MaiplRootProvider(props: { children: R.ReactNode }) {
 function MaiplContextProvider(props: {
   basename?: string
   poolSize?: number
-  routes: Array<RR.RouteObject>
+  router: t_router
 }) {
   // tokens
   const [access, setAccess] = R.useState(() => localStorage.getItem("access"))
@@ -116,7 +120,7 @@ function MaiplContextProvider(props: {
   )
 
   // client
-  const client: Client.t = R.useMemo(
+  const client: t_client = R.useMemo(
     () =>
       access == null
         ? Client.guest
@@ -174,7 +178,7 @@ function MaiplContextProvider(props: {
             path: "/profile",
             element: <MR.Profile />,
           },
-          ...props.routes,
+          ...props.router(context),
         ],
     {
       basename: props.basename || import.meta.env.BASE_URL || "/",
@@ -274,4 +278,11 @@ function CompleteAuthFlow() {
 
 const useMaipl = () => R.useContext(MaiplContext)
 
-export { type t_context, MaiplProvider, MaiplRootProvider, useMaipl }
+export {
+  type t_client,
+  type t_context,
+  type t_router,
+  MaiplProvider,
+  MaiplRootProvider,
+  useMaipl,
+}

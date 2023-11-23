@@ -3,16 +3,18 @@ import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as MR from "./index.ts"
 
+type t_notification_context = {
+  notifications: Array<t_notification>
+  notify: t_notify
+}
+
 type t_notification = JSX.Element
+
+type t_notify = (messageFn: (onClose: t_onclose) => t_notification) => void
 
 type t_onclose = (event: R.SyntheticEvent) => void
 
-type t_notification_context = {
-  notifications: Array<t_notification>
-  notify: (messageFn: (onClose: t_onclose) => t_notification) => void
-}
-
-const NotificationsContext = R.createContext<t_notification_context>({
+const NotificationContext = R.createContext<t_notification_context>({
   notifications: [],
   notify: () => {
     throw Error("notify called outside of NotificationsContext")
@@ -33,7 +35,7 @@ function NotificationProvider(props: { children: R.ReactNode }) {
     ])
   }
   return (
-    <NotificationsContext.Provider
+    <NotificationContext.Provider
       children={props.children}
       value={{ notifications, notify }}
     />
@@ -41,7 +43,7 @@ function NotificationProvider(props: { children: R.ReactNode }) {
 }
 
 function Notifications() {
-  const context = R.useContext(NotificationsContext)
+  const context = R.useContext(NotificationContext)
   const isNotifying = context.notifications.length > 0
   const isFetching = RQ.useIsFetching() > 0
   const isMutating = RQ.useIsMutating() > 0
@@ -62,11 +64,12 @@ function Notifications() {
   )
 }
 
-const useNotify = () => R.useContext(NotificationsContext).notify
+const useNotify = () => R.useContext(NotificationContext).notify
 
 export {
-  type t_notification,
   type t_notification_context,
+  type t_notification,
+  type t_notify,
   NotificationProvider,
   Notifications,
   useNotify,

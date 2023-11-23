@@ -1,5 +1,5 @@
 import { File } from "@maipl/api"
-import { filesize } from "@maipl/format"
+import * as F from "@maipl/format"
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
@@ -7,6 +7,7 @@ import * as RT from "@tanstack/react-table"
 import * as R from "react"
 import * as DZ from "react-dropzone"
 import * as RR from "react-router-dom"
+import * as RRT from "react-router-typesafe"
 
 const style = {
   base: {
@@ -49,19 +50,37 @@ const column = RT.createColumnHelper<FileState>()
 
 const AcceptedFiles = MR.Table<FileState, string>()
 
-export default function FileUpload() {
+export const element = <Element />
+
+export const loader = (_maipl: MR.t_context) =>
+  (async ({ request }) => {
+    // folder query param
+    const url = new URL(request.url)
+    const search = url.searchParams
+    const folder = search.get("folder") ?? "public"
+    File.invariantMaiplFolder(folder)
+    // payload
+    return { folder }
+  }) satisfies RR.LoaderFunction
+
+function Element() {
+  const navigate = RR.useNavigate()
+  const { folder } = RRT.useLoaderData<ReturnType<typeof loader>>()
+  const onClose = () => {
+    navigate(-1)
+  }
+  return <FileUpload folder={folder} onClose={onClose} />
+}
+
+export default function FileUpload(props: {
+  folder: File.t_maipl_folder
+  onClose: () => void
+}) {
   const queryClient = RQ.useQueryClient()
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
   const [tag, setTag] = R.useState("")
   const [status, setStatus] = R.useState<UploadStatus>(() => new Map())
-  const [search, _setSearch] = RR.useSearchParams()
-  const navigate = RR.useNavigate()
-  const folder = (search.get("folder") ?? "public") as File.t_maipl_folder
-
-  const onClose = () => {
-    navigate(-1)
-  }
 
   // table
   const table = MR.useTable<FileState, string>()
@@ -76,7 +95,7 @@ export default function FileUpload() {
         }),
         column.accessor("size", {
           header: "Size",
-          cell: ctx => filesize(ctx.getValue()),
+          cell: ctx => F.filesize(ctx.getValue()),
         }),
         column.accessor("status", {
           header: "Status",
@@ -146,7 +165,7 @@ export default function FileUpload() {
                 maipl.client,
                 {
                   file,
-                  maipl_folder: folder,
+                  maipl_folder: props.folder,
                   meta: await File.discoverMeta(file),
                   path: file.path ?? file.name,
                   tag,
@@ -201,9 +220,12 @@ export default function FileUpload() {
   )
 
   return dz.acceptedFiles.length == 0 ? (
-    <MR.Modal onClose={onClose}>
+    <MR.Modal onClose={props.onClose}>
       <M.Stack spacing={2}>
-        <M.Typography variant="h5" children={`Upload files to: /${folder}`} />
+        <M.Typography
+          variant="h5"
+          children={`Upload files to: /${props.folder}`}
+        />
         <M.Box my={5}>
           <M.Box {...dz.getRootProps({ sx: dzStyle })}>
             <input {...dz.getInputProps()} />
@@ -215,10 +237,10 @@ export default function FileUpload() {
       </M.Stack>
     </MR.Modal>
   ) : (
-    <MR.Modal onClose={onClose}>
+    <MR.Modal onClose={props.onClose}>
       <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography
-          children={`${table.selection.size} files to be uploaded (${filesize(
+          children={`${table.selection.size} files to be uploaded (${F.filesize(
             dz.acceptedFiles.reduce(
               (r, f: DZ.FileWithPath) =>
                 table.selection.has(f.path ?? f.name) ? r + f.size : r,
@@ -258,7 +280,7 @@ export default function FileUpload() {
           <M.Stack flexGrow={1} />
           <M.Button
             children={uploadMutation.isPending ? "Cancel" : "Close"}
-            onClick={onClose} // todo: implement cancel and abort upload
+            onClick={props.onClose} // todo: implement cancel and abort upload
             variant="outlined"
           />
           <M.Button

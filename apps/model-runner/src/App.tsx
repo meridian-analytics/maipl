@@ -7,16 +7,7 @@ import ShowTask from "./ShowTask.tsx"
 import Tasks from "./Tasks.tsx"
 
 export default function App() {
-  return (
-    <MR.MaiplProvider
-      routes={[
-        {
-          element: <Layout />,
-          children: routes,
-        },
-      ]}
-    />
-  )
+  return <MR.MaiplProvider router={router} />
 }
 
 function Layout() {
@@ -35,26 +26,31 @@ function Layout() {
   )
 }
 
-const routes: Array<RR.RouteObject> = [
+const router: MR.t_router = () => [
   {
-    path: "/",
-    element: <Tasks />,
+    element: <Layout />,
     children: [
       {
-        path: "new",
-        element: <EditTask />,
-      },
-      {
-        path: ":taskId/copy",
-        element: <EditTask />,
-      },
-      {
-        path: ":taskId/detections",
-        element: <Detections />,
-      },
-      {
-        path: ":taskId",
-        element: <ShowTask />,
+        path: "/",
+        element: <Tasks />,
+        children: [
+          {
+            path: "new",
+            element: <EditTask />,
+          },
+          {
+            path: ":taskId/copy",
+            element: <EditTask />,
+          },
+          {
+            path: ":taskId/detections",
+            element: <Detections />,
+          },
+          {
+            path: ":taskId",
+            element: <ShowTask />,
+          },
+        ],
       },
     ],
   },
