@@ -235,11 +235,11 @@ function safeMeta<
 function read(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.addEventListener("load", e => {
-      resolve(e.target!.result as ArrayBuffer)
+    reader.addEventListener("load", function () {
+      resolve(this.result as ArrayBuffer)
     })
-    reader.addEventListener("error", e => {
-      reject(e)
+    reader.addEventListener("error", function () {
+      reject(this.error)
     })
     reader.readAsArrayBuffer(file)
   })
