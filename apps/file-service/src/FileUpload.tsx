@@ -1,6 +1,7 @@
 import { File } from "@maipl/api"
 import * as F from "@maipl/format"
 import * as MR from "@maipl/react"
+import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as RT from "@tanstack/react-table"
@@ -11,28 +12,20 @@ import * as RRT from "react-router-typesafe"
 
 const style = {
   base: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    padding: "20px",
-    borderWidth: 2,
-    borderRadius: 2,
-    borderColor: "#eeeeee",
+    borderColor: M.colors.grey[500],
     borderStyle: "dashed",
-    backgroundColor: "#fafafa",
-    color: "#bdbdbd",
-    outline: "none",
-    transition: "border .24s ease-in-out",
+    borderWidth: 2,
+    backgroundColor: M.colors.grey[100],
+    padding: 6,
   },
   focused: {
-    borderColor: "#2196f3",
+    borderColor: M.colors.blue[500],
   },
   accept: {
-    borderColor: "#00e676",
+    borderColor: M.colors.green[500],
   },
   reject: {
-    borderColor: "#ff1744",
+    borderColor: M.colors.red[500],
   },
 }
 
@@ -69,19 +62,149 @@ function Element() {
   const onClose = () => {
     navigate(-1)
   }
-  return <FileUpload folder={folder} onClose={onClose} />
+  switch (folder) {
+    case File.t_maipl_folder.annotation:
+      return <FileUpload folder={folder} onClose={onClose} disabled={true} />
+    case File.t_maipl_folder.config:
+      return (
+        <FileUpload
+          folder={folder}
+          onClose={onClose}
+          accept={{
+            "application/json": [".json"],
+          }}
+        />
+      )
+    case File.t_maipl_folder.dataset:
+      return (
+        <FileUpload
+          folder={folder}
+          onClose={onClose}
+          accept={{
+            "application/x-hdf": [".h5"],
+            "text/csv": [".csv"],
+          }}
+        />
+      )
+
+    case File.t_maipl_folder.model:
+      return (
+        <FileUpload
+          folder={folder}
+          onClose={onClose}
+          accept={{
+            "application/zip": [".kt"],
+          }}
+        />
+      )
+    case File.t_maipl_folder.public:
+      return (
+        <FileUpload
+          folder={folder}
+          onClose={onClose}
+          accept={{
+            "audio/flac": [".flac"],
+            "audio/x-wav": [".wav"],
+          }}
+        />
+      )
+    case File.t_maipl_folder.raw:
+      return <FileUpload onClose={onClose} folder={folder} />
+  }
 }
 
 export default function FileUpload(props: {
+  accept?: DZ.Accept
+  disabled?: boolean
+  folder: File.t_maipl_folder
+  onClose: () => void
+  text?: string
+  validator?: DZ.DropzoneOptions["validator"]
+}) {
+  const dz = DZ.useDropzone({
+    accept: props.accept,
+    disabled: props.disabled,
+    validator: props.validator,
+  })
+  const dzStyle = R.useMemo(
+    () => ({
+      ...style.base,
+      ...(dz.isFocused ? style.focused : {}),
+      ...(dz.isDragAccept ? style.accept : {}),
+      ...(dz.isDragReject ? style.reject : {}),
+    }),
+    [dz.isFocused, dz.isDragAccept, dz.isDragReject],
+  )
+  if (dz.acceptedFiles.length > 0) {
+    return (
+      <FileUploadStep2
+        files={dz.acceptedFiles}
+        folder={props.folder}
+        onClose={props.onClose}
+      />
+    )
+  }
+  return (
+    <MR.Modal onClose={props.onClose}>
+      <M.Stack spacing={2}>
+        <M.Typography
+          variant="h5"
+          children={`Upload files to: /${props.folder}`}
+        />
+        <M.Box {...dz.getRootProps({ sx: dzStyle })}>
+          <input {...dz.getInputProps()} />
+          {props.disabled ? (
+            <M.Stack alignItems="center" spacing={6}>
+              <UploadIcon icon={I.Cancel} label="Not Allowed" />
+              <M.Typography>
+                {props.text ?? "This folder does not allow uploads"}
+              </M.Typography>
+            </M.Stack>
+          ) : (
+            <M.Stack alignItems="center" spacing={6}>
+              <M.Stack direction="row" spacing={2}>
+                <UploadIcon icon={I.FolderOutlined} label="Folder" />
+                {Object.entries(props.accept ?? {}).flatMap(([_mime, exts]) =>
+                  exts.map(e => (
+                    <UploadIcon
+                      icon={I.InsertDriveFileOutlined}
+                      key={e}
+                      label={e}
+                    />
+                  )),
+                )}
+              </M.Stack>
+              <M.Typography>
+                {props.text ?? "Drag and drop or click to select files here"}
+              </M.Typography>
+            </M.Stack>
+          )}
+        </M.Box>
+        <M.Stack direction="row-reverse" spacing={2}>
+          <M.Button
+            children="Cancel"
+            onClick={props.onClose}
+            size="small"
+            variant="outlined"
+          />
+        </M.Stack>
+      </M.Stack>
+    </MR.Modal>
+  )
+}
+
+function FileUploadStep2(props: {
+  files: Array<DZ.FileWithPath>
   folder: File.t_maipl_folder
   onClose: () => void
 }) {
   const queryClient = RQ.useQueryClient()
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
+
+  // state
   const [tag, setTag] = R.useState("")
   const [status, setStatus] = R.useState<UploadStatus>(() => new Map())
-
   // table
   const table = MR.useTable<FileState, string>()
   const columns = R.useMemo(
@@ -109,25 +232,13 @@ export default function FileUpload(props: {
     [],
   )
 
-  // dropzone
-  const dz = DZ.useDropzone()
-  const dzStyle = R.useMemo(
-    () => ({
-      ...style.base,
-      ...(dz.isFocused ? style.focused : {}),
-      ...(dz.isDragAccept ? style.accept : {}),
-      ...(dz.isDragReject ? style.reject : {}),
-    }),
-    [dz.isFocused, dz.isDragAccept, dz.isDragReject],
-  )
-
   // sorted files
   const sortedFiles = R.useMemo(
     () =>
-      [...dz.acceptedFiles].sort((a: DZ.FileWithPath, b: DZ.FileWithPath) =>
+      [...props.files].sort((a, b) =>
         (a.path ?? a.name).localeCompare(b.path ?? b.name),
       ),
-    [dz.acceptedFiles],
+    [props.files],
   )
 
   // event handlers
@@ -137,6 +248,7 @@ export default function FileUpload(props: {
     }
   }
 
+  // mutations
   const uploadFile = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof File.create>) => File.create(...vars),
     onError: (err, vars) => {
@@ -155,11 +267,11 @@ export default function FileUpload(props: {
       Promise.allSettled(
         sortedFiles
           .filter(
-            (file: DZ.FileWithPath) =>
+            file =>
               table.selection.has(file.path ?? file.name) &&
               status.get(file.path ?? file.name) !== "ok",
           )
-          .map((file: DZ.FileWithPath) =>
+          .map(file =>
             maipl.enqueue(async () =>
               uploadFile.mutateAsync([
                 maipl.client,
@@ -210,39 +322,25 @@ export default function FileUpload(props: {
       })
       queryClient.refetchQueries({ queryKey: ["files"] })
     },
+    onSettled: () => {
+      uploadMutation.reset()
+    },
   })
 
   // checkbox enabled?
   const rowCanSelect = R.useCallback(
     (file: FileState) =>
-      !uploadMutation.isPending && status.get(file.path) !== "ok",
+      uploadMutation.isIdle && status.get(file.path) !== "ok",
     [uploadMutation, status],
   )
 
-  return dz.acceptedFiles.length == 0 ? (
-    <MR.Modal onClose={props.onClose}>
-      <M.Stack spacing={2}>
-        <M.Typography
-          variant="h5"
-          children={`Upload files to: /${props.folder}`}
-        />
-        <M.Box my={5}>
-          <M.Box {...dz.getRootProps({ sx: dzStyle })}>
-            <input {...dz.getInputProps()} />
-            <M.Typography>
-              Drag and drop some files here, or click to select files
-            </M.Typography>
-          </M.Box>
-        </M.Box>
-      </M.Stack>
-    </MR.Modal>
-  ) : (
+  return (
     <MR.Modal onClose={props.onClose}>
       <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography
           children={`${table.selection.size} files to be uploaded (${F.filesize(
-            dz.acceptedFiles.reduce(
-              (r, f: DZ.FileWithPath) =>
+            props.files.reduce(
+              (r, f) =>
                 table.selection.has(f.path ?? f.name) ? r + f.size : r,
               0,
             ),
@@ -252,7 +350,7 @@ export default function FileUpload(props: {
         <AcceptedFiles
           {...table}
           columns={columns}
-          rows={sortedFiles.map((file: DZ.FileWithPath) => ({
+          rows={sortedFiles.map(file => ({
             id: file.path ?? file.name,
             name: file.name,
             path: file.path ?? file.name,
@@ -292,6 +390,33 @@ export default function FileUpload(props: {
         </M.Stack>
       </M.Stack>
     </MR.Modal>
+  )
+}
+
+function UploadIcon(props: {
+  icon: typeof M.SvgIcon
+  label: string
+  size?: number
+}) {
+  return (
+    <M.Stack
+      alignItems="center"
+      justifyContent="center"
+      spacing={2}
+      sx={{
+        height: props.size ?? 128,
+        width: props.size ?? 128,
+        backgroundColor: "#eee",
+      }}
+    >
+      <props.icon sx={{ fontSize: (props.size ?? 128) / 2 }} />
+      <M.Typography
+        children={props.label}
+        sx={{
+          fontFamily: props.label.startsWith(".") ? "monospace" : "inherit",
+        }}
+      />
+    </M.Stack>
   )
 }
 
