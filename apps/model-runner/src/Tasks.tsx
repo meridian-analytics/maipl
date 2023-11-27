@@ -102,7 +102,6 @@ export default function TasksTable(props: {
 
   return (
     <M.Stack
-      spacing={2}
       sx={{
         flexGrow: 1,
         maxHeight: "100%",
@@ -112,13 +111,13 @@ export default function TasksTable(props: {
       }}
     >
       <RR.Outlet />
-      <M.Stack direction="row" spacing={2}>
+      <M.Stack direction="row">
         <M.Stack flexGrow={1} />
         <MR.ActionButton
           children={<I.AddCircle />}
           component={RR.Link}
           title="Create Task"
-          to={"/new"}
+          to="/new"
         />
       </M.Stack>
       <MR.Tasks.Table

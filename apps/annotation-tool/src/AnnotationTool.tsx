@@ -23,20 +23,18 @@ import { Bindings, Keypress } from "specviz-react/keybinds"
 
 function SegmentActions(props: { batch: Batch.t; segment: Segment.t }) {
   return (
-    <M.Stack direction="row" spacing={2}>
+    <M.Stack direction="row">
       <MR.ActionButton
         children={<I.Architecture />}
         component={RR.Link}
         to={`/annotate/${props.batch.id}/segment/${props.segment.id}`}
         title="Annotate"
-        size="small"
       />
       <MR.ActionButton
         children={<I.Architecture />}
         component={RR.Link}
         title="Annotate"
         to={`/annotate/${props.batch.id}/segment/${props.segment.id}`}
-        size="small"
       />
     </M.Stack>
   )
@@ -192,7 +190,7 @@ function PreloadedAnnotationTool(props: {
       <M.Grid container sx={{ maxHeight: "100%", overflow: "hidden" }}>
         {/* main window */}
         <M.Grid item xs={8} sx={{ maxHeight: "100%", overflow: "hidden" }}>
-          <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
+          <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
             {/* segments */}
             <MR.Segments.Table
               {...segmentsTable}
@@ -213,7 +211,7 @@ function PreloadedAnnotationTool(props: {
             ) : image == null ? (
               <p>Error: Image for segment could not be loaded</p>
             ) : (
-              <M.Stack spacing={2}>
+              <M.Stack>
                 <Audio
                   src={audio.audio}
                   duration={segment.end - segment.start}
@@ -233,24 +231,22 @@ function PreloadedAnnotationTool(props: {
             )}
 
             {/* controls */}
-            <M.Stack direction="row" flexShrink={0} spacing={2}>
-              <MyAudioControls direction="row" spacing={2} />
-              <M.Stack direction="row" spacing={2}>
-                <M.Button
-                  children="Save"
-                  disabled={saveMutation.isPending}
-                  onClick={onSave}
-                  variant="contained"
-                />
-              </M.Stack>
+            <M.Stack direction="row" flexShrink={0}>
+              <MyAudioControls direction="row" />
+              <M.Button
+                children="Save"
+                disabled={saveMutation.isPending}
+                onClick={onSave}
+                variant="contained"
+              />
               <M.Stack flexGrow={1} />
-              <ToolPalette direction="row" spacing={2} />
+              <ToolPalette direction="row" />
             </M.Stack>
           </M.Stack>
         </M.Grid>
         {/* side column */}
         <M.Grid item xs={4} paddingX={2}>
-          <M.Stack spacing={2}>
+          <M.Stack>
             <M.Typography variant="h5">{segment?.filename}</M.Typography>
             <AnnotationForm schema={form?.schema} uiSchema={form?.uiSchema} />
           </M.Stack>
@@ -269,28 +265,24 @@ function ToolPalette(props: M.StackProps) {
         className={toolState === "annotate" ? "active" : ""}
         onClick={_ => command.tool("annotate")}
         title="Annotate"
-        size="small"
       />
 
       <MR.ActionButton
         children={<I.SelectAllOutlined />}
         className={toolState === "select" ? "active" : ""}
         onClick={_ => command.tool("select")}
-        size="small"
         title="Select"
       />
       <MR.ActionButton
         children={<I.ZoomInOutlined />}
         className={toolState === "zoom" ? "active" : ""}
         onClick={_ => command.tool("zoom")}
-        size="small"
         title="Zoom"
       />
       <MR.ActionButton
         children={<I.PanToolOutlined />}
         className={toolState === "pan" ? "active" : ""}
         onClick={_ => command.tool("pan")}
-        size="small"
         title="Pan"
       />
     </M.Stack>
@@ -340,7 +332,7 @@ function MonoForm(props: {
   const { transport, setRegions } = useSpecviz()
   const { region } = props
   return (
-    <M.Stack spacing={2}>
+    <M.Stack>
       <Form
         children=" "
         formData={props.region}
@@ -354,7 +346,7 @@ function MonoForm(props: {
         uiSchema={props.uiSchema}
         validator={validator}
       />
-      <M.Stack direction="row" spacing={2} justifyContent="space-between">
+      <M.Stack direction="row" justifyContent="space-between">
         <M.Box className="encoder">
           <Encoder.X {...region} />
           <M.Typography>Offset</M.Typography>
@@ -372,7 +364,7 @@ function MonoForm(props: {
           <M.Typography>Max</M.Typography>
         </M.Box>
       </M.Stack>
-      <M.Stack direction="row" spacing={2}>
+      <M.Stack direction="row">
         <M.Button
           fullWidth
           onClick={() => transport.loop(region.id)}
@@ -384,7 +376,6 @@ function MonoForm(props: {
           fullWidth
           onClick={() => transport.stop()}
           color="primary"
-          variant="outlined"
           children="Stop"
         />
       </M.Stack>
@@ -473,7 +464,6 @@ export default function AnnotationTool(props: { sx?: M.SxProps }) {
   // batch.data is loaded
   return (
     <M.Stack
-      spacing={2}
       sx={{
         maxHeight: "100%",
         overflow: "hidden",
@@ -499,14 +489,12 @@ function MyAudioControls(props: M.StackProps) {
         title="Z"
         onClick={_ => transport.play()}
         className={transportState.type === "play" ? "active" : ""}
-        variant="outlined"
         children="Play"
       />
       <M.Button
         title="X"
         onClick={_ => transport.stop()}
         className={transportState.type === "stop" ? "active" : ""}
-        variant="outlined"
         children="Stop"
       />
     </M.Stack>

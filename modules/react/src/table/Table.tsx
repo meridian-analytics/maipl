@@ -150,7 +150,6 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
       >
         <M.TableContainer sx={{ flexGrow: 1 }}>
           <M.Table
-            size="small"
             stickyHeader
             sx={{
               maxHeight: "100%",
@@ -161,11 +160,7 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
               {table.getHeaderGroups().map(headerGroup => (
                 <M.TableRow key={headerGroup.id}>
                   {headerGroup.headers.map(header => (
-                    <M.TableCell
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      size="small"
-                    >
+                    <M.TableCell key={header.id} colSpan={header.colSpan}>
                       {header.isPlaceholder ? null : (
                         <M.Typography>
                           {RT.flexRender(
@@ -185,7 +180,6 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
                   {row.getVisibleCells().map(cell => (
                     <M.TableCell
                       key={cell.id}
-                      size="small"
                       align="left"
                       sx={{ overflow: "hidden" }}
                       children={RT.flexRender(

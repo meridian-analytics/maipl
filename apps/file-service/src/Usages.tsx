@@ -20,7 +20,7 @@ function Usages() {
     },
   })
   return (
-    <M.Stack component={M.Paper} spacing={2} padding={2}>
+    <M.Stack component={M.Paper} padding={2}>
       <M.Typography variant="h5">Storage Usage</M.Typography>
       <M.Typography>Public Total {filesize(data.public)}</M.Typography>
       <M.Typography>Private Total {filesize(data.private)}</M.Typography>

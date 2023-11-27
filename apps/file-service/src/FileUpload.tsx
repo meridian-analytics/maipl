@@ -146,7 +146,7 @@ export default function FileUpload(props: {
   }
   return (
     <MR.Modal onClose={props.onClose}>
-      <M.Stack spacing={2}>
+      <M.Stack>
         <M.Typography
           variant="h5"
           children={`Upload files to: /${props.folder}`}
@@ -162,7 +162,7 @@ export default function FileUpload(props: {
             </M.Stack>
           ) : (
             <M.Stack alignItems="center" spacing={6}>
-              <M.Stack direction="row" spacing={2}>
+              <M.Stack direction="row">
                 <UploadIcon icon={I.FolderOutlined} label="Folder" />
                 {Object.entries(props.accept ?? {}).flatMap(([_mime, exts]) =>
                   exts.map(e => (
@@ -180,13 +180,8 @@ export default function FileUpload(props: {
             </M.Stack>
           )}
         </M.Box>
-        <M.Stack direction="row-reverse" spacing={2}>
-          <M.Button
-            children="Cancel"
-            onClick={props.onClose}
-            size="small"
-            variant="outlined"
-          />
+        <M.Stack direction="row-reverse">
+          <M.Button children="Cancel" onClick={props.onClose} />
         </M.Stack>
       </M.Stack>
     </MR.Modal>
@@ -336,7 +331,7 @@ function FileUploadStep2(props: {
 
   return (
     <MR.Modal onClose={props.onClose}>
-      <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
+      <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography
           children={`${table.selection.size} files to be uploaded (${F.filesize(
             props.files.reduce(
@@ -366,20 +361,17 @@ function FileUploadStep2(props: {
             id: false,
           }}
         />
-        <M.Stack direction="row" spacing={2}>
+        <M.Stack direction="row">
           <M.TextField
             disabled={uploadMutation.isPending}
             label="Tag (optional)"
             onChange={e => setTag(e.currentTarget.value)}
-            size="small"
             value={tag}
-            variant="outlined"
           />
           <M.Stack flexGrow={1} />
           <M.Button
             children={uploadMutation.isPending ? "Cancel" : "Close"}
             onClick={props.onClose} // todo: implement cancel and abort upload
-            variant="outlined"
           />
           <M.Button
             children={uploadMutation.isPending ? "Please wait ..." : "Upload"}
@@ -402,7 +394,6 @@ function UploadIcon(props: {
     <M.Stack
       alignItems="center"
       justifyContent="center"
-      spacing={2}
       sx={{
         height: props.size ?? 128,
         width: props.size ?? 128,
@@ -425,19 +416,12 @@ function UploadStatus(props: { status: string }) {
     case "none":
       return <></>
     case "error":
-      return <M.Chip color="error" label="Error" size="small" />
+      return <M.Chip color="error" label="Error" />
     case "pending":
-      return (
-        <M.Chip
-          color="warning"
-          label="Pending"
-          size="small"
-          variant="outlined"
-        />
-      )
+      return <M.Chip color="warning" label="Pending" />
     case "ok":
-      return <M.Chip color="success" label="Ok" size="small" />
+      return <M.Chip color="success" label="Ok" />
     default:
-      return <M.Chip label={props.status} color="info" size="small" />
+      return <M.Chip label={props.status} color="info" />
   }
 }

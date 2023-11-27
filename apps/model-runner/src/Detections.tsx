@@ -127,7 +127,6 @@ function Detections(props: {
 
   return (
     <M.Stack
-      spacing={2}
       sx={{
         flexGrow: 1,
         maxHeight: "100%",
@@ -139,34 +138,28 @@ function Detections(props: {
       <M.Typography variant="h6">
         Detections for Task #{props.task.id}
       </M.Typography>
-      <M.Stack direction="row" spacing={2}>
+      <M.Stack direction="row">
         <M.TextField
           label="Label"
           onChange={e => table.filter.set("label", e.currentTarget.value)}
           placeholder="my-label"
-          size="small"
           value={table.filter.get("label") ?? ""}
-          variant="outlined"
         />
         <M.TextField
           inputProps={{ step: 0.1 }}
           label="Score (min)"
           onChange={e => table.filter.set("score_min", e.currentTarget.value)}
           placeholder="0"
-          size="small"
           type="number"
           value={table.filter.get("score_min") ?? ""}
-          variant="outlined"
         />
         <M.TextField
           inputProps={{ step: 0.1 }}
           label="Score (max)"
           onChange={e => table.filter.set("score_max", e.currentTarget.value)}
           placeholder="1"
-          size="small"
           type="number"
           value={table.filter.get("score_max") ?? ""}
-          variant="outlined"
         />
       </M.Stack>
       <MR.Detections.Table
@@ -179,20 +172,14 @@ function Detections(props: {
           select: false,
         }}
       />
-      <M.Stack direction="row-reverse" spacing={2}>
+      <M.Stack direction="row-reverse">
         <M.Button
           children="Save as .CSV"
-          color="primary"
           disabled={exportMutation.isPending}
           onClick={onExport}
           variant="contained"
         />
-        <M.Button
-          children="Close"
-          color="primary"
-          onClick={props.onClose}
-          variant="outlined"
-        />
+        <M.Button children="Close" onClick={props.onClose} />
       </M.Stack>
     </M.Stack>
   )

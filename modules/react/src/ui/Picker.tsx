@@ -5,11 +5,10 @@ export default function Picker<T>(props: {
   value: T
   values: Array<T> | Record<string, T>
   setValue: (newValue: T) => void
-  size?: "small" | "medium"
   disabled?: boolean
 }) {
   return (
-    <M.FormControl size={props.size ?? "small"}>
+    <M.FormControl>
       <M.InputLabel>{props.label}</M.InputLabel>
       <M.Select
         disabled={props.disabled}

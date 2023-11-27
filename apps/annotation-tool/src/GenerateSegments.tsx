@@ -89,7 +89,7 @@ function GenerateSegments(props: {
 
   return (
     <MR.Modal onClose={props.onClose}>
-      <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
+      <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography variant="h5">
           Selected Files ({props.files.length})
         </M.Typography>
@@ -106,13 +106,11 @@ function GenerateSegments(props: {
           }}
         />
         <M.Typography variant="h5">Segment Parameters:</M.Typography>
-        <M.Stack direction="row" spacing={2}>
+        <M.Stack direction="row">
           <M.TextField
             label="Tag (optional)"
             onChange={e => setTag(e.currentTarget.value)}
-            size="small"
             value={tag}
-            variant="outlined"
             fullWidth
           />
           <M.TextField
@@ -120,28 +118,20 @@ function GenerateSegments(props: {
             onChange={e =>
               setLength(Math.max(1, Number(e.currentTarget.value) || 60))
             }
-            size="small"
             type="number"
             value={length}
-            variant="outlined"
           />
           <M.TextField
             label="Step (seconds)"
             onChange={e =>
               setStep(Math.max(1, Number(e.currentTarget.value) || 60))
             }
-            size="small"
             type="number"
             value={step}
-            variant="outlined"
           />
           <M.FormControlLabel
             control={
-              <M.Switch
-                checked={pad}
-                onChange={(_e, value) => setPad(value)}
-                size="small"
-              />
+              <M.Switch checked={pad} onChange={(_e, value) => setPad(value)} />
             }
             label="Pad"
           />
@@ -155,7 +145,7 @@ function GenerateSegments(props: {
             select: false,
           }}
         />
-        <M.Stack direction="row-reverse" spacing={2}>
+        <M.Stack direction="row-reverse">
           <M.Button
             children="Create"
             color="primary"
@@ -163,12 +153,7 @@ function GenerateSegments(props: {
             onClick={onCreate}
             variant="contained"
           />
-          <M.Button
-            children="Cancel"
-            color="primary"
-            onClick={props.onClose}
-            variant="outlined"
-          />
+          <M.Button children="Cancel" color="primary" onClick={props.onClose} />
         </M.Stack>
       </M.Stack>
     </MR.Modal>

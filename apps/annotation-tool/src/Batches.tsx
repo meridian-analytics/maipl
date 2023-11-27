@@ -160,33 +160,15 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
 function BatchStatus(props: { batch: Batch.t_list_item }) {
   switch (Batch.status(props.batch)) {
     case Batch.t_status.empty:
-      return <M.Chip label="Empty" size="small" variant="outlined" />
+      return <M.Chip label="Empty" />
     case Batch.t_status.error:
-      return (
-        <M.Chip color="error" label="Error" size="small" variant="outlined" />
-      )
+      return <M.Chip color="error" label="Error" />
     case Batch.t_status.processing:
-      return (
-        <M.Chip
-          color="info"
-          label="Processing"
-          size="small"
-          variant="outlined"
-        />
-      )
+      return <M.Chip color="info" label="Processing" />
     case Batch.t_status.success:
-      return (
-        <M.Chip color="success" label="Ready" size="small" variant="outlined" />
-      )
+      return <M.Chip color="success" label="Ready" />
     case Batch.t_status.unprocessed:
-      return (
-        <M.Chip
-          color="warning"
-          label="Unprocessed"
-          size="small"
-          variant="outlined"
-        />
-      )
+      return <M.Chip color="warning" label="Unprocessed" />
   }
 }
 
@@ -229,7 +211,6 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
 
   return (
     <M.Stack
-      spacing={2}
       sx={{
         flexGrow: 1,
         maxHeight: "100%",
@@ -239,14 +220,12 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
       }}
     >
       <RR.Outlet />
-      <M.Stack direction="row" spacing={2}>
+      <M.Stack direction="row">
         <M.TextField
           label="Name"
           onChange={e => filter.set("name", e.currentTarget.value)}
           placeholder="Batch name..."
-          size="small"
           value={filter.get("name")}
-          variant="outlined"
         />
         <M.Stack flexGrow={1} />
         <MR.ActionButton

@@ -127,9 +127,9 @@ export default function EditFile(props: {
       onClose={() => props.onClose(hasUnsavedChanges)}
       sx={{ width: "100%" }}
     >
-      <M.Stack spacing={2}>
+      <M.Stack>
         <M.Typography variant="h5">{props.file.basename}</M.Typography>
-        <M.Stack direction="row" spacing={2}>
+        <M.Stack direction="row">
           <MR.Picker
             disabled={true}
             label="Folder"
@@ -146,18 +146,14 @@ export default function EditFile(props: {
           />
           <M.TextField
             fullWidth
-            size="small"
             label="path"
             value={path}
-            variant="outlined"
             onChange={e => setPath(e.currentTarget.value)}
             disabled={true}
           />
           <M.TextField
-            size="small"
             label="tag"
             value={tag}
-            variant="outlined"
             onChange={e => setTag(e.currentTarget.value)}
           />
         </M.Stack>
@@ -171,13 +167,12 @@ export default function EditFile(props: {
           }}
           value={value}
         />
-        <M.Stack direction="row" spacing={2}>
+        <M.Stack direction="row">
           <M.Typography>{F.filesize(value?.length ?? 0)}</M.Typography>
           <M.Typography>{F.iso8601(props.file.created_at)}</M.Typography>
           <M.Typography>{language?.aliases?.[0] ?? "Plain Text"}</M.Typography>
           <M.Stack flexGrow={1} />
           <M.Button
-            variant="outlined"
             color={hasUnsavedChanges ? "error" : "primary"}
             onClick={() => props.onClose(hasUnsavedChanges)}
             children={hasUnsavedChanges ? "Close Without Saving" : "Close"}

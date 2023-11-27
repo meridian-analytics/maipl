@@ -65,8 +65,8 @@ function ErrorModal() {
   const navigate = RR.useNavigate()
   return (
     <MR.Modal onClose={() => navigate(-1)}>
-      <M.Stack spacing={2} padding={2}>
-        <M.Stack direction="row" alignItems="center" spacing={2}>
+      <M.Stack padding={2}>
+        <M.Stack direction="row" alignItems="center">
           <I.PestControl fontSize="large" />
           <M.Typography variant="h4">Bugger!</M.Typography>
         </M.Stack>
@@ -76,12 +76,7 @@ function ErrorModal() {
             : error.message}
         </M.Alert>
         <M.Stack direction="row-reverse">
-          <M.Button
-            color="primary"
-            children="Go Back"
-            size="small"
-            variant="contained"
-          />
+          <M.Button color="primary" children="Go Back" />
         </M.Stack>
       </M.Stack>
     </MR.Modal>

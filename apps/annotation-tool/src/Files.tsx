@@ -15,7 +15,7 @@ function Actions(props: {
   }
 
   return (
-    <M.Stack direction="row" spacing={2}>
+    <M.Stack direction="row">
       <MR.ActionButton
         children={<I.ContentCut />}
         disabled={props.selection.size == 0}
@@ -50,7 +50,6 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
 
   return (
     <M.Stack
-      spacing={2}
       sx={{
         flexGrow: 1,
         maxHeight: "100%",
@@ -65,7 +64,7 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
           files={Array.from(selection.values())}
         />
       )}
-      <M.Stack direction="row" spacing={2}>
+      <M.Stack direction="row">
         <MR.Picker
           label="Folder"
           setValue={setFolder}
@@ -83,17 +82,13 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
           label="Path"
           onChange={e => filter.set("path", e.currentTarget.value)}
           placeholder="path/to/folder"
-          size="small"
           value={filter.get("path")}
-          variant="outlined"
         />
         <M.TextField
           label="Tag"
           onChange={e => filter.set("tag", e.currentTarget.value)}
           placeholder="my-tag"
-          size="small"
           value={filter.get("tag")}
-          variant="outlined"
         />
         <M.Stack flexGrow={1} />
         <Actions

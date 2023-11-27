@@ -46,7 +46,7 @@ function SelectionActions(props: {
   }
 
   return (
-    <M.Stack direction="row" spacing={2}>
+    <M.Stack direction="row">
       <MR.ActionButton
         children={<I.DriveFolderUpload />}
         component={RR.Link}
@@ -174,7 +174,6 @@ export default function Files(props: { sx?: M.SxProps }) {
 
   return (
     <M.Stack
-      spacing={2}
       sx={{
         flexGrow: 1,
         maxHeight: "100%",
@@ -184,7 +183,7 @@ export default function Files(props: { sx?: M.SxProps }) {
       }}
     >
       <RR.Outlet />
-      <M.Stack direction="row" spacing={2}>
+      <M.Stack direction="row">
         <MR.Picker
           label="Folder"
           setValue={folder => {
@@ -202,20 +201,16 @@ export default function Files(props: { sx?: M.SxProps }) {
           ]}
         />
         <M.TextField
-          size="small"
           label="Path"
           onChange={e => filter.set("path", e.currentTarget.value)}
           placeholder="path/to/folder"
           value={filter.get("path")}
-          variant="outlined"
         />
         <M.TextField
-          size="small"
           label="Tag"
           onChange={e => filter.set("tag", e.currentTarget.value)}
           placeholder="my-tag"
           value={filter.get("tag")}
-          variant="outlined"
         />
         <M.Stack flexGrow={1} />
         <SelectionActions selection={selection} setSelection={setSelection} />

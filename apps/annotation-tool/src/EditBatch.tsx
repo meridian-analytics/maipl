@@ -171,35 +171,29 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
 
   return (
     <MR.Modal onClose={props.onClose}>
-      <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
+      <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography variant="h6">
           {batch == null ? "Create new batch ..." : name}
         </M.Typography>
-        <M.Stack component={M.Paper} padding={2} spacing={2}>
+        <M.Stack component={M.Paper} padding={2}>
           <M.TextField
-            size="small"
             label="Batch Name"
             value={name}
-            variant="outlined"
             onChange={e => setName(e.currentTarget.value)}
           />
           <M.TextField
-            size="small"
             label="Description"
             value={description}
-            variant="outlined"
             onChange={e => setDescription(e.currentTarget.value)}
           />
-          <M.Stack direction="row" spacing={2} alignItems={"center"}>
+          <M.Stack direction="row" alignItems="center">
             <M.FormControl disabled={batch != null} fullWidth>
               <M.InputLabel id={templateSelectorId}>Template</M.InputLabel>
               <M.Select
-                label={"Template"}
+                label="Template"
                 labelId={templateSelectorId}
                 onChange={e => setTemplate(e.target.value)}
-                size="small"
                 value={template}
-                variant="outlined"
               >
                 <M.MenuItem value="__">Choose a template...</M.MenuItem>
                 {Object.entries(templates).map(([key, option]) => (
@@ -241,36 +235,24 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
             validator={validator}
           />
         </M.Stack>
-        <M.Stack direction="row-reverse" spacing={2}>
+        <M.Stack direction="row-reverse">
           {batch == null ? (
             <M.Button
               children="Create"
-              color="primary"
               disabled={createMutation.isPending}
               onClick={onCreate}
               variant="contained"
             />
           ) : (
-            <M.Button
-              children="Save"
-              color="primary"
-              onClick={onUpdate}
-              variant="contained"
-            />
+            <M.Button children="Save" onClick={onUpdate} variant="contained" />
           )}
-          <M.Button
-            children="Close"
-            color="primary"
-            onClick={props.onClose}
-            variant="outlined"
-          />
+          <M.Button children="Close" onClick={props.onClose} />
           <M.Stack flexGrow={1} />
           <M.FormControlLabel
             control={
               <M.Switch
                 checked={allowChanges}
                 onChange={(_e, value) => setAllowChanges(value)}
-                size="small"
               />
             }
             disabled={true}

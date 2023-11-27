@@ -12,12 +12,10 @@ function NavButton(props: {
     <M.Stack
       component={M.Button}
       sx={{ height: 200, width: 200 }}
-      variant="outlined"
       onClick={() => {
         // todo: useNavigate if same-origin
         window.location.href = props.to
       }}
-      spacing={2}
     >
       <Icon sx={{ fontSize: 100 }} />
       <M.Typography>{props.label}</M.Typography>
@@ -32,7 +30,7 @@ export default function Dashboard() {
       justifyContent="center"
       sx={{ height: "100vh", overflow: "hidden" }}
     >
-      <M.Stack direction="row" maxWidth="lg" spacing={2}>
+      <M.Stack direction="row" maxWidth="lg">
         <NavButton
           icon={I.CloudUpload}
           label="File System"

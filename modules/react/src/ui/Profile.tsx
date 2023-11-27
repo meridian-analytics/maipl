@@ -23,7 +23,7 @@ function Usages() {
     },
   })
   return (
-    <M.Stack component={M.Paper} flexGrow={1} spacing={2} padding={2}>
+    <M.Stack component={M.Paper} flexGrow={1} padding={2}>
       <M.Typography variant="h5">Storage Usage</M.Typography>
       <M.Typography>Public Total {F.filesize(data.public)}</M.Typography>
       <M.Typography>Private Total {F.filesize(data.private)}</M.Typography>
@@ -39,13 +39,7 @@ function Usages() {
 const UserCard = () => {
   const { user } = useMaipl()
   return (
-    <M.Stack
-      component={M.Paper}
-      alignItems="center"
-      minWidth={300}
-      padding={2}
-      spacing={2}
-    >
+    <M.Stack component={M.Paper} alignItems="center" minWidth={300} padding={2}>
       {user == null ? (
         <p>Loading...</p>
       ) : (
@@ -64,7 +58,7 @@ export default function Profile() {
   const navigate = RR.useNavigate()
   return (
     <Modal onClose={() => navigate(-1)}>
-      <M.Stack direction="row" spacing={2}>
+      <M.Stack direction="row">
         <UserCard />
         <Usages />
       </M.Stack>
