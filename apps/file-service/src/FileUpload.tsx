@@ -64,7 +64,15 @@ function Element() {
   }
   switch (folder) {
     case File.t_maipl_folder.annotation:
-      return <FileUpload folder={folder} onClose={onClose} disabled={true} />
+      return (
+        <FileUpload
+          folder={folder}
+          onClose={onClose}
+          accept={{
+            "text/csv": [".csv"],
+          }}
+        />
+      )
     case File.t_maipl_folder.config:
       return (
         <FileUpload
@@ -76,17 +84,7 @@ function Element() {
         />
       )
     case File.t_maipl_folder.dataset:
-      return (
-        <FileUpload
-          folder={folder}
-          onClose={onClose}
-          accept={{
-            "application/x-hdf": [".h5"],
-            "text/csv": [".csv"],
-          }}
-        />
-      )
-
+      return <FileUpload folder={folder} onClose={onClose} disabled={true} />
     case File.t_maipl_folder.model:
       return (
         <FileUpload
@@ -98,6 +96,8 @@ function Element() {
         />
       )
     case File.t_maipl_folder.public:
+      return <FileUpload folder={folder} onClose={onClose} disabled={true} />
+    case File.t_maipl_folder.raw:
       return (
         <FileUpload
           folder={folder}
@@ -108,8 +108,6 @@ function Element() {
           }}
         />
       )
-    case File.t_maipl_folder.raw:
-      return <FileUpload onClose={onClose} folder={folder} />
   }
 }
 
