@@ -132,6 +132,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
       <M.Divider />
       <M.MenuItem
         children="Detail"
+        disabled={Object.keys(props.batch.segment_parameters ?? {}).length == 0} // todo: nosegments remove
         component={RR.Link}
         to={`/batches/${props.batch.id}`}
       />

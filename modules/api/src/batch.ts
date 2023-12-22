@@ -13,18 +13,26 @@ type t = {
   id: number
   /** Allow change of batch settings */
   allow_change_settings: boolean
+  /** Annotation config file id */
+  annotation_file: number
+  /** Annotation config file, cached at time of last update */
+  annotation_file_text: string
   /** Batch name */
   batch_name: string
   /** Date when batch was created */
   created_at: Date
   /** Batch description */
   description: string
-  /** Valid form schema for annotation */
-  form: string
-  /** Batch parameters */
+  /** Batch list of input files */
+  filelist: Array<number>
+  /** Import file id, if used */
+  import_file: null | number
+  /** Spectrogram parameters */
   parameters: t_parameters
   /** Batch progress */
   progress: number
+  /** Segment parameters */
+  segment_parameters: t_segment_parameters
   /** List of segment identifiers */
   segments: Array<number>
   /** Batch owner */
@@ -71,6 +79,13 @@ type t_parameters = {
   window_length: number
 }
 
+/** Batch.t_segment_parameters */
+type t_segment_parameters = {
+  length: number
+  step?: number
+  pad: boolean
+}
+
 /** Batch.t_celery_status */
 enum t_celery_status {
   failure = "FAILURE",
@@ -96,7 +111,14 @@ type t_list_item = Omit<t, "parameters">
 /** Batch.t_create_request */
 type t_create_request = Omit<
   t,
-  "id" | "created_at" | "progress" | "user_id" | "task_id" | "task_status"
+  | "id"
+  | "annotation_file_text"
+  | "created_at"
+  | "progress"
+  | "user_id"
+  | "segments"
+  | "task_id"
+  | "task_status"
 >
 
 /** Batch.t_create_response */
@@ -327,15 +349,16 @@ const update = (client: Client.t, body: t_update_request): Promise<void> => {
 
 export {
   type t,
-  type t_list_item,
-  type t_parameters,
   type t_create_request,
   type t_create_response,
-  type t_get_response,
   type t_filter_params,
+  type t_get_response,
+  type t_list_item,
   type t_list_request,
   type t_list_response,
+  type t_parameters,
   type t_process_response,
+  type t_segment_parameters,
   type t_update_request,
   audios,
   create,
