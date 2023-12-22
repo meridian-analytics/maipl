@@ -25,15 +25,15 @@ export const loader = (_maipl: MR.t_context) =>
 function Element() {
   const navigate = RR.useNavigate()
   const { folder } = RRT.useLoaderData<ReturnType<typeof loader>>()
-  const onClose = (hasUnsavedChanges?: boolean) => {
-    hasUnsavedChanges == false && navigate(-1)
+  const onClose = () => {
+    navigate(-1)
   }
   return <NewFile folder={folder} onClose={onClose} />
 }
 
 export default function NewFile(props: {
   folder: File.t_maipl_folder
-  onClose: (hasUnsavedChanges?: boolean) => void
+  onClose: () => void
 }) {
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
@@ -73,7 +73,7 @@ export default function NewFile(props: {
         </M.Alert>
       ))
       queryClient.refetchQueries({ queryKey: ["files"] })
-      props.onClose(hasUnsavedChanges)
+      props.onClose()
     },
   })
 
@@ -98,9 +98,7 @@ export default function NewFile(props: {
 
   return (
     <MR.Modal
-      onClose={() =>
-        hasUnsavedChanges == false && props.onClose(hasUnsavedChanges)
-      }
+      onClose={() => hasUnsavedChanges == false && props.onClose()}
       sx={{ width: "100%" }}
     >
       <M.Stack>
@@ -149,7 +147,7 @@ export default function NewFile(props: {
           <M.Stack flexGrow={1} />
           <M.Button
             color={hasUnsavedChanges ? "error" : "primary"}
-            onClick={() => props.onClose(hasUnsavedChanges)}
+            onClick={props.onClose}
             children={hasUnsavedChanges ? "Close Without Saving" : "Close"}
           />
           <M.Button
