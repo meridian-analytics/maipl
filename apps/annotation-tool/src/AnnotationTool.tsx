@@ -30,12 +30,6 @@ function SegmentActions(props: { batch: Batch.t; segment: Segment.t }) {
         to={`/annotate/${props.batch.id}/segment/${props.segment.id}`}
         title="Annotate"
       />
-      <MR.ActionButton
-        children={<I.Architecture />}
-        component={RR.Link}
-        title="Annotate"
-        to={`/annotate/${props.batch.id}/segment/${props.segment.id}`}
-      />
     </M.Stack>
   )
 }
