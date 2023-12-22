@@ -54,12 +54,12 @@ function Notifications() {
       open={isOpen}
       anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
     >
-      <M.Box>
+      <M.Stack>
         {isNotifying && context.notifications[0]}
         {isSynchronizing && (
           <M.Alert severity="info" children="Synchronizing with server..." />
         )}
-      </M.Box>
+      </M.Stack>
     </M.Snackbar>
   )
 }

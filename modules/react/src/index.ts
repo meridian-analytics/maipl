@@ -43,5 +43,6 @@ export {
   Navbar,
   Picker,
   Profile,
+  Switch,
   theme,
 } from "./ui.tsx"
