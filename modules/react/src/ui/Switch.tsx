@@ -1,5 +1,5 @@
-import * as R from "react"
 import * as M from "@mui/material"
+import * as R from "react"
 
 export default function Switch(props: {
   disabled?: boolean
