@@ -105,6 +105,8 @@ function get
 function list
 function update
 function usage
+
+function invariantMaiplFolder
 ```
 
 Additional memebers for accessing `meta` field:

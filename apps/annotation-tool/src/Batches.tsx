@@ -55,7 +55,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
           Success: Deleted batch "{props.batch.batch_name}"
         </M.Alert>
       ))
-      queryClient.refetchQueries(["batches"])
+      queryClient.refetchQueries({ queryKey: ["batches"] })
     },
   })
 
@@ -78,7 +78,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
           Success: Exported "{props.batch.batch_name}" to {file.path}`
         </M.Alert>
       ))
-      queryClient.refetchQueries(["files"])
+      queryClient.refetchQueries({ queryKey: ["files"] })
     },
   })
 
@@ -101,7 +101,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
           Success: Started processing batch "{props.batch.batch_name} ..."
         </M.Alert>
       ))
-      queryClient.refetchQueries(["batches"])
+      queryClient.refetchQueries({ queryKey: ["batches"] })
     },
   })
 
@@ -110,19 +110,19 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
   // automatically refresh once in 30 seconds, the processing should be complete by then
   R.useEffect(() => {
     const t = window.setTimeout(() => {
-      queryClient.refetchQueries(["batches"])
+      queryClient.refetchQueries({ queryKey: ["batches"] })
     }, 30000)
     return () => {
       window.clearTimeout(t)
     }
-  })
+  }, [queryClient])
 
   return (
     <MR.Menu icon={<I.Settings />}>
       <M.MenuItem
         children="Submit for processing..."
         disabled={
-          processMutation.isLoading ||
+          processMutation.isPending ||
           status == Batch.t_status.empty ||
           status == Batch.t_status.processing ||
           status == Batch.t_status.success
@@ -132,6 +132,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
       <M.Divider />
       <M.MenuItem
         children="Detail"
+        disabled={Object.keys(props.batch.segment_parameters ?? {}).length == 0} // todo: nosegments remove
         component={RR.Link}
         to={`/batches/${props.batch.id}`}
       />
@@ -144,13 +145,13 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
       />
       <M.MenuItem
         children="Export Annotations"
-        disabled={exportMutation.isLoading}
+        disabled={exportMutation.isPending}
         onClick={onExport}
       />
       <M.Divider />
       <M.MenuItem
         children="Delete"
-        disabled={deleteMutation.isLoading}
+        disabled={deleteMutation.isPending}
         onClick={onDelete}
       />
     </MR.Menu>
@@ -160,33 +161,15 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
 function BatchStatus(props: { batch: Batch.t_list_item }) {
   switch (Batch.status(props.batch)) {
     case Batch.t_status.empty:
-      return <M.Chip label="Empty" size="small" variant="outlined" />
+      return <M.Chip label="Empty" />
     case Batch.t_status.error:
-      return (
-        <M.Chip color="error" label="Error" size="small" variant="outlined" />
-      )
+      return <M.Chip color="error" label="Error" />
     case Batch.t_status.processing:
-      return (
-        <M.Chip
-          color="info"
-          label="Processing"
-          size="small"
-          variant="outlined"
-        />
-      )
+      return <M.Chip color="info" label="Processing" />
     case Batch.t_status.success:
-      return (
-        <M.Chip color="success" label="Ready" size="small" variant="outlined" />
-      )
+      return <M.Chip color="success" label="Ready" />
     case Batch.t_status.unprocessed:
-      return (
-        <M.Chip
-          color="warning"
-          label="Unprocessed"
-          size="small"
-          variant="outlined"
-        />
-      )
+      return <M.Chip color="warning" label="Unprocessed" />
   }
 }
 
@@ -229,7 +212,6 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
 
   return (
     <M.Stack
-      spacing={2}
       sx={{
         flexGrow: 1,
         maxHeight: "100%",
@@ -239,14 +221,12 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
       }}
     >
       <RR.Outlet />
-      <M.Stack direction="row" spacing={2}>
+      <M.Stack direction="row">
         <M.TextField
           label="Name"
           onChange={e => filter.set("name", e.currentTarget.value)}
           placeholder="Batch name..."
-          size="small"
           value={filter.get("name")}
-          variant="outlined"
         />
         <M.Stack flexGrow={1} />
         <MR.ActionButton

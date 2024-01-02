@@ -7,7 +7,7 @@
   "formatter": {
     "enabled": true,
     "formatWithErrors": true,
-    "indentSize": 2,
+    "indentWidth": 2,
     "indentStyle": "space"
   },
   "organizeImports": {

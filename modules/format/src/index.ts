@@ -54,7 +54,7 @@ export function safeParseBoolean<T>(value: unknown, orElse: T): boolean | T {
 
 export function safeParseNumber<T>(value: unknown, orElse: T): number | T {
   const n = Number.parseFloat(String(value))
-  return isNaN(n) ? orElse : n
+  return Number.isNaN(n) ? orElse : n
 }
 
 export function safeParseInteger<T>(
@@ -63,7 +63,7 @@ export function safeParseInteger<T>(
   radix?: number,
 ): number | T {
   const n = Number.parseInt(String(value), radix)
-  return isNaN(n) ? orElse : n
+  return Number.isNaN(n) ? orElse : n
 }
 
 export function safeParseString<T>(value: unknown, orElse: T): string | T {

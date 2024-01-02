@@ -9,7 +9,9 @@
 ## <a name="context"></a> Context
 
 ```ts
+type t_client
 type t_context
+type t_router
 
 function useMaipl
 function MaiplProvider
@@ -32,6 +34,7 @@ function useFilter
 ```ts
 type t_notification
 type t_notification_context
+type t_notify
 
 function NotificationProvider
 function Notifications

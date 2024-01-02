@@ -67,7 +67,7 @@ function EditTask(props: {
   const [threshold, setThreshold] = R.useState(() => props.task?.threshold ?? 0)
 
   const { data: models } = MR.Files.useQuery({
-    maipl_folder: "model",
+    maipl_folder: File.t_maipl_folder.model,
     page: 1, // bug: when query changes, page needs to be reset
     size: 100,
   })
@@ -121,7 +121,7 @@ function EditTask(props: {
           Success: Created task #{task.id}
         </M.Alert>
       ))
-      queryClient.refetchQueries(["tasks"])
+      queryClient.refetchQueries({ queryKey: ["tasks"] })
       props.onClose()
     },
   })
@@ -159,18 +159,16 @@ function EditTask(props: {
   }
 
   return (
-    <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
+    <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
       <M.Typography variant="h6">
         {props.task == null ? "New Task" : `Copy Task #${props.task.id}`}
       </M.Typography>
-      <M.FormControl size="small">
+      <M.FormControl>
         <M.InputLabel>Model</M.InputLabel>
         <M.Select
           label="Model"
           onChange={e => setModelFile(e.target.value as number)}
-          size="small"
           value={modelFile}
-          variant="outlined"
         >
           <M.MenuItem value={-1} children="Choose model ..." />
           {models.data
@@ -183,46 +181,36 @@ function EditTask(props: {
         </M.Select>
       </M.FormControl>
       <M.TextField
-        size="small"
         label="Description"
         value={description}
-        variant="outlined"
         onChange={e => setDescription(e.target.value)}
       />
-      <M.Stack direction="row" spacing={2} justifyContent="space-between">
+      <M.Stack direction="row" justifyContent="space-between">
         <M.TextField
           fullWidth
-          size="small"
           label="Batch Size"
           value={batchSize}
-          variant="outlined"
           type="number"
           onChange={e => setBatchSize(F.safeParseInteger(e.target.value, 0))}
         />
         <M.TextField
           fullWidth
-          size="small"
           label="Step Size"
           value={stepSize}
-          variant="outlined"
           type="number"
           onChange={e => setStepSize(F.safeParseInteger(e.target.value, 0))}
         />
         <M.TextField
           fullWidth
-          size="small"
           label="Threshold"
           value={threshold}
-          variant="outlined"
           type="number"
           onChange={e => setThreshold(F.safeParseNumber(e.target.value, 0))}
         />
         <M.TextField
           fullWidth
-          size="small"
           label="Buffer"
           value={buffer}
-          variant="outlined"
           type="number"
           onChange={e => setBuffer(F.safeParseNumber(e.target.value, 0))}
         />
@@ -230,27 +218,28 @@ function EditTask(props: {
       <M.Typography variant="h6" pt={3}>
         Input Files
       </M.Typography>
-      <M.Stack direction="row" spacing={2}>
-        <MR.MaiplFolderPicker
-          folder={folder}
-          folders={["public", "dataset", "raw"]}
-          setFolder={setFolder}
+      <M.Stack direction="row">
+        <MR.Picker
+          label="Folder"
+          setValue={setFolder}
+          value={folder}
+          values={[
+            File.t_maipl_folder.public,
+            File.t_maipl_folder.dataset,
+            File.t_maipl_folder.raw,
+          ]}
         />
         <M.TextField
-          size="small"
           label="Path"
           onChange={e => filter.set("path", e.currentTarget.value)}
           placeholder="path/to/folder"
           value={filter.get("path")}
-          variant="outlined"
         />
         <M.TextField
-          size="small"
           label="Tag"
           onChange={e => filter.set("tag", e.currentTarget.value)}
           placeholder="my-tag"
           value={filter.get("tag")}
-          variant="outlined"
         />
       </M.Stack>
       <MR.Files.Table
@@ -269,20 +258,17 @@ function EditTask(props: {
           created_at: true,
         }}
       />
-      <M.Stack direction="row-reverse" spacing={2}>
+      <M.Stack direction="row-reverse">
         <M.Button
           children="Create"
-          color="primary"
-          disabled={createMutation.isLoading}
+          disabled={createMutation.isPending}
           onClick={onCreate}
           variant="contained"
         />
         <M.Button
           children="Cancel"
-          color="primary"
-          disabled={createMutation.isLoading}
+          disabled={createMutation.isPending}
           onClick={props.onClose}
-          variant="outlined"
         />
       </M.Stack>
     </M.Stack>

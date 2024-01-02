@@ -31,7 +31,6 @@ function useTable(props?: {
 function useQuery(props?: Task.t_list_request) {
   const { client } = useMaipl()
   return RQ.useQuery({
-    keepPreviousData: true,
     queryKey: ["tasks", "list", props],
     queryFn: () => Task.list(client, props),
     initialData: [],
@@ -69,43 +68,19 @@ const Table = BaseTable([
 function TaskStatus(props: { status: Task.t["status"] }) {
   switch (props.status) {
     case "CREATED":
-      return (
-        <M.Chip
-          color="default"
-          label="Created"
-          size="small"
-          variant="outlined"
-        />
-      )
+      return <M.Chip color="default" label="Created" />
     case "FAILURE":
-      return (
-        <M.Chip color="error" label="Failure" size="small" variant="outlined" />
-      )
+      return <M.Chip color="error" label="Failure" />
     case "PENDING":
-      return (
-        <M.Chip color="info" label="Pending" size="small" variant="outlined" />
-      )
+      return <M.Chip color="info" label="Pending" />
     case "RETRY":
-      return (
-        <M.Chip color="warning" label="Retry" size="small" variant="outlined" />
-      )
+      return <M.Chip color="warning" label="Retry" />
     case "REVOKED":
-      return (
-        <M.Chip color="error" label="Revoked" size="small" variant="outlined" />
-      )
+      return <M.Chip color="error" label="Revoked" />
     case "STARTED":
-      return (
-        <M.Chip color="info" label="Started" size="small" variant="outlined" />
-      )
+      return <M.Chip color="info" label="Started" />
     case "SUCCESS":
-      return (
-        <M.Chip
-          color="success"
-          label="Success"
-          size="small"
-          variant="outlined"
-        />
-      )
+      return <M.Chip color="success" label="Success" />
   }
 }
 

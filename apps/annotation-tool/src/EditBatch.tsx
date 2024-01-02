@@ -86,28 +86,34 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
     initialData: {},
   })
 
-  const selectTemplate = RQ.useQuery({
+  const templateQuery = RQ.useQuery({
     enabled: template != "__",
     queryFn: () => fetch(template).then(res => res.text()),
     queryKey: ["templates", template],
-    onError: err => {
+    initialData: "",
+  })
+
+  R.useEffect(() => {
+    if (templateQuery.error) {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="error">
           Error: Could not load template "{template}"
         </M.Alert>
       ))
       if (import.meta.env.DEV) {
-        console.error("EditBatch selectTemplate error", err)
+        console.error("EditBatch selectTemplate error", templateQuery.error)
       }
-    },
-    onSuccess: data => {
+    }
+  }, [templateQuery.error, notify, template])
+
+  R.useEffect(() => {
+    if (templateQuery.data != null) {
       console.warn(
         "EditBatch selectTemplate warning: validate template not implemented",
       ) // todo
-      setForm(data)
-    },
-    initialData: "",
-  })
+      setForm(templateQuery.data)
+    }
+  }, [templateQuery.data, setForm])
 
   const createMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Batch.create>) =>
@@ -135,7 +141,7 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
           }
         </M.Alert>
       ))
-      queryClient.refetchQueries(["batches"])
+      queryClient.refetchQueries({ queryKey: ["batches"] })
       props.onClose()
     },
   })
@@ -165,35 +171,29 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
 
   return (
     <MR.Modal onClose={props.onClose}>
-      <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
+      <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography variant="h6">
           {batch == null ? "Create new batch ..." : name}
         </M.Typography>
-        <M.Stack component={M.Paper} padding={2} spacing={2}>
+        <M.Stack component={M.Paper} padding={2}>
           <M.TextField
-            size="small"
             label="Batch Name"
             value={name}
-            variant="outlined"
             onChange={e => setName(e.currentTarget.value)}
           />
           <M.TextField
-            size="small"
             label="Description"
             value={description}
-            variant="outlined"
             onChange={e => setDescription(e.currentTarget.value)}
           />
-          <M.Stack direction="row" spacing={2} alignItems={"center"}>
+          <M.Stack direction="row" alignItems="center">
             <M.FormControl disabled={batch != null} fullWidth>
               <M.InputLabel id={templateSelectorId}>Template</M.InputLabel>
               <M.Select
-                label={"Template"}
+                label="Template"
                 labelId={templateSelectorId}
                 onChange={e => setTemplate(e.target.value)}
-                size="small"
                 value={template}
-                variant="outlined"
               >
                 <M.MenuItem value="__">Choose a template...</M.MenuItem>
                 {Object.entries(templates).map(([key, option]) => (
@@ -203,9 +203,9 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
                 ))}
               </M.Select>
             </M.FormControl>
-            {selectTemplate.isLoading ? (
+            {templateQuery.isLoading ? (
               <I.CloudSyncOutlined />
-            ) : selectTemplate.isError ? (
+            ) : templateQuery.isError ? (
               <I.SyncProblemOutlined color="error" />
             ) : form instanceof Error ? (
               <I.AssignmentLateOutlined color="error" />
@@ -235,36 +235,24 @@ function EditBatch_(props: { batch?: Batch.t; onClose: () => void }) {
             validator={validator}
           />
         </M.Stack>
-        <M.Stack direction="row-reverse" spacing={2}>
+        <M.Stack direction="row-reverse">
           {batch == null ? (
             <M.Button
               children="Create"
-              color="primary"
-              disabled={createMutation.isLoading}
+              disabled={createMutation.isPending}
               onClick={onCreate}
               variant="contained"
             />
           ) : (
-            <M.Button
-              children="Save"
-              color="primary"
-              onClick={onUpdate}
-              variant="contained"
-            />
+            <M.Button children="Save" onClick={onUpdate} variant="contained" />
           )}
-          <M.Button
-            children="Close"
-            color="primary"
-            onClick={props.onClose}
-            variant="outlined"
-          />
+          <M.Button children="Close" onClick={props.onClose} />
           <M.Stack flexGrow={1} />
           <M.FormControlLabel
             control={
               <M.Switch
                 checked={allowChanges}
                 onChange={(_e, value) => setAllowChanges(value)}
-                size="small"
               />
             }
             disabled={true}

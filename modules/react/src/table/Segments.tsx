@@ -29,10 +29,15 @@ function useTable(props?: {
     tag: props?.tag ?? "",
   })
   const debouncedFilter = useDebounce(filter, props?.debounceDelay)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: hack fixes bug above in queryParams
   R.useEffect(() => {
-    // hack: fixes bug above in queryParams
     setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
-  }, [debouncedFilter.get("filename"), debouncedFilter.get("tag")])
+  }, [
+    setPagination,
+    pagination.pageSize,
+    debouncedFilter.get("filename"),
+    debouncedFilter.get("tag"),
+  ])
   return {
     filter,
     debouncedFilter,
@@ -46,7 +51,6 @@ function useTable(props?: {
 function useQuery(props: Segment.t_list_request) {
   const { client } = useMaipl()
   return RQ.useQuery({
-    keepPreviousData: true,
     queryKey: ["segments", "list", props],
     queryFn: () => Segment.list(client, props),
     initialData: () =>

@@ -5,13 +5,13 @@
     "@check": "biome check .",
     "@format": "biome format --write .",
     "@build": "tsc && pnpm -F \"./apps/*\" build",
-    "@preview": "pnpm -F \"./apps/*\" preview",
+    "@preview": "docker compose up --build",
     "@start": "pnpm -F \"./apps/*\" start",
     "@tsc": "tsc"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.2.2",
-    "@types/node": "^20.8.5",
-    "typescript": "^5.2.2"
+    "@biomejs/biome": "1.3.3",
+    "@types/node": "^20.9.3",
+    "typescript": "^5.3.2"
   }
 }

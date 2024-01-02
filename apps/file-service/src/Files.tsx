@@ -6,6 +6,20 @@ import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
+import * as RRT from "react-router-typesafe"
+
+export const element = <Files />
+
+export const loader = (_maipl: MR.t_context) =>
+  (async ({ request }) => {
+    // folder query param
+    const url = new URL(request.url)
+    const search = url.searchParams
+    const folder = search.get("folder") ?? "public"
+    File.invariantMaiplFolder(folder)
+    // payload
+    return { folder }
+  }) satisfies RR.LoaderFunction
 
 function SelectionActions(props: {
   selection: ReturnType<typeof MR.Files.useTable>["selection"]
@@ -27,12 +41,12 @@ function SelectionActions(props: {
       props.setSelection(new Map())
       // bug: how to handle when deleting all items on last page?
       // setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
-      queryClient.refetchQueries(["files"])
+      queryClient.refetchQueries({ queryKey: ["files"] })
     }
   }
 
   return (
-    <M.Stack direction="row" spacing={2}>
+    <M.Stack direction="row">
       <MR.ActionButton
         children={<I.DriveFolderUpload />}
         component={RR.Link}
@@ -95,7 +109,7 @@ function FileActions(props: { file: File.t }) {
   )
 }
 
-export default function FilesTable(props: { sx?: M.SxProps }) {
+export default function Files(props: { sx?: M.SxProps }) {
   const {
     debouncedFilter,
     filter,
@@ -105,8 +119,8 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
     setSelection,
   } = MR.Files.useTable()
 
-  const [search, setSearch] = RR.useSearchParams()
-  const folder = (search.get("folder") ?? "public") as File.t_maipl_folder
+  const [_search, setSearch] = RR.useSearchParams()
+  const { folder } = RRT.useLoaderData<ReturnType<typeof loader>>()
 
   const extraColumns = R.useMemo(
     () =>
@@ -160,7 +174,6 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
 
   return (
     <M.Stack
-      spacing={2}
       sx={{
         flexGrow: 1,
         maxHeight: "100%",
@@ -170,37 +183,34 @@ export default function FilesTable(props: { sx?: M.SxProps }) {
       }}
     >
       <RR.Outlet />
-      <M.Stack direction="row" spacing={2}>
-        <MR.MaiplFolderPicker
-          folder={folder}
-          folders={[
-            "public",
-            "annotation",
-            "config",
-            "dataset",
-            "model",
-            "raw",
-          ]}
-          setFolder={(folder: File.t_maipl_folder) => {
+      <M.Stack direction="row">
+        <MR.Picker
+          label="Folder"
+          setValue={folder => {
             setSearch({ folder }, { replace: true })
             setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
           }}
+          value={folder}
+          values={[
+            File.t_maipl_folder.public,
+            File.t_maipl_folder.annotation,
+            File.t_maipl_folder.config,
+            File.t_maipl_folder.dataset,
+            File.t_maipl_folder.model,
+            File.t_maipl_folder.raw,
+          ]}
         />
         <M.TextField
-          size="small"
           label="Path"
           onChange={e => filter.set("path", e.currentTarget.value)}
           placeholder="path/to/folder"
           value={filter.get("path")}
-          variant="outlined"
         />
         <M.TextField
-          size="small"
           label="Tag"
           onChange={e => filter.set("tag", e.currentTarget.value)}
           placeholder="my-tag"
           value={filter.get("tag")}
-          variant="outlined"
         />
         <M.Stack flexGrow={1} />
         <SelectionActions selection={selection} setSelection={setSelection} />

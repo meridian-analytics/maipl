@@ -70,89 +70,70 @@ function ShowTask(props: {
   })
 
   return (
-    <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
+    <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
       <M.Typography variant="h6">Task #{task.id}</M.Typography>
-      <M.FormControl size="small">
+      <M.FormControl>
         <M.InputLabel>Model</M.InputLabel>
-        <M.Select
-          disabled
-          label="Model"
-          size="small"
-          value={model.id}
-          variant="outlined"
-        >
+        <M.Select disabled label="Model" value={model.id}>
           <M.MenuItem value={model.id} children={`model/${model.path}`} />
         </M.Select>
       </M.FormControl>
-      <M.TextField
-        disabled
-        label="Description"
-        size="small"
-        value={task.description}
-        variant="outlined"
-      />
-      <M.Stack direction="row" spacing={2} justifyContent="space-between">
+      <M.TextField disabled label="Description" value={task.description} />
+      <M.Stack direction="row" justifyContent="space-between">
         <M.TextField
           disabled
           fullWidth
           label="Batch Size"
-          size="small"
           type="number"
           value={task.batch_size}
-          variant="outlined"
         />
         <M.TextField
           disabled
           fullWidth
           label="Step Size"
-          size="small"
           type="number"
           value={task.step_size}
-          variant="outlined"
         />
         <M.TextField
           disabled
           fullWidth
           label="Threshold"
-          size="small"
           type="number"
           value={task.threshold}
-          variant="outlined"
         />
         <M.TextField
           disabled
           fullWidth
           label="Buffer"
-          size="small"
           type="number"
           value={task.buffer}
-          variant="outlined"
         />
       </M.Stack>
       <M.Typography variant="h6" pt={3}>
         Input Files
       </M.Typography>
-      <M.Stack direction="row" spacing={2}>
-        <MR.MaiplFolderPicker
-          folder={folder}
-          folders={["public", "dataset", "raw"]}
-          setFolder={setFolder}
+      <M.Stack direction="row">
+        <MR.Picker
+          label="Folder"
+          setValue={setFolder}
+          value={folder}
+          values={[
+            File.t_maipl_folder.public,
+            File.t_maipl_folder.dataset,
+            File.t_maipl_folder.raw,
+          ]}
         />
         <M.TextField
-          size="small"
           label="Path"
           onChange={e => filter.set("path", e.currentTarget.value)}
           placeholder="path/to/folder"
           value={filter.get("path")}
-          variant="outlined"
         />
         <M.TextField
-          size="small"
           label="Tag"
           onChange={e => filter.set("tag", e.currentTarget.value)}
           placeholder="my-tag"
           value={filter.get("tag")}
-          variant="outlined"
         />
       </M.Stack>
       <MR.Files.Table
@@ -172,20 +153,14 @@ function ShowTask(props: {
           created_at: true,
         }}
       />
-      <M.Stack direction="row-reverse" spacing={2}>
+      <M.Stack direction="row-reverse">
         <M.Button
           children="Copy"
-          color="primary"
           component={RR.Link}
           to={`/${task.id}/copy`}
           variant="contained"
         />
-        <M.Button
-          children="Close"
-          color="primary"
-          onClick={props.onClose}
-          variant="outlined"
-        />
+        <M.Button children="Close" onClick={props.onClose} />
       </M.Stack>
     </M.Stack>
   )

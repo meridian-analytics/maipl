@@ -95,7 +95,7 @@ export default function AddToBatch(props: {
 
   return (
     <MR.Modal onClose={props.onClose}>
-      <M.Stack spacing={2} sx={{ maxHeight: "100%", overflow: "hidden" }}>
+      <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography variant="h5">
           Selected Segments ({props.segments.length})
         </M.Typography>
@@ -122,20 +122,14 @@ export default function AddToBatch(props: {
             actions: false,
           }}
         />
-        <M.Stack direction="row-reverse" spacing={2}>
+        <M.Stack direction="row-reverse">
           <M.Button
             children="Submit"
-            color="primary"
-            disabled={selection.size == 0 || addMutation.isLoading}
+            disabled={selection.size == 0 || addMutation.isPending}
             onClick={onAdd}
             variant="contained"
           />
-          <M.Button
-            children="Cancel"
-            color="primary"
-            onClick={props.onClose}
-            variant="outlined"
-          />
+          <M.Button children="Cancel" onClick={props.onClose} />
         </M.Stack>
       </M.Stack>
     </MR.Modal>

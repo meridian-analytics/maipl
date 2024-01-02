@@ -27,15 +27,15 @@ function useTable(props?: {
   const [selection, setSelection] = useSelection(props?.selection)
 
   const [folder, setFolder] = R.useState<File.t_maipl_folder>(
-    props?.maipl_folder ?? "public",
+    props?.maipl_folder ?? File.t_maipl_folder.public,
   )
   const filter = useFilter({ path: props?.path ?? "", tag: props?.tag ?? "" })
   const debouncedFilter = useDebounce(filter, props?.debounceDelay)
 
-  // hack: fixes bug above in queryParams
+  // biome-ignore lint/correctness/useExhaustiveDependencies: hack fixes bug above in queryParams
   R.useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
-  }, [debouncedFilter.get("path"), debouncedFilter.get("tag")])
+  }, [setPagination, debouncedFilter.get("path"), debouncedFilter.get("tag")])
 
   return {
     folder,
@@ -53,7 +53,6 @@ function useQuery(props: File.t_list_request) {
   const { client, user } = useMaipl()
   return RQ.useQuery({
     enabled: user != null,
-    keepPreviousData: true,
     queryKey: ["files", "list", props],
     queryFn: () => File.list(client, props),
     initialData: () =>

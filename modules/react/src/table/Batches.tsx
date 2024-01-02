@@ -27,10 +27,10 @@ function useTable(props?: {
   const filter = useFilter({ name: props?.name ?? "" })
   const debouncedFilter = useDebounce(filter, props?.debounceDelay)
 
-  // hack: fixes bug above in queryParams
+  // biome-ignore lint/correctness/useExhaustiveDependencies: hack fixes bug above in queryParams
   R.useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
-  }, [debouncedFilter.get("name")])
+  }, [setPagination, pagination.pageSize, debouncedFilter.get("name")])
 
   return {
     filter,
@@ -46,7 +46,6 @@ function useQuery(props: Batch.t_list_request) {
   const { client, user } = useMaipl()
   return RQ.useQuery({
     enabled: user != null,
-    keepPreviousData: true,
     queryKey: ["batches", "list", props],
     queryFn: () => Batch.list(client, props),
     initialData: () =>

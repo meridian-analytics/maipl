@@ -50,12 +50,12 @@ function Actions(props: {
         </M.Alert>
       ))
       props.setSelection(new Map())
-      queryClient.refetchQueries(["segments"])
+      queryClient.refetchQueries({ queryKey: ["segments"] })
     },
   })
 
   return (
-    <M.Stack direction="row" spacing={2}>
+    <M.Stack direction="row">
       <MR.ActionButton
         children={<I.ContentPasteGo />}
         disabled={props.selection.size == 0}
@@ -68,7 +68,7 @@ function Actions(props: {
       />
       <MR.ActionButton
         children={<I.DeleteForever />}
-        disabled={props.selection.size == 0 || deleteMutation.isLoading}
+        disabled={props.selection.size == 0 || deleteMutation.isPending}
         onClick={onDelete}
         title={
           props.selection.size == 0
@@ -105,7 +105,6 @@ export default function SegmentsTable(props: { sx?: M.SxProps }) {
 
   return (
     <M.Stack
-      spacing={2}
       sx={{
         flexGrow: 1,
         maxHeight: "100%",
@@ -122,22 +121,18 @@ export default function SegmentsTable(props: { sx?: M.SxProps }) {
           }}
         />
       )}
-      <M.Stack direction="row" spacing={2}>
+      <M.Stack direction="row">
         <M.TextField
           label="Filename"
           onChange={e => filter.set("filename", e.currentTarget.value)}
           placeholder="path/to/myfile.ext"
-          size="small"
           value={filter.get("filename")}
-          variant="outlined"
         />
         <M.TextField
           label="Tag"
           onChange={e => filter.set("tag", e.currentTarget.value)}
           placeholder="my-tag"
-          size="small"
           value={filter.get("tag")}
-          variant="outlined"
         />
         <M.Stack flexGrow={1} />
         <Actions

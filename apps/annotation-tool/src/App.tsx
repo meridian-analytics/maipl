@@ -3,22 +3,11 @@ import * as M from "@mui/material"
 import * as RR from "react-router-dom"
 import AnnotationTool from "./AnnotationTool.tsx"
 import Batches from "./Batches.tsx"
-import EditBatch from "./EditBatch.tsx"
-import Files from "./Files.tsx"
-import Segments from "./Segments.tsx"
+import EditBatch from "./NewBatch.tsx"
+import ShowBatch from "./ShowBatch.tsx"
 
 export default function App() {
-  return (
-    <MR.MaiplProvider
-      routes={[
-        {
-          path: "/",
-          element: <Layout />,
-          children: routes,
-        },
-      ]}
-    />
-  )
+  return <MR.MaiplProvider router={router} />
 }
 
 function Layout() {
@@ -44,19 +33,12 @@ function LocalNavigation() {
   const tab = RR.useMatch("/:tab/*")?.params?.tab
   return (
     <M.Stack direction="row" flexGrow={1} justifyContent="center">
-      <M.Tabs value={tab ?? "files"} indicatorColor="primary">
-        <M.Tab component={RR.Link} label="Files" to="/files" value="files" />
+      <M.Tabs value={tab ?? "batches"} indicatorColor="primary">
         <M.Tab
           component={RR.Link}
           label="Batches"
           to="/batches"
           value="batches"
-        />
-        <M.Tab
-          component={RR.Link}
-          label="Segments"
-          to="/segments"
-          value="segments"
         />
         <M.Tab
           component={RR.Link}
@@ -70,40 +52,38 @@ function LocalNavigation() {
   )
 }
 
-const routes: Array<RR.RouteObject> = [
+const router: MR.t_router = () => [
   {
-    index: true,
-    element: <RR.Navigate to="/files" replace />,
-  },
-  {
-    path: "files",
-    element: <Files />,
-  },
-  {
-    path: "batches",
-    element: <Batches />,
+    path: "/",
+    element: <Layout />,
     children: [
       {
-        path: ":batchId",
-        element: <EditBatch isNew={false} />,
+        index: true,
+        element: <RR.Navigate to="/batches" replace />,
       },
       {
-        path: "new",
-        element: <EditBatch isNew={true} />,
+        path: "batches",
+        element: <Batches />,
+        children: [
+          {
+            path: "new",
+            element: <EditBatch />,
+          },
+          {
+            path: ":batchId",
+            element: <ShowBatch />,
+          },
+        ],
       },
-    ],
-  },
-  {
-    path: "segments",
-    element: <Segments />,
-  },
-  {
-    path: "annotate/:batchId",
-    element: <AnnotationTool />,
-    children: [
       {
-        path: "segment/:segmentId",
+        path: "annotate/:batchId",
         element: <AnnotationTool />,
+        children: [
+          {
+            path: "segment/:segmentId",
+            element: <AnnotationTool />,
+          },
+        ],
       },
     ],
   },
