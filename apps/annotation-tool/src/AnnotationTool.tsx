@@ -242,7 +242,10 @@ function PreloadedAnnotationTool(props: {
         <M.Grid item xs={4} paddingX={2}>
           <M.Stack>
             <M.Typography variant="h5">{segment?.filename}</M.Typography>
-            <AnnotationForm schema={annotationFileText?.schema} uiSchema={annotationFileText?.uiSchema} />
+            <AnnotationForm
+              schema={annotationFileText?.schema}
+              uiSchema={annotationFileText?.uiSchema}
+            />
           </M.Stack>
         </M.Grid>
       </M.Grid>
