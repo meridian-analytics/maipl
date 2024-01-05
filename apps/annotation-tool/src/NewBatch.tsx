@@ -189,7 +189,7 @@ function EditBatch(props: {
           <MR.Picker
             label="Annotation Configuration"
             setValue={value => setAnnotationFile(Number(value))}
-            value={annotationFile ? String(annotationFile) : null}
+            value={annotationFile ? String(annotationFile) : ""}
             values={optionsForFiles(annotationFiles)}
             fullWidth
           />
@@ -224,7 +224,7 @@ function EditBatch(props: {
                 <MR.Picker
                   label="IMPORT .CSV"
                   setValue={value => setImportFile(Number(value))}
-                  value={null}
+                  value=""
                   values={optionsForFiles(importFiles)}
                   fullWidth
                 />

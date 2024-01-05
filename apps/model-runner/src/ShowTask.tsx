@@ -115,7 +115,9 @@ function ShowTask(props: {
       <M.Stack direction="row">
         <MR.Picker
           label="Folder"
-          setValue={setFolder}
+          setValue={value => {
+            if (value) setFolder(value as File.t_maipl_folder)
+          }}
           value={folder}
           values={[
             File.t_maipl_folder.public,

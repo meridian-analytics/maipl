@@ -151,10 +151,8 @@ type t_process_response = {
   message: string
 }
 
-/** Batch.t_update_request
- * form is not editable at this time
- */
-type t_update_request = Omit<t, "created_at" | "form">
+/** Batch.t_update_request */
+type t_update_request = Omit<t, "created_at">
 
 /** Batch.audios: get list of batch audios */
 const audios = async (
