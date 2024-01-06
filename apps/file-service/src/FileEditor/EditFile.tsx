@@ -61,7 +61,6 @@ export default function EditFile(props: {
   const queryClient = RQ.useQueryClient()
 
   const [path, setPath] = R.useState(props.file.path)
-  const [folder, setFolder] = R.useState(props.file.maipl_folder)
   const [tag, setTag] = R.useState(props.file.tag)
   const [value, setValue] = R.useState<undefined | string>(props.fileContents)
 
@@ -109,7 +108,7 @@ export default function EditFile(props: {
         props.file.id,
         {
           file: new window.File([value ?? ""], path),
-          maipl_folder: folder,
+          maipl_folder: props.file.maipl_folder,
           meta: props.file.meta,
           path,
           tag,
@@ -133,16 +132,9 @@ export default function EditFile(props: {
           <MR.Picker
             disabled={true}
             label="Folder"
-            setValue={setFolder}
-            value={folder}
-            values={[
-              File.t_maipl_folder.public,
-              File.t_maipl_folder.annotation,
-              File.t_maipl_folder.config,
-              File.t_maipl_folder.dataset,
-              File.t_maipl_folder.model,
-              File.t_maipl_folder.raw,
-            ]}
+            setValue={() => {}}
+            value={props.file.maipl_folder}
+            values={[props.file.maipl_folder]}
           />
           <M.TextField
             fullWidth

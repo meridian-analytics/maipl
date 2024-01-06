@@ -112,9 +112,9 @@ function PreloadedAnnotationTool(props: {
     props.batch.parameters.freq_min,
   ])
 
-  const form = R.useMemo(() => {
+  const annotationFileText = R.useMemo(() => {
     try {
-      return JSON.parse(props.batch.form) as {
+      return JSON.parse(props.batch.annotation_file_text) as {
         schema: RJSFSchema
         uiSchema: UiSchema
       }
@@ -122,7 +122,7 @@ function PreloadedAnnotationTool(props: {
       console.warn("AnnotationTool schema parse error", err)
       return undefined
     }
-  }, [props.batch.form])
+  }, [props.batch.annotation_file_text])
 
   const saveMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Annotation.updateSegment>) =>
@@ -242,7 +242,10 @@ function PreloadedAnnotationTool(props: {
         <M.Grid item xs={4} paddingX={2}>
           <M.Stack>
             <M.Typography variant="h5">{segment?.filename}</M.Typography>
-            <AnnotationForm schema={form?.schema} uiSchema={form?.uiSchema} />
+            <AnnotationForm
+              schema={annotationFileText?.schema}
+              uiSchema={annotationFileText?.uiSchema}
+            />
           </M.Stack>
         </M.Grid>
       </M.Grid>

@@ -91,15 +91,50 @@ function ShowBatch(props: {
     size: table.pagination.pageSize,
   })
 
+  const updateMutation = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof Batch.patch>) => Batch.patch(...vars),
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not update batch
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("ShowBatch update error", err, vars)
+      }
+    },
+    onSuccess: () => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: updated batch{" "}
+          {
+            <M.Link
+              component={RR.Link}
+              to={`/batches/${props.batch.id}`}
+              children={`#${props.batch.id}`}
+            />
+          }
+        </M.Alert>
+      ))
+      queryClient.refetchQueries({ queryKey: ["batches"] })
+      props.onClose()
+    },
+  })
+
   const onUpdate = () => {
-    console.warn("todo ShowBatch onUpdate not implemented")
-    console.dir({
-      name,
-      description,
-      annotationFile,
-      parameters,
-      segmentParameters,
-    })
+    if (updateMutation.isIdle) {
+      return updateMutation.mutateAsync([
+        maipl.client,
+        {
+          id: props.batch.id,
+          batch_name: name,
+          description,
+          filelist: Array.from(table.selection.keys()),
+          parameters,
+          segment_parameters: segmentParameters,
+        },
+      ])
+    }
   }
 
   return (
@@ -251,7 +286,12 @@ function ShowBatch(props: {
           </M.Typography>
           <M.Stack flexGrow={1} />
           <M.Button children="Close" onClick={props.onClose} />
-          <M.Button children="Save" onClick={onUpdate} variant="contained" />
+          <M.Button
+            children="Save"
+            disabled={updateMutation.isPending}
+            onClick={onUpdate}
+            variant="contained"
+          />
         </M.Stack>
       </M.Stack>
     </MR.Modal>

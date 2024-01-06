@@ -187,8 +187,10 @@ export default function Files(props: { sx?: M.SxProps }) {
         <MR.Picker
           label="Folder"
           setValue={folder => {
-            setSearch({ folder }, { replace: true })
-            setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
+            if (folder) {
+              setSearch({ folder }, { replace: true })
+              setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
+            }
           }}
           value={folder}
           values={[
