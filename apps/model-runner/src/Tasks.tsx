@@ -11,11 +11,47 @@ function TaskActions(props: { task: Task.t }) {
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
 
+  const onDelete = () => {
+    if (
+      deleteMutation.isIdle &&
+      confirm(`Are you sure you want to delete task #${props.task.id}?`)
+    ) {
+      return deleteMutation.mutateAsync([maipl.client, props.task.id])
+    }
+  }
+
   const onStart = () => {
     if (startMutation.isIdle) {
       return startMutation.mutateAsync([maipl.client, props.task.id])
     }
   }
+
+  const deleteMutation = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof Task.delete>) => {
+      return Task.delete(...vars)
+    },
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert severity="error" onClose={onClose}>
+          Error: Could not delete task #{vars[1]}
+        </M.Alert>
+      ))
+      if (import.meta.env.DEV) {
+        console.error("TaskActions deleteMutation error", err, vars)
+      }
+    },
+    onSettled: () => {
+      deleteMutation.reset()
+    },
+    onSuccess: (_data, vars) => {
+      notify(onClose => (
+        <M.Alert severity="success" onClose={onClose}>
+          Success: Deleted task #{vars[1]}
+        </M.Alert>
+      ))
+      queryClient.refetchQueries({ queryKey: ["tasks"] })
+    },
+  })
 
   const startMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Task.start>) => Task.start(...vars),
@@ -64,7 +100,9 @@ function TaskActions(props: { task: Task.t }) {
         disabled={
           props.task.status != "PENDING" && props.task.status != "STARTED"
         }
-        onClick={() => {}}
+        onClick={() => {
+          console.warn("TaskActions cancelMutation not implemented")
+        }}
         children="Cancel"
       />
       <M.Divider />
@@ -75,9 +113,11 @@ function TaskActions(props: { task: Task.t }) {
       />
       <M.MenuItem
         disabled={
-          props.task.status == "PENDING" || props.task.status == "STARTED"
+          props.task.status == "PENDING" ||
+          props.task.status == "STARTED" ||
+          deleteMutation.isPending
         }
-        onClick={() => {}}
+        onClick={onDelete}
         children="Delete"
       />
     </MR.Menu>

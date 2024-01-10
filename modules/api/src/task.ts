@@ -94,6 +94,11 @@ const create = async (client: Client.t, body: t_create_request): Promise<t> => {
   }
 }
 
+/** Task.delete: delete an existing task */
+const delete_ = (client: Client.t, id: number): Promise<void> => {
+  return client.delete(`${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/tasks/${id}/`)
+}
+
 /** Task.get: get task details */
 const get = async (client: Client.t, id: number): Promise<t> => {
   const response = await client
@@ -149,6 +154,7 @@ export {
   type t_list_request,
   type t_list_response,
   create,
+  delete_ as delete,
   get,
   list,
   start,
