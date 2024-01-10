@@ -38,15 +38,15 @@ class t {
       })
       .catch(this.onError<T, R>)
   // wrappers
-  delete: typeof axios["delete"] = (url, config) =>
+  delete: (typeof axios)["delete"] = (url, config) =>
     this.request({ ...config, method: "DELETE", url })
-  get: typeof axios["get"] = (url, config) =>
+  get: (typeof axios)["get"] = (url, config) =>
     this.request({ ...config, method: "GET", url })
-  patch: typeof axios["patch"] = (url, data, config) =>
+  patch: (typeof axios)["patch"] = (url, data, config) =>
     this.request({ ...config, method: "PATCH", url, data })
-  post: typeof axios["post"] = (url, data, config) =>
+  post: (typeof axios)["post"] = (url, data, config) =>
     this.request({ ...config, method: "POST", url, data })
-  put: typeof axios["put"] = (url, data, config) =>
+  put: (typeof axios)["put"] = (url, data, config) =>
     this.request({ ...config, method: "PUT", url, data })
 
   // introspection
