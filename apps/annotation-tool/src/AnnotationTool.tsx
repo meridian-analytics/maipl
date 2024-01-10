@@ -195,7 +195,6 @@ function PreloadedAnnotationTool(props: {
               columns={segmentsTableExtraColumns}
               visibility={{
                 select: false,
-                created_at: false,
                 duration: false,
               }}
             />

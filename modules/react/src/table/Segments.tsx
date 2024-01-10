@@ -69,9 +69,6 @@ const Table = BaseTable([
   column.accessor("filename", {
     header: "File Name",
   }),
-  column.accessor("tag", {
-    header: "Tag",
-  }),
   column.accessor("start", {
     header: "Start",
     cell: info => `${info.getValue().toFixed(2)} sec`,
@@ -84,16 +81,6 @@ const Table = BaseTable([
     id: "duration",
     header: "Duration",
     cell: info => `${info.getValue().toFixed(2)} sec`,
-  }),
-  column.accessor("created_at", {
-    header: "Date",
-    cell: info => {
-      const value = info.getValue()
-      return value == null ? "-" : iso8601(value)
-    },
-  }),
-  column.accessor("user_id", {
-    header: "Owner",
   }),
 ] as Array<ColumnDef<Segment.t>>)
 
