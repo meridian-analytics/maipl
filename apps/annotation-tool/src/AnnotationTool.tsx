@@ -326,7 +326,7 @@ function MonoForm(props: {
   schema?: RJSFSchema
   uiSchema?: UiSchema
 }) {
-  const { transport, setRegions } = useSpecviz()
+  const { command, transport, setRegions } = useSpecviz()
   const { region } = props
   return (
     <M.Stack>
@@ -363,17 +363,21 @@ function MonoForm(props: {
       </M.Stack>
       <M.Stack direction="row">
         <M.Button
-          fullWidth
           onClick={() => transport.loop(region.id)}
           color="primary"
           variant="contained"
-          children="Play annotation"
+          children={<I.PlayArrow />}
         />
         <M.Button
-          fullWidth
           onClick={() => transport.stop()}
           color="primary"
-          children="Stop"
+          children={<I.Stop />}
+        />
+        <M.Stack flexGrow={1} />
+        <MR.ActionButton
+          children={<I.DeleteForever />}
+          onClick={() => command.delete()}
+          title="Delete annotation"
         />
       </M.Stack>
     </M.Stack>
@@ -502,7 +506,6 @@ function MyKeybinds() {
   const { command, transport } = useSpecviz()
   return (
     <Bindings>
-      <Keypress bind="Backspace" onKeyDown={command.delete} />
       <Keypress bind="Escape" onKeyDown={command.deselect} />
       <Keypress
         bind="ArrowLeft"
