@@ -250,6 +250,9 @@ function FileUploadStep2(props: {
       }
       setStatus(status => new Map(status).set(vars[1].path, "error"))
     },
+    onSettled: () => {
+      uploadFile.reset()
+    },
     onSuccess: file => {
       setStatus(status => new Map(status).set(file.path, "ok"))
     },
@@ -300,6 +303,9 @@ function FileUploadStep2(props: {
         console.error("FileUpload uploadMutation error", error, vars)
       }
     },
+    onSettled: () => {
+      uploadMutation.reset()
+    },
     onSuccess: data => {
       notify(onClose => {
         const count = data.filter(f => f.status == "fulfilled").length
@@ -314,9 +320,6 @@ function FileUploadStep2(props: {
         )
       })
       queryClient.refetchQueries({ queryKey: ["files"] })
-    },
-    onSettled: () => {
-      uploadMutation.reset()
     },
   })
 

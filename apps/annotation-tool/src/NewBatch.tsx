@@ -135,6 +135,9 @@ function EditBatch(props: {
         console.error("EditBatch create error", err, vars)
       }
     },
+    onSettled: () => {
+      createMutation.reset()
+    },
     onSuccess: batch => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="success">

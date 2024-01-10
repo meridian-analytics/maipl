@@ -115,6 +115,9 @@ function EditTask(props: {
         console.error("EditTask createMutation error", err, vars)
       }
     },
+    onSettled: () => {
+      createMutation.reset()
+    },
     onSuccess: task => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="success">

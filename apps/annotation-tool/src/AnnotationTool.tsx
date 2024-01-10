@@ -137,6 +137,9 @@ function PreloadedAnnotationTool(props: {
         console.error("AnnotationTool saveMutation error", err, vars)
       }
     },
+    onSettled: () => {
+      saveMutation.reset()
+    },
     onSuccess: segments => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="success">

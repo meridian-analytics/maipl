@@ -29,15 +29,16 @@ function TaskActions(props: { task: Task.t }) {
         console.error("Tasks startMutation error", err, vars)
       }
     },
+    onSettled: () => {
+      startMutation.reset()
+      queryClient.refetchQueries({ queryKey: ["tasks"] })
+    },
     onSuccess: task => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="success">
           Success: Started task #{task.id} ...
         </M.Alert>
       ))
-    },
-    onSettled: () => {
-      queryClient.refetchQueries({ queryKey: ["tasks"] })
     },
   })
 

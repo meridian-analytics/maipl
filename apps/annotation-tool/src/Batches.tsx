@@ -49,6 +49,9 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
         console.error("BatchActions deleteMutation error", err, vars)
       }
     },
+    onSettled: () => {
+      deleteMutation.reset()
+    },
     onSuccess: () => {
       notify(onClose => (
         <M.Alert severity="success" onClose={onClose}>
@@ -72,6 +75,9 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
         console.error("BatchActions exportMutation error", err, vars)
       }
     },
+    onSettled: () => {
+      exportMutation.reset()
+    },
     onSuccess: file => {
       notify(onClose => (
         <M.Alert severity="success" onClose={onClose}>
@@ -94,6 +100,9 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
       if (import.meta.env.DEV) {
         console.error("BatchActions processMutation error", err, vars)
       }
+    },
+    onSettled: () => {
+      processMutation.reset()
     },
     onSuccess: () => {
       notify(onClose => (

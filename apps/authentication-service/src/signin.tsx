@@ -52,6 +52,8 @@ export default function Signin() {
       if (import.meta.env.DEV) {
         console.error("Signin loginMutation error", err, vars)
       }
+    },
+    onSettled: () => {
       loginMutation.reset()
     },
     onSuccess: redirect => {

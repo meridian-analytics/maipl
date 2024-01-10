@@ -66,6 +66,9 @@ export default function NewFile(props: {
         console.error("FileEditor createMutation error", err, vars)
       }
     },
+    onSettled: () => {
+      createMutation.reset()
+    },
     onSuccess: file => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="success">

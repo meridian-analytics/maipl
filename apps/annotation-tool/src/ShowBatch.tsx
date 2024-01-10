@@ -103,6 +103,9 @@ function ShowBatch(props: {
         console.error("ShowBatch update error", err, vars)
       }
     },
+    onSettled: () => {
+      updateMutation.reset()
+    },
     onSuccess: () => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="success">
