@@ -116,7 +116,7 @@ function MaiplContextProvider(props: {
         return undefined as R
       }
     },
-    [refresh, setAccess, setRefresh],
+    [refresh],
   )
 
   // client
