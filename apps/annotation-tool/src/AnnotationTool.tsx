@@ -243,7 +243,8 @@ function PreloadedAnnotationTool(props: {
         {/* side column */}
         <M.Grid item xs={4} paddingX={2}>
           <M.Stack>
-            <M.Typography variant="h5">{segment?.filename}</M.Typography>
+            <M.Typography variant="h5">{props.batch.batch_name}</M.Typography>
+            <M.Typography variant="h6">{segment?.filename}</M.Typography>
             <AnnotationForm
               schema={annotationFileText?.schema}
               uiSchema={annotationFileText?.uiSchema}
@@ -311,15 +312,21 @@ function AnnotationForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
 }
 
 function NullForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
+  const specviz = useSpecviz()
   return (
-    <Form
-      children=" "
-      formData={{}}
-      readonly={true}
-      schema={props.schema ?? {}}
-      uiSchema={props.uiSchema}
-      validator={validator}
-    />
+    <M.Stack>
+      <M.Typography variant="body1">
+        {specviz.regions.size} annotations
+      </M.Typography>
+      <Form
+        children=" "
+        formData={{}}
+        readonly={true}
+        schema={props.schema ?? {}}
+        uiSchema={props.uiSchema}
+        validator={validator}
+      />
+    </M.Stack>
   )
 }
 
@@ -328,15 +335,18 @@ function MonoForm(props: {
   schema?: RJSFSchema
   uiSchema?: UiSchema
 }) {
-  const { command, transport, setRegions } = useSpecviz()
+  const specviz = useSpecviz()
   const { region } = props
   return (
     <M.Stack>
+      <M.Typography variant="body1">
+        {specviz.regions.size} annotations
+      </M.Typography>
       <Form
         children=" "
         formData={props.region}
         onChange={e =>
-          setRegions(prev =>
+          specviz.setRegions(prev =>
             new Map(prev).set(region.id, { ...region, ...e.formData }),
           )
         }
@@ -365,20 +375,20 @@ function MonoForm(props: {
       </M.Stack>
       <M.Stack direction="row">
         <M.Button
-          onClick={() => transport.loop(region.id)}
+          onClick={() => specviz.transport.loop(region.id)}
           color="primary"
           variant="contained"
           children={<I.PlayArrow />}
         />
         <M.Button
-          onClick={() => transport.stop()}
+          onClick={() => specviz.transport.stop()}
           color="primary"
           children={<I.Stop />}
         />
         <M.Stack flexGrow={1} />
         <MR.ActionButton
           children={<I.DeleteForever />}
-          onClick={() => command.delete()}
+          onClick={() => specviz.command.delete()}
           title="Delete annotation"
         />
       </M.Stack>
@@ -390,7 +400,7 @@ function PolyForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
   const { selection } = useSpecviz()
   return (
     <>
-      <M.Typography variant="h6">
+      <M.Typography variant="body1">
         {selection.size} annotations selected
       </M.Typography>
       <Form
