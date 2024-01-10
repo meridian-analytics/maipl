@@ -96,7 +96,9 @@ const create = async (client: Client.t, body: t_create_request): Promise<t> => {
 
 /** Task.delete: delete an existing task */
 const delete_ = (client: Client.t, id: number): Promise<void> => {
-  return client.delete(`${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/tasks/${id}/`)
+  return client.delete(
+    `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/run/tasks/${id}/`,
+  )
 }
 
 /** Task.get: get task details */
