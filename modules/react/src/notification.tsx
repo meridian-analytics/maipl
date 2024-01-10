@@ -22,7 +22,6 @@ const NotificationContext = R.createContext<t_notification_context>({
 })
 
 function NotificationProvider(props: { children: R.ReactNode }) {
-  // const isMounted = MR.useIsMounted()
   const [notifications, setNotifications] = R.useState<Array<t_notification>>(
     [],
   )
@@ -34,6 +33,14 @@ function NotificationProvider(props: { children: R.ReactNode }) {
       ...prev,
     ])
   }
+  R.useEffect(() => {
+    if (notifications.length > 0) {
+      const timeout = window.setTimeout(() => {
+        setNotifications(n => n.slice(1))
+      }, 5000)
+      return () => window.clearTimeout(timeout)
+    }
+  }, [notifications])
   return (
     <NotificationContext.Provider
       children={props.children}
