@@ -499,16 +499,18 @@ function MyAudioControls(props: M.StackProps) {
   return (
     <M.Stack {...props}>
       <M.Button
-        title="Z"
-        onClick={_ => transport.play()}
-        className={transportState.type === "play" ? "active" : ""}
-        children="Play"
+        onClick={_ => transport.seek(0)}
+        children={<I.SkipPrevious />}
       />
       <M.Button
-        title="X"
+        onClick={_ => transport.play()}
+        className={transportState.type === "play" ? "active" : ""}
+        children={<I.PlayArrow />}
+      />
+      <M.Button
         onClick={_ => transport.stop()}
         className={transportState.type === "stop" ? "active" : ""}
-        children="Stop"
+        children={<I.Stop />}
       />
     </M.Stack>
   )
@@ -551,8 +553,9 @@ function MyKeybinds() {
       <Keypress bind="s" onKeyDown={() => command.tool("select")} />
       <Keypress bind="d" onKeyDown={() => command.tool("zoom")} />
       <Keypress bind="f" onKeyDown={() => command.tool("pan")} />
-      <Keypress bind="z" onKeyDown={transport.play} />
-      <Keypress bind="x" onKeyDown={transport.stop} />
+      <Keypress bind="z" onKeyDown={() => transport.seek(0)} />
+      <Keypress bind="x" onKeyDown={() => transport.play()} />
+      <Keypress bind="c" onKeyDown={() => transport.stop()} />
     </Bindings>
   )
 }
