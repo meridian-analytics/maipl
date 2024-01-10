@@ -266,7 +266,7 @@ function EditTask(props: {
       <M.Stack direction="row-reverse">
         <M.Button
           children="Create"
-          disabled={createMutation.isPending}
+          disabled={selection.size == 0 || createMutation.isPending}
           onClick={onCreate}
           variant="contained"
         />
@@ -275,6 +275,15 @@ function EditTask(props: {
           disabled={createMutation.isPending}
           onClick={props.onClose}
         />
+        <M.Stack flexGrow={1} />
+        <M.Typography>
+          {selection.size == 0
+            ? "No files selected"
+            : `${selection.size} ${F.pluralize(
+                "file",
+                selection.size,
+              )} selected`}
+        </M.Typography>
       </M.Stack>
     </M.Stack>
   )
