@@ -42,7 +42,7 @@ type t = {
   /** MAIPL folder */
   maipl_folder: t_maipl_folder
   /** File metadata */
-  meta?: Meta.t_meta
+  meta: Meta.t_meta | null
   /** The complete file path, including name */
   path: string
   /** Sha256 integrity checksum */
@@ -96,7 +96,7 @@ type t_create_request = {
   /** MAIPL folder */
   maipl_folder: t_maipl_folder
   /** File metadata */
-  meta?: Meta.t_meta
+  meta: Meta.t_meta | null
   /** Complete file path, including file name */
   path: string
   /** File tag */
@@ -216,7 +216,7 @@ const get = async (client: Client.t, id: t_get_request): Promise<t> => {
 }
 
 /** File.discoverMeta: attempt automatic discovery of metadata from a system file */
-async function discoverMeta(file: File): Promise<Meta.t_meta | undefined> {
+async function discoverMeta(file: File): Promise<Meta.t_meta | null> {
   return Meta.discover(await read(file))
 }
 
