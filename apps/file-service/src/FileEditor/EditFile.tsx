@@ -77,15 +77,6 @@ export default function EditFile(props: {
 
   const updateMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof File.update>) => File.update(...vars),
-    onSuccess: file => {
-      notify(onClose => (
-        <M.Alert onClose={onClose} severity="success">
-          Success: Updated file "{file.path}""
-        </M.Alert>
-      ))
-      queryClient.refetchQueries({ queryKey: ["files"] })
-      props.onClose()
-    },
     onError: (err, vars) => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="error">
@@ -95,6 +86,18 @@ export default function EditFile(props: {
       if (import.meta.env.DEV) {
         console.error("FileEditor updateMutation error", err, vars)
       }
+    },
+    onSettled: () => {
+      updateMutation.reset()
+    },
+    onSuccess: file => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Updated file "{file.path}""
+        </M.Alert>
+      ))
+      queryClient.refetchQueries({ queryKey: ["files"] })
+      props.onClose()
     },
   })
 

@@ -320,21 +320,20 @@ const process = async (client: Client.t, id: number): Promise<number> => {
 /** Batch.status: derivew batch status from celery task */
 const status = (batch: t_list_item): t_status => {
   if (batch.segments.length == 0) return t_status.empty
-  else if (batch.task_id == null) return t_status.unprocessed
-  else
-    switch (batch.task_status) {
-      case null:
-      case t_celery_status.started:
-        return t_status.processing
-      case t_celery_status.pending:
-        return t_status.unprocessed
-      case t_celery_status.failure:
-      case t_celery_status.retry:
-      case t_celery_status.revoked:
-        return t_status.error
-      case t_celery_status.success:
-        return t_status.success
-    }
+  if (batch.task_id == null) return t_status.unprocessed
+  switch (batch.task_status) {
+    case null:
+    case t_celery_status.started:
+      return t_status.processing
+    case t_celery_status.pending:
+      return t_status.unprocessed
+    case t_celery_status.failure:
+    case t_celery_status.retry:
+    case t_celery_status.revoked:
+      return t_status.error
+    case t_celery_status.success:
+      return t_status.success
+  }
 }
 
 /** Batch.update: update an existing batch */

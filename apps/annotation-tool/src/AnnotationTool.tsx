@@ -137,6 +137,9 @@ function PreloadedAnnotationTool(props: {
         console.error("AnnotationTool saveMutation error", err, vars)
       }
     },
+    onSettled: () => {
+      saveMutation.reset()
+    },
     onSuccess: segments => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="success">
@@ -192,7 +195,6 @@ function PreloadedAnnotationTool(props: {
               columns={segmentsTableExtraColumns}
               visibility={{
                 select: false,
-                created_at: false,
                 duration: false,
               }}
             />
@@ -241,7 +243,8 @@ function PreloadedAnnotationTool(props: {
         {/* side column */}
         <M.Grid item xs={4} paddingX={2}>
           <M.Stack>
-            <M.Typography variant="h5">{segment?.filename}</M.Typography>
+            <M.Typography variant="h5">{props.batch.batch_name}</M.Typography>
+            <M.Typography variant="h6">{segment?.filename}</M.Typography>
             <AnnotationForm
               schema={annotationFileText?.schema}
               uiSchema={annotationFileText?.uiSchema}
@@ -309,15 +312,21 @@ function AnnotationForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
 }
 
 function NullForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
+  const specviz = useSpecviz()
   return (
-    <Form
-      children=" "
-      formData={{}}
-      readonly={true}
-      schema={props.schema ?? {}}
-      uiSchema={props.uiSchema}
-      validator={validator}
-    />
+    <M.Stack>
+      <M.Typography variant="body1">
+        {specviz.regions.size} annotations
+      </M.Typography>
+      <Form
+        children=" "
+        formData={{}}
+        readonly={true}
+        schema={props.schema ?? {}}
+        uiSchema={props.uiSchema}
+        validator={validator}
+      />
+    </M.Stack>
   )
 }
 
@@ -326,15 +335,18 @@ function MonoForm(props: {
   schema?: RJSFSchema
   uiSchema?: UiSchema
 }) {
-  const { transport, setRegions } = useSpecviz()
+  const specviz = useSpecviz()
   const { region } = props
   return (
     <M.Stack>
+      <M.Typography variant="body1">
+        {specviz.regions.size} annotations
+      </M.Typography>
       <Form
         children=" "
         formData={props.region}
         onChange={e =>
-          setRegions(prev =>
+          specviz.setRegions(prev =>
             new Map(prev).set(region.id, { ...region, ...e.formData }),
           )
         }
@@ -363,17 +375,21 @@ function MonoForm(props: {
       </M.Stack>
       <M.Stack direction="row">
         <M.Button
-          fullWidth
-          onClick={() => transport.loop(region.id)}
+          onClick={() => specviz.transport.loop(region.id)}
           color="primary"
           variant="contained"
-          children="Play annotation"
+          children={<I.PlayArrow />}
         />
         <M.Button
-          fullWidth
-          onClick={() => transport.stop()}
+          onClick={() => specviz.transport.stop()}
           color="primary"
-          children="Stop"
+          children={<I.Stop />}
+        />
+        <M.Stack flexGrow={1} />
+        <MR.ActionButton
+          children={<I.DeleteForever />}
+          onClick={() => specviz.command.delete()}
+          title="Delete annotation"
         />
       </M.Stack>
     </M.Stack>
@@ -384,7 +400,7 @@ function PolyForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
   const { selection } = useSpecviz()
   return (
     <>
-      <M.Typography variant="h6">
+      <M.Typography variant="body1">
         {selection.size} annotations selected
       </M.Typography>
       <Form
@@ -483,16 +499,18 @@ function MyAudioControls(props: M.StackProps) {
   return (
     <M.Stack {...props}>
       <M.Button
-        title="Z"
-        onClick={_ => transport.play()}
-        className={transportState.type === "play" ? "active" : ""}
-        children="Play"
+        onClick={_ => transport.seek(0)}
+        children={<I.SkipPrevious />}
       />
       <M.Button
-        title="X"
+        onClick={_ => transport.play()}
+        className={transportState.type === "play" ? "active" : ""}
+        children={<I.PlayArrow />}
+      />
+      <M.Button
         onClick={_ => transport.stop()}
         className={transportState.type === "stop" ? "active" : ""}
-        children="Stop"
+        children={<I.Stop />}
       />
     </M.Stack>
   )
@@ -502,7 +520,6 @@ function MyKeybinds() {
   const { command, transport } = useSpecviz()
   return (
     <Bindings>
-      <Keypress bind="Backspace" onKeyDown={command.delete} />
       <Keypress bind="Escape" onKeyDown={command.deselect} />
       <Keypress
         bind="ArrowLeft"
@@ -536,8 +553,9 @@ function MyKeybinds() {
       <Keypress bind="s" onKeyDown={() => command.tool("select")} />
       <Keypress bind="d" onKeyDown={() => command.tool("zoom")} />
       <Keypress bind="f" onKeyDown={() => command.tool("pan")} />
-      <Keypress bind="z" onKeyDown={transport.play} />
-      <Keypress bind="x" onKeyDown={transport.stop} />
+      <Keypress bind="z" onKeyDown={() => transport.seek(0)} />
+      <Keypress bind="x" onKeyDown={() => transport.play()} />
+      <Keypress bind="c" onKeyDown={() => transport.stop()} />
     </Bindings>
   )
 }

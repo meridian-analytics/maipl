@@ -28,6 +28,6 @@ export default function useFilter<T extends t_use_filter_state>(
       toggle: () => setEnabled(!enabled),
       clear: () => setState(initFilter),
     }),
-    [enabled, initFilter, setEnabled, setState, state],
+    [enabled, initFilter, state],
   )
 }

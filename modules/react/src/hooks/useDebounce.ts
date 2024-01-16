@@ -7,6 +7,6 @@ export default function useDebounce<T>(value: T, delay?: number): T {
     return () => {
       window.clearTimeout(t)
     }
-  }, [setState, value, delay])
+  }, [value, delay])
   return state
 }
