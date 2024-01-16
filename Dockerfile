@@ -27,4 +27,5 @@ COPY nginx.conf /etc/nginx/conf.d/nginx.conf
 COPY --from=build /build/apps/annotation-tool/dist /usr/share/nginx/html/annotation-tool
 COPY --from=build /build/apps/authentication-service/dist /usr/share/nginx/html/authentication-service
 COPY --from=build /build/apps/file-service/dist /usr/share/nginx/html/file-service
+COPY --from=build /build/apps/metrics/dist /usr/share/nginx/html/metrics
 COPY --from=build /build/apps/model-runner/dist /usr/share/nginx/html/model-runner

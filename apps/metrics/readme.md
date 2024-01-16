@@ -1,8 +1,8 @@
-# MAIPL File Service Frontend
+# MAIPL Metrics Frontend
 
 ## Setup
 
-Copy environment defaults
+Copy environment defaults.
 
 ```sh
 $ cp .env.defaults .env
@@ -26,7 +26,7 @@ MAIPL_REACT_QUERY_DEVTOOLS=true
 
 # vite
 VITE_BASE_URL=/
-VITE_PORT=3100
+VITE_PORT=3400
 ```
 
 Install packages and start dev server.
@@ -38,10 +38,11 @@ $ pnpm start
 
 ## Development
 
-Format all source code before commits.
+Lint and format all source code before commits.
 
 ```sh
 $ pnpm format
+$ pnpm check
 ```
 
 ## Production

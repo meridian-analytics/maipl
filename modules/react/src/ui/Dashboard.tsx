@@ -46,7 +46,11 @@ export default function Dashboard() {
           label="Model Runner"
           to={K.MAIPL_MODEL_RUNNER_FRONTEND}
         />
-        <NavButton icon={I.QueryStats} label="Metrics" to="#todo" />
+        <NavButton
+          icon={I.QueryStats}
+          label="Metrics"
+          to={K.MAIPL_METRICS_FRONTEND}
+        />
       </M.Stack>
     </M.Stack>
   )

@@ -32,6 +32,16 @@ export const MAIPL_FILE_FRONTEND = safeParseString(
   "http://localhost:3000",
 )
 
+export const MAIPL_METRICS_BACKEND = safeParseString(
+  import.meta.env.MAIPL_METRICS_BACKEND,
+  "http://localhost:8000",
+)
+
+export const MAIPL_METRICS_FRONTEND = safeParseString(
+  import.meta.env.MAIPL_METRICS_FRONTEND,
+  "http://localhost:3000",
+)
+
 export const MAIPL_MODEL_RUNNER_BACKEND = safeParseString(
   import.meta.env.MAIPL_MODEL_RUNNER_BACKEND,
   "http://localhost:8000",

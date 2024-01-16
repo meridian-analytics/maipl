@@ -4,9 +4,9 @@
   "scripts": {
     "@check": "biome check .",
     "@format": "biome format --write .",
-    "@build": "tsc && pnpm -F \"./apps/*\" build",
+    "@build": "tsc && pnpm --parallel -F \"./apps/*\" build",
     "@preview": "docker compose up --build",
-    "@start": "pnpm -F \"./apps/*\" start",
+    "@start": "pnpm --parallel -F \"./apps/*\" start",
     "@tsc": "tsc"
   },
   "devDependencies": {
