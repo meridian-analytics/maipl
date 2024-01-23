@@ -237,7 +237,7 @@ function EditBatch(props: {
         {tab == Tab.files &&
           selectionType == SelectionType.manual &&
           importFile == null && (
-            <M.Stack>
+            <>
               <M.Stack direction="row" alignItems="center">
                 <M.TextField
                   label="Path"
@@ -254,7 +254,7 @@ function EditBatch(props: {
                 <M.Stack flexGrow={1} />
                 <M.Button
                   size="medium"
-                  children="Cancel selection"
+                  children="Go Back"
                   onClick={() => setSelectionType(SelectionType.initial)}
                 />
               </M.Stack>
@@ -274,7 +274,7 @@ function EditBatch(props: {
                   created_at: true,
                 }}
               />
-            </M.Stack>
+            </>
           )}
         {tab == Tab.files && importFile && (
           <M.Stack sx={style.base} direction="row" spacing={4}>
@@ -344,8 +344,8 @@ function EditBatch(props: {
             overflowY: "auto",
             overflowX: "hidden",
             paddingX: 2,
-            // use visiblity to ensure Form stays mounted; fixes #6
-            visibility: tab == Tab.parameters ? "visible" : "hidden",
+            // use height to ensure Form stays mounted; fixes #6
+            height: tab == Tab.parameters ? "auto" : 0,
           }}
         >
           <Form
