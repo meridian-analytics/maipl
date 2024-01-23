@@ -36,8 +36,8 @@ function Element() {
   const { fileId, folder, file, fileContents } =
     RRT.useLoaderData<ReturnType<typeof loader>>()
   const navigate = RR.useNavigate()
-  const onClose = (hasUnsavedChanges?: boolean) => {
-    hasUnsavedChanges == false && navigate(-1)
+  const onClose = () => {
+    navigate(-1)
   }
   return (
     <EditFile
@@ -54,7 +54,7 @@ export default function EditFile(props: {
   file: File.t
   fileContents: string
   folder: File.t_maipl_folder
-  onClose: (hasUnsavedChanges?: boolean) => void
+  onClose: () => void
 }) {
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
@@ -126,19 +126,12 @@ export default function EditFile(props: {
 
   return (
     <MR.Modal
-      onClose={() => props.onClose(hasUnsavedChanges)}
+      onClose={() => hasUnsavedChanges == false && props.onClose()}
       sx={{ width: "100%" }}
     >
       <M.Stack>
         <M.Typography variant="h5">{props.file.basename}</M.Typography>
         <M.Stack direction="row">
-          <MR.Picker
-            disabled={true}
-            label="Folder"
-            setValue={() => {}}
-            value={props.file.maipl_folder}
-            values={[props.file.maipl_folder]}
-          />
           <M.TextField
             fullWidth
             label="path"
@@ -169,7 +162,7 @@ export default function EditFile(props: {
           <M.Stack flexGrow={1} />
           <M.Button
             color={hasUnsavedChanges ? "error" : "primary"}
-            onClick={() => props.onClose(hasUnsavedChanges)}
+            onClick={() => props.onClose()}
             children={hasUnsavedChanges ? "Close Without Saving" : "Close"}
           />
           <M.Button
