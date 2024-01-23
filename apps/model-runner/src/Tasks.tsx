@@ -3,7 +3,6 @@ import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
-import * as R from "react"
 import * as RR from "react-router-dom"
 
 function TaskActions(props: { task: Task.t }) {
@@ -133,14 +132,6 @@ export default function TasksTable(props: {
 
   const { data: tasks } = MR.Tasks.useQuery()
 
-  // hack: refresh tasks every 30 seconds
-  R.useEffect(() => {
-    const t = setTimeout(() => {
-      queryClient.refetchQueries({ queryKey: ["tasks", "list"] })
-    }, 30000)
-    return () => clearTimeout(t)
-  }, [queryClient])
-
   return (
     <M.Stack
       sx={{
@@ -159,6 +150,13 @@ export default function TasksTable(props: {
           component={RR.Link}
           title="Create Task"
           to="/new"
+        />
+        <MR.ActionButton
+          children={<I.Refresh />}
+          onClick={() => {
+            queryClient.refetchQueries({ queryKey: ["tasks", "list"] })
+          }}
+          title="Refresh"
         />
       </M.Stack>
       <MR.Tasks.Table
