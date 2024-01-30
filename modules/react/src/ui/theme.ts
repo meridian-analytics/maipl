@@ -19,6 +19,11 @@ const theme = M.createTheme({
         size: "small",
       },
     },
+    MuiGrid2: {
+      defaultProps: {
+        spacing: 2,
+      },
+    },
     MuiIconButton: {
       defaultProps: {
         size: "small",

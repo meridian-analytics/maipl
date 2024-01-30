@@ -2,6 +2,7 @@ import { Annotation, Batch, Segment } from "@maipl/api"
 import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
+import Grid from "@mui/material/Unstable_Grid2"
 import { Form } from "@rjsf/mui"
 import { RJSFSchema, UiSchema } from "@rjsf/utils"
 import validator from "@rjsf/validator-ajv8"
@@ -21,19 +22,6 @@ import { formatHz, formatTimestamp } from "specviz-react/format"
 import { useAxes, useRegionState, useSpecviz } from "specviz-react/hooks"
 import { Bindings, Keypress } from "specviz-react/keybinds"
 
-function SegmentActions(props: { batch: Batch.t; segment: Segment.t }) {
-  return (
-    <M.Stack direction="row">
-      <MR.ActionButton
-        children={<I.Architecture />}
-        component={RR.Link}
-        to={`/annotate/${props.batch.id}/segment/${props.segment.id}`}
-        title="Annotate"
-      />
-    </M.Stack>
-  )
-}
-
 function PreloadedAnnotationTool(props: {
   batch: Batch.t
   segments: Array<Segment.t>
@@ -52,26 +40,6 @@ function PreloadedAnnotationTool(props: {
       image: props.images.get(Number(segmentId)),
     }),
     [props.audios, props.images, props.segments, segmentId],
-  )
-
-  const segmentsTable = MR.useTable<Segment.t>({
-    pagination: {
-      pageIndex: 0,
-      pageSize: 10,
-    },
-  })
-
-  const segmentsTableExtraColumns = R.useMemo(
-    () => [
-      MR.Segments.column.display({
-        id: "actions",
-        header: "",
-        cell: info => (
-          <SegmentActions batch={props.batch} segment={info.row.original} />
-        ),
-      }),
-    ],
-    [props.batch],
   )
 
   const [regions, setRegions] = useRegionState()
@@ -180,26 +148,31 @@ function PreloadedAnnotationTool(props: {
   // error
   if (annotations.error)
     return <p>Error: {(annotations.error as Error).message}</p>
-  // annotations. data is loaded
+  // annotations.data is loaded
   // segmentId is a number
   return (
     <Specviz axes={axes} regions={regions} setRegions={setRegions}>
-      <M.Grid container sx={{ maxHeight: "100%", overflow: "hidden" }}>
-        {/* main window */}
-        <M.Grid item xs={8} sx={{ maxHeight: "100%", overflow: "hidden" }}>
-          <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
-            {/* segments */}
-            <MR.Segments.Table
-              {...segmentsTable}
-              rows={props.segments}
-              columns={segmentsTableExtraColumns}
-              visibility={{
-                select: false,
-                duration: false,
-              }}
+      <Grid
+        container
+        sx={{
+          maxHeight: "100%",
+          overflow: "hidden",
+        }}
+      >
+        <Grid xs={12}>
+          <M.Stack direction="row">
+            <M.Typography variant="h5">{props.batch.batch_name}</M.Typography>
+            <M.Stack flexGrow={1} />
+            <MR.ActionButton
+              children={<I.Save />}
+              disabled={saveMutation.isPending}
+              onClick={() => onSave()}
+              title="Save Batch"
             />
-            {/* audio/visual */}
-
+          </M.Stack>
+        </Grid>
+        <Grid xs={12}>
+          <M.Stack>
             {segment == null ? (
               <p>Choose a segment...</p>
             ) : audio == null ? (
@@ -207,7 +180,7 @@ function PreloadedAnnotationTool(props: {
             ) : image == null ? (
               <p>Error: Image for segment could not be loaded</p>
             ) : (
-              <M.Stack>
+              <>
                 <Audio
                   src={audio.audio}
                   duration={segment.end - segment.start}
@@ -222,36 +195,39 @@ function PreloadedAnnotationTool(props: {
                   xaxis={axes.seconds}
                   yaxis={axes.hertz}
                 />
-                <MyKeybinds />
-              </M.Stack>
-            )}
+                <M.Stack direction="row" flexShrink={0}>
+                  <MyAudioControls direction="row" />
 
-            {/* controls */}
-            <M.Stack direction="row" flexShrink={0}>
-              <MyAudioControls direction="row" />
-              <M.Button
-                children="Save"
-                disabled={saveMutation.isPending}
-                onClick={onSave}
-                variant="contained"
-              />
-              <M.Stack flexGrow={1} />
-              <ToolPalette direction="row" />
-            </M.Stack>
+                  <M.Stack flexGrow={1} />
+                  <ToolPalette direction="row" />
+                </M.Stack>
+                <MyKeybinds />
+              </>
+            )}
           </M.Stack>
-        </M.Grid>
-        {/* side column */}
-        <M.Grid item xs={4} paddingX={2}>
-          <M.Stack>
-            <M.Typography variant="h5">{props.batch.batch_name}</M.Typography>
-            <M.Typography variant="h6">{segment?.filename}</M.Typography>
-            <AnnotationForm
-              schema={annotationFileText?.schema}
-              uiSchema={annotationFileText?.uiSchema}
-            />
-          </M.Stack>
-        </M.Grid>
-      </M.Grid>
+        </Grid>
+        <Grid xs={4}>
+          <Segments
+            batch={props.batch}
+            segments={props.segments}
+            selectedId={segmentId}
+            sx={{ maxHeight: "40vh", overflow: "auto" }}
+          />
+        </Grid>
+        <Grid xs={4}>
+          <Annotations
+            batch={props.batch}
+            sx={{ maxHeight: "40vh", overflow: "auto" }}
+          />
+        </Grid>
+        <Grid xs={4}>
+          <AnnotationForm
+            schema={annotationFileText?.schema}
+            uiSchema={annotationFileText?.uiSchema}
+            sx={{ maxHeight: "40vh", overflow: "auto" }}
+          />
+        </Grid>
+      </Grid>
     </Specviz>
   )
 }
@@ -289,44 +265,123 @@ function ToolPalette(props: M.StackProps) {
   )
 }
 
-function AnnotationForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
+function Segments(props: {
+  batch: Batch.t
+  segments: Array<Segment.t>
+  selectedId: string
+  sx?: M.SxProps
+}) {
+  return (
+    <M.Paper sx={props.sx}>
+      <M.List>
+        <M.ListSubheader>Segments ({props.segments.length})</M.ListSubheader>
+        {props.segments.map(segment => (
+          <M.ListItem disablePadding key={segment.id}>
+            <M.ListItemButton
+              component={RR.Link}
+              to={`/annotate/${props.batch.id}/segment/${segment.id}`}
+              selected={String(segment.id) == props.selectedId}
+            >
+              <M.ListItemText
+                primary={segment.filename}
+                secondary={`${segment.start.toFixed(2)} - ${segment.end.toFixed(
+                  2,
+                )}`}
+              />
+            </M.ListItemButton>
+          </M.ListItem>
+        ))}
+      </M.List>
+    </M.Paper>
+  )
+}
+
+function Annotations(props: {
+  batch: Batch.t
+  sx?: M.SxProps
+}) {
+  function order(a: Annotation.t_region, b: Annotation.t_region) {
+    return a.x == b.x ? a.y - b.y : a.x - b.x
+  }
+  const specviz = useSpecviz()
+  return (
+    <M.Paper sx={props.sx}>
+      <M.List>
+        <M.ListSubheader>Annotations ({specviz.regions.size})</M.ListSubheader>
+        {Array.from(specviz.regions.values(), r => r as Annotation.t_region) // todo: update specviz, remove mapping to t_region
+          .sort(order)
+          .map(region => (
+            <M.ListItem disablePadding key={region.id}>
+              <M.ListItemButton
+                selected={specviz.selection.has(region.id)}
+                onClick={() => specviz.setSelection(() => new Set([region.id]))}
+              >
+                <M.ListItemText
+                  secondary={`${region.x.toFixed(2)} - ${(
+                    region.x + region.width
+                  ).toFixed(2)} sec`}
+                  primary={region.label == null ? "Unlabeled" : region.label}
+                />
+              </M.ListItemButton>
+            </M.ListItem>
+          ))}
+      </M.List>
+    </M.Paper>
+  )
+}
+
+function AnnotationForm(props: {
+  schema?: RJSFSchema
+  sx?: M.SxProps
+  uiSchema?: UiSchema
+}) {
   const { regions, selection } = useSpecviz()
   const ids = [...selection]
   return (
     <ErrorBoundary
       fallbackRender={({ error }) => <p>Error: {error.message}</p>}
     >
-      {ids.length == 0 ? (
-        <NullForm schema={props.schema} uiSchema={props.uiSchema} />
-      ) : ids.length == 1 ? (
-        <MonoForm
-          region={regions.get(ids[0])!}
-          schema={props.schema}
-          uiSchema={props.uiSchema}
-        />
-      ) : (
-        <PolyForm schema={props.schema} uiSchema={props.uiSchema} />
-      )}
+      <M.Paper
+        sx={{
+          ...props.sx,
+        }}
+      >
+        <M.List>
+          <M.ListSubheader
+            children="Edit Annotation"
+            sx={{
+              zIndex: 10, // some rjsf components render z-index: 1
+            }}
+          />
+          <M.ListItem sx={{ marginTop: -2 }}>
+            {ids.length == 0 ? (
+              <NullForm schema={props.schema} uiSchema={props.uiSchema} />
+            ) : ids.length == 1 ? (
+              <MonoForm
+                region={regions.get(ids[0])!}
+                schema={props.schema}
+                uiSchema={props.uiSchema}
+              />
+            ) : (
+              <PolyForm schema={props.schema} uiSchema={props.uiSchema} />
+            )}
+          </M.ListItem>
+        </M.List>
+      </M.Paper>
     </ErrorBoundary>
   )
 }
 
 function NullForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
-  const specviz = useSpecviz()
   return (
-    <M.Stack>
-      <M.Typography variant="body1">
-        {specviz.regions.size} annotations
-      </M.Typography>
-      <Form
-        children=" "
-        formData={{}}
-        readonly={true}
-        schema={props.schema ?? {}}
-        uiSchema={props.uiSchema}
-        validator={validator}
-      />
-    </M.Stack>
+    <Form
+      children=" "
+      formData={{}}
+      readonly={true}
+      schema={props.schema ?? {}}
+      uiSchema={props.uiSchema}
+      validator={validator}
+    />
   )
 }
 
@@ -339,9 +394,6 @@ function MonoForm(props: {
   const { region } = props
   return (
     <M.Stack>
-      <M.Typography variant="body1">
-        {specviz.regions.size} annotations
-      </M.Typography>
       <Form
         children=" "
         formData={props.region}
@@ -397,38 +449,32 @@ function MonoForm(props: {
 }
 
 function PolyForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
-  const { selection } = useSpecviz()
   return (
-    <>
-      <M.Typography variant="body1">
-        {selection.size} annotations selected
-      </M.Typography>
-      <Form
-        children=" "
-        formData={{}}
-        readonly={true}
-        schema={props.schema ?? {}}
-        uiSchema={props.uiSchema}
-        validator={validator}
-      />
-    </>
+    <Form
+      children=" "
+      formData={{}}
+      readonly={true}
+      schema={props.schema ?? {}}
+      uiSchema={props.uiSchema}
+      validator={validator}
+    />
   )
 }
 
 export default function AnnotationTool(props: { sx?: M.SxProps }) {
-  const { client } = MR.useMaipl()
+  const maipl = MR.useMaipl()
   const batchId = RR.useParams()?.batchId
   const batch = RQ.useQuery({
     enabled: batchId != null,
     queryKey: ["batches", batchId],
-    queryFn: () => Batch.get(client, Number(batchId)),
+    queryFn: () => Batch.get(maipl.client, Number(batchId)),
   })
   const audio = RQ.useQuery({
     enabled: batchId != null,
     initialData: new Map(),
     queryKey: ["batches", batchId, "audios"],
     queryFn: () =>
-      Batch.audios(client, Number(batchId)).then(
+      Batch.audios(maipl.client, Number(batchId)).then(
         arr => new Map(arr.map(audio => [audio.segment_id, audio])),
       ),
   })
@@ -437,25 +483,20 @@ export default function AnnotationTool(props: { sx?: M.SxProps }) {
     initialData: new Map(),
     queryKey: ["batches", batchId, "images"],
     queryFn: () =>
-      Batch.images(client, Number(batchId)).then(
+      Batch.images(maipl.client, Number(batchId)).then(
         arr => new Map(arr.map(image => [image.segment_id, image])),
       ),
   })
   const segments = RQ.useQuery({
     enabled: batch.data != null,
-    initialData: {
-      data: [],
-      count: 0,
-      page: 1,
-      size: 10,
-      prev: null,
-      next: null,
-    },
+    initialData: [],
     queryKey: ["batches", batchId, "segments"],
     queryFn: () =>
-      Segment.list(client, {
+      // todo: change to
+      // Batch.segments(maipl.client, Number(batchId))
+      Segment.list(maipl.client, {
         ids: batch.data!.segments,
-      }),
+      }).then(r => r.data),
   })
   // url did not specify batchId
   if (batchId == null) return <p>Batch ID not specified</p>
@@ -486,7 +527,7 @@ export default function AnnotationTool(props: { sx?: M.SxProps }) {
     >
       <PreloadedAnnotationTool
         batch={batch.data}
-        segments={segments.data.data}
+        segments={segments.data}
         images={image.data}
         audios={audio.data}
       />

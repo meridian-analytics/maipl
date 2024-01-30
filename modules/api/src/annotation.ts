@@ -29,6 +29,8 @@ interface t_region {
   height: number
   xunit: string
   yunit: string
+  score?: number
+  label?: string
 }
 
 /** Annotation.t_create_request */
