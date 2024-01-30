@@ -184,6 +184,7 @@ function BatchStatus(props: { batch: Batch.t_list_item }) {
 
 export default function BatchesTable(props: { sx?: M.SxProps }) {
   const maipl = MR.useMaipl()
+  const queryClient = RQ.useQueryClient()
 
   const {
     filter,
@@ -238,6 +239,13 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
           value={filter.get("name")}
         />
         <M.Stack flexGrow={1} />
+        <MR.ActionButton
+          children={<I.Refresh />}
+          onClick={() => {
+            queryClient.refetchQueries({ queryKey: ["batches", "list"] })
+          }}
+          title="Refresh"
+        />
         <MR.ActionButton
           children={<I.AddCircle />}
           component={RR.Link}
