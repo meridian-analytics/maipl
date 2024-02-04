@@ -4,7 +4,6 @@ import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import Grid from "@mui/material/Unstable_Grid2"
 import { Form } from "@rjsf/mui"
-import { RJSFSchema, UiSchema } from "@rjsf/utils"
 import validator from "@rjsf/validator-ajv8"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
@@ -21,6 +20,7 @@ import { linear } from "specviz-react/axis"
 import { formatHz, formatTimestamp } from "specviz-react/format"
 import { useAxes, useRegionState, useSpecviz } from "specviz-react/hooks"
 import { Bindings, Keypress } from "specviz-react/keybinds"
+import * as S from "./SchemaContext.tsx"
 
 function PreloadedAnnotationTool(props: {
   batch: Batch.t
@@ -79,18 +79,6 @@ function PreloadedAnnotationTool(props: {
     props.batch.parameters.freq_max,
     props.batch.parameters.freq_min,
   ])
-
-  const annotationFileText = R.useMemo(() => {
-    try {
-      return JSON.parse(props.batch.annotation_file_text) as {
-        schema: RJSFSchema
-        uiSchema: UiSchema
-      }
-    } catch (err) {
-      console.warn("AnnotationTool schema parse error", err)
-      return undefined
-    }
-  }, [props.batch.annotation_file_text])
 
   const saveMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Annotation.updateSegment>) =>
@@ -151,84 +139,81 @@ function PreloadedAnnotationTool(props: {
   // annotations.data is loaded
   // segmentId is a number
   return (
-    <Specviz axes={axes} regions={regions} setRegions={setRegions}>
-      <Grid
-        container
-        sx={{
-          maxHeight: "100%",
-          overflow: "hidden",
-        }}
-      >
-        <Grid xs={12}>
-          <M.Stack direction="row">
-            <M.Typography variant="h5">{props.batch.batch_name}</M.Typography>
-            <M.Stack flexGrow={1} />
-            <MR.ActionButton
-              children={<I.Save />}
-              disabled={saveMutation.isPending}
-              onClick={() => onSave()}
-              title="Save Batch"
+    <S.SchemaContextProvider batch={props.batch}>
+      <Specviz axes={axes} regions={regions} setRegions={setRegions}>
+        <Grid
+          container
+          sx={{
+            maxHeight: "100%",
+            overflow: "hidden",
+          }}
+        >
+          <Grid xs={12}>
+            <M.Stack direction="row">
+              <M.Typography variant="h5">{props.batch.batch_name}</M.Typography>
+              <M.Stack flexGrow={1} />
+              <MR.ActionButton
+                children={<I.Save />}
+                disabled={saveMutation.isPending}
+                onClick={() => onSave()}
+                title="Save Batch"
+              />
+            </M.Stack>
+          </Grid>
+          <Grid xs={12}>
+            <M.Stack>
+              {segment == null ? (
+                <p>Choose a segment...</p>
+              ) : audio == null ? (
+                <p>Error: Audio for segment could not be loaded.</p>
+              ) : image == null ? (
+                <p>Error: Image for segment could not be loaded</p>
+              ) : (
+                <>
+                  <Audio
+                    src={audio.audio}
+                    duration={segment.end - segment.start}
+                  />
+                  <Navigator
+                    src={image.image}
+                    xaxis={axes.seconds}
+                    yaxis={axes.hertz}
+                  />
+                  <Visualization
+                    src={image.image}
+                    xaxis={axes.seconds}
+                    yaxis={axes.hertz}
+                  />
+                  <M.Stack direction="row" flexShrink={0}>
+                    <MyAudioControls direction="row" />
+                    <M.Stack flexGrow={1} />
+                    <ToolPalette direction="row" />
+                  </M.Stack>
+                  <MyKeybinds />
+                </>
+              )}
+            </M.Stack>
+          </Grid>
+          <Grid xs={4}>
+            <Segments
+              batch={props.batch}
+              segments={props.segments}
+              selectedId={segmentId}
+              sx={{ maxHeight: "40vh", overflow: "auto" }}
             />
-          </M.Stack>
+          </Grid>
+          <Grid xs={4}>
+            <Annotations
+              batch={props.batch}
+              sx={{ maxHeight: "40vh", overflow: "auto" }}
+            />
+          </Grid>
+          <Grid xs={4}>
+            <AnnotationForm sx={{ maxHeight: "40vh", overflow: "auto" }} />
+          </Grid>
         </Grid>
-        <Grid xs={12}>
-          <M.Stack>
-            {segment == null ? (
-              <p>Choose a segment...</p>
-            ) : audio == null ? (
-              <p>Error: Audio for segment could not be loaded.</p>
-            ) : image == null ? (
-              <p>Error: Image for segment could not be loaded</p>
-            ) : (
-              <>
-                <Audio
-                  src={audio.audio}
-                  duration={segment.end - segment.start}
-                />
-                <Navigator
-                  src={image.image}
-                  xaxis={axes.seconds}
-                  yaxis={axes.hertz}
-                />
-                <Visualization
-                  src={image.image}
-                  xaxis={axes.seconds}
-                  yaxis={axes.hertz}
-                />
-                <M.Stack direction="row" flexShrink={0}>
-                  <MyAudioControls direction="row" />
-
-                  <M.Stack flexGrow={1} />
-                  <ToolPalette direction="row" />
-                </M.Stack>
-                <MyKeybinds />
-              </>
-            )}
-          </M.Stack>
-        </Grid>
-        <Grid xs={4}>
-          <Segments
-            batch={props.batch}
-            segments={props.segments}
-            selectedId={segmentId}
-            sx={{ maxHeight: "40vh", overflow: "auto" }}
-          />
-        </Grid>
-        <Grid xs={4}>
-          <Annotations
-            batch={props.batch}
-            sx={{ maxHeight: "40vh", overflow: "auto" }}
-          />
-        </Grid>
-        <Grid xs={4}>
-          <AnnotationForm
-            schema={annotationFileText?.schema}
-            uiSchema={annotationFileText?.uiSchema}
-            sx={{ maxHeight: "40vh", overflow: "auto" }}
-          />
-        </Grid>
-      </Grid>
-    </Specviz>
+      </Specviz>
+    </S.SchemaContextProvider>
   )
 }
 
@@ -300,6 +285,7 @@ function Annotations(props: {
   batch: Batch.t
   sx?: M.SxProps
 }) {
+  const labels = S.useLabels()
   function order(a: Annotation.t_region, b: Annotation.t_region) {
     return a.x == b.x ? a.y - b.y : a.x - b.x
   }
@@ -317,10 +303,14 @@ function Annotations(props: {
                 onClick={() => specviz.setSelection(() => new Set([region.id]))}
               >
                 <M.ListItemText
+                  primary={
+                    region.label == null
+                      ? "Unlabeled"
+                      : labels.get(region.label) ?? `Unknown: ${region.label}`
+                  }
                   secondary={`${region.x.toFixed(2)} - ${(
                     region.x + region.width
                   ).toFixed(2)} sec`}
-                  primary={region.label == null ? "Unlabeled" : region.label}
                 />
               </M.ListItemButton>
             </M.ListItem>
@@ -331,9 +321,7 @@ function Annotations(props: {
 }
 
 function AnnotationForm(props: {
-  schema?: RJSFSchema
   sx?: M.SxProps
-  uiSchema?: UiSchema
 }) {
   const { regions, selection } = useSpecviz()
   const ids = [...selection]
@@ -355,15 +343,11 @@ function AnnotationForm(props: {
           />
           <M.ListItem sx={{ marginTop: -2 }}>
             {ids.length == 0 ? (
-              <NullForm schema={props.schema} uiSchema={props.uiSchema} />
+              <NullForm />
             ) : ids.length == 1 ? (
-              <MonoForm
-                region={regions.get(ids[0])!}
-                schema={props.schema}
-                uiSchema={props.uiSchema}
-              />
+              <MonoForm region={regions.get(ids[0])!} />
             ) : (
-              <PolyForm schema={props.schema} uiSchema={props.uiSchema} />
+              <PolyForm />
             )}
           </M.ListItem>
         </M.List>
@@ -372,14 +356,15 @@ function AnnotationForm(props: {
   )
 }
 
-function NullForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
+function NullForm() {
+  const { schema, uiSchema } = S.useSchema()
   return (
     <Form
       children=" "
       formData={{}}
       readonly={true}
-      schema={props.schema ?? {}}
-      uiSchema={props.uiSchema}
+      schema={schema}
+      uiSchema={uiSchema}
       validator={validator}
     />
   )
@@ -387,9 +372,8 @@ function NullForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
 
 function MonoForm(props: {
   region: Annotation.t_region
-  schema?: RJSFSchema
-  uiSchema?: UiSchema
 }) {
+  const { schema, uiSchema } = S.useSchema()
   const specviz = useSpecviz()
   const { region } = props
   return (
@@ -403,8 +387,14 @@ function MonoForm(props: {
           )
         }
         readonly={false}
-        schema={props.schema ?? {}}
-        uiSchema={props.uiSchema}
+        schema={schema}
+        uiSchema={{
+          ...uiSchema,
+          score: {
+            "ui:readonly": true,
+            ...uiSchema.score,
+          },
+        }}
         validator={validator}
       />
       <M.Stack direction="row" justifyContent="space-between">
@@ -448,14 +438,15 @@ function MonoForm(props: {
   )
 }
 
-function PolyForm(props: { schema?: RJSFSchema; uiSchema?: UiSchema }) {
+function PolyForm() {
+  const { schema, uiSchema } = S.useSchema()
   return (
     <Form
       children=" "
       formData={{}}
       readonly={true}
-      schema={props.schema ?? {}}
-      uiSchema={props.uiSchema}
+      schema={schema}
+      uiSchema={uiSchema}
       validator={validator}
     />
   )

@@ -74,6 +74,9 @@ importers:
       specviz-react:
         specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react
         version: git-dev.cs.dal.ca/meridian/specviz-react/7d3e03eebb6bb31c54dd0e38a2d4fa9d989d30ea
+      zod:
+        specifier: ^3.22.4
+        version: 3.22.4
     devDependencies:
       '@tanstack/react-query-devtools':
         specifier: ^5.8.4
@@ -2318,6 +2321,10 @@ packages:
   /yaml@1.10.2:
     resolution: {integrity: sha512-r3vXyErRCYJ7wg28yvBY5VSoAF8ZvlcW9/BwUzEtUsjvX/DKs24dIkuwjtuprwJJHsbyUbLApepYTR1BN4uHrg==}
     engines: {node: '>= 6'}
+    dev: false
+
+  /zod@3.22.4:
+    resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
     dev: false
 
   git-dev.cs.dal.ca/meridian/specviz-react/7d3e03eebb6bb31c54dd0e38a2d4fa9d989d30ea:
