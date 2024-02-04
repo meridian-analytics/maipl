@@ -2,7 +2,7 @@
   "name": "@maipl/monorepo",
   "private": true,
   "scripts": {
-    "@check": "biome check .",
+    "@check": "biome check --apply .",
     "@format": "biome format --write .",
     "@build": "tsc && pnpm --parallel -F \"./apps/*\" build",
     "@preview": "docker compose up --build",
