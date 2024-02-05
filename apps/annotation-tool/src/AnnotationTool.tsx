@@ -1,4 +1,5 @@
 import { Annotation, Batch } from "@maipl/api"
+import * as F from "@maipl/format"
 import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
@@ -248,7 +249,7 @@ function Segments(props: {
             >
               <M.ListItemText
                 primary={s.filename}
-                secondary={`${s.start.toFixed(2)} - ${s.end.toFixed(2)}`}
+                secondary={F.duration(s.start, s.end)}
               />
             </M.ListItemButton>
           </M.ListItem>
@@ -285,9 +286,7 @@ function Annotations(props: {
                       : labels.lookup(region.label) ??
                         `Unknown: ${region.label}`
                   }
-                  secondary={`${region.x.toFixed(2)} - ${(
-                    region.x + region.width
-                  ).toFixed(2)} sec`}
+                  secondary={F.duration(region.x, region.x + region.width)}
                 />
               </M.ListItemButton>
             </M.ListItem>
