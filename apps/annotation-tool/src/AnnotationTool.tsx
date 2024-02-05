@@ -129,73 +129,71 @@ function AnnotationTool() {
     }
   }
   return (
-    <S.SchemaContextProvider jsonSchema={ctx.batch.annotation_file_text}>
-      <Specviz axes={axes} regions={regions} setRegions={setRegions}>
-        <Grid
-          container
-          sx={{
-            maxHeight: "100%",
-            overflow: "hidden",
-          }}
-        >
-          <Grid xs={12}>
-            <M.Stack direction="row">
-              <M.Typography variant="h5">{ctx.batch.batch_name}</M.Typography>
-              <M.Stack flexGrow={1} />
-              <MR.ActionButton
-                children={<I.Save />}
-                disabled={saveMutation.isPending}
-                onClick={() => onSave()}
-                title="Save Batch"
-              />
-            </M.Stack>
-          </Grid>
-          <Grid xs={12}>
-            <M.Stack>
-              {ctx.active.segment == null ? (
-                <p>Choose a segment...</p>
-              ) : ctx.active.audio == null ? (
-                <p>Error: Audio for segment could not be loaded.</p>
-              ) : ctx.active.image == null ? (
-                <p>Error: Image for segment could not be loaded</p>
-              ) : (
-                <>
-                  <Audio
-                    src={ctx.active.audio.audio}
-                    duration={ctx.active.segment.end - ctx.active.segment.start}
-                  />
-                  <Navigator
-                    src={ctx.active.image.image}
-                    xaxis={axes.seconds}
-                    yaxis={axes.hertz}
-                  />
-                  <Visualization
-                    src={ctx.active.image.image}
-                    xaxis={axes.seconds}
-                    yaxis={axes.hertz}
-                  />
-                  <M.Stack direction="row" flexShrink={0}>
-                    <MyAudioControls direction="row" />
-                    <M.Stack flexGrow={1} />
-                    <ToolPalette direction="row" />
-                  </M.Stack>
-                  <MyKeybinds />
-                </>
-              )}
-            </M.Stack>
-          </Grid>
-          <Grid xs={4}>
-            <Segments sx={{ height: "35vh", overflow: "auto" }} />
-          </Grid>
-          <Grid xs={4}>
-            <Annotations sx={{ height: "35vh", overflow: "auto" }} />
-          </Grid>
-          <Grid xs={4}>
-            <AnnotationForm sx={{ height: "35vh", overflow: "auto" }} />
-          </Grid>
+    <Specviz axes={axes} regions={regions} setRegions={setRegions}>
+      <Grid
+        container
+        sx={{
+          maxHeight: "100%",
+          overflow: "hidden",
+        }}
+      >
+        <Grid xs={12}>
+          <M.Stack direction="row">
+            <M.Typography variant="h5">{ctx.batch.batch_name}</M.Typography>
+            <M.Stack flexGrow={1} />
+            <MR.ActionButton
+              children={<I.Save />}
+              disabled={saveMutation.isPending}
+              onClick={() => onSave()}
+              title="Save Batch"
+            />
+          </M.Stack>
         </Grid>
-      </Specviz>
-    </S.SchemaContextProvider>
+        <Grid xs={12}>
+          <M.Stack>
+            {ctx.active.segment == null ? (
+              <p>Choose a segment...</p>
+            ) : ctx.active.audio == null ? (
+              <p>Error: Audio for segment could not be loaded.</p>
+            ) : ctx.active.image == null ? (
+              <p>Error: Image for segment could not be loaded</p>
+            ) : (
+              <>
+                <Audio
+                  src={ctx.active.audio.audio}
+                  duration={ctx.active.segment.end - ctx.active.segment.start}
+                />
+                <Navigator
+                  src={ctx.active.image.image}
+                  xaxis={axes.seconds}
+                  yaxis={axes.hertz}
+                />
+                <Visualization
+                  src={ctx.active.image.image}
+                  xaxis={axes.seconds}
+                  yaxis={axes.hertz}
+                />
+                <M.Stack direction="row" flexShrink={0}>
+                  <MyAudioControls direction="row" />
+                  <M.Stack flexGrow={1} />
+                  <ToolPalette direction="row" />
+                </M.Stack>
+                <MyKeybinds />
+              </>
+            )}
+          </M.Stack>
+        </Grid>
+        <Grid xs={4}>
+          <Segments sx={{ height: "35vh", overflow: "auto" }} />
+        </Grid>
+        <Grid xs={4}>
+          <Annotations sx={{ height: "35vh", overflow: "auto" }} />
+        </Grid>
+        <Grid xs={4}>
+          <AnnotationForm sx={{ height: "35vh", overflow: "auto" }} />
+        </Grid>
+      </Grid>
+    </Specviz>
   )
 }
 
