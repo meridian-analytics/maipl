@@ -149,7 +149,9 @@ export function useLabels(): UseLabelsHook {
   const lookup = R.useCallback(
     (key: string | string[]) =>
       typeof key == "object"
-        ? key.map(k => labels.get(k) ?? `(NoLabel ${k})`).join(", ")
+        ? key.length == 0
+          ? "(Unlabeled)"
+          : key.map(k => labels.get(k) ?? `(NoLabel ${k})`).join(", ")
         : labels.get(key) ?? `(NoLabel ${key})`,
     [labels],
   )

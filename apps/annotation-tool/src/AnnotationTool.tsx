@@ -278,12 +278,7 @@ function Annotations(props: {
                 onClick={() => specviz.setSelection(() => new Set([region.id]))}
               >
                 <M.ListItemText
-                  primary={
-                    region.label == null
-                      ? "Unlabeled"
-                      : labels.lookup(region.label) ??
-                        `Unknown: ${region.label}`
-                  }
+                  primary={labels.lookup(region.label ?? "")}
                   secondary={F.duration(region.x, region.x + region.width)}
                 />
               </M.ListItemButton>
