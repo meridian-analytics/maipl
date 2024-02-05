@@ -14,13 +14,22 @@ export const OptionsSchema = Z.array(
     title: Z.string(),
   }),
 )
+
+export const EnumSchema = Z.object({
+  enum: Z.array(Z.string()),
+  title: Z.string().optional(),
+  type: Z.literal("string"),
+})
+
 export const AnyOfSchema = Z.object({
   anyOf: OptionsSchema,
+  title: Z.string().optional(),
   type: Z.literal("string"),
 })
 
 export const OneOfSchema = Z.object({
   oneOf: OptionsSchema,
+  title: Z.string().optional(),
   type: Z.literal("string"),
 })
 
@@ -28,10 +37,12 @@ export const NumberSchema = Z.object({
   maximum: Z.number().optional(),
   minimum: Z.number().optional(),
   multipleOf: Z.number().optional(),
+  title: Z.string().optional(),
   type: Z.literal("number"),
 })
 
 export const StringSchema = Z.object({
+  title: Z.string().optional(),
   type: Z.literal("string"),
 })
 
@@ -66,6 +77,7 @@ export const MaiplSchemaFromJson = Z.preprocess(json => {
 }, MaiplSchema)
 
 export type OptionsSchema = Z.infer<typeof OptionsSchema>
+export type EnumSchema = Z.infer<typeof EnumSchema>
 export type OneOfSchema = Z.infer<typeof OneOfSchema>
 export type AnyOfSchema = Z.infer<typeof AnyOfSchema>
 export type NumberSchema = Z.infer<typeof NumberSchema>
