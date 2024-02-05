@@ -1,4 +1,4 @@
-import { Annotation, Batch, Segment } from "@maipl/api"
+import { Annotation, Batch } from "@maipl/api"
 import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
@@ -20,64 +20,69 @@ import { linear } from "specviz-react/axis"
 import { formatHz, formatTimestamp } from "specviz-react/format"
 import { useAxes, useRegionState, useSpecviz } from "specviz-react/hooks"
 import { Bindings, Keypress } from "specviz-react/keybinds"
+import * as Z from "zod"
+import * as A from "./AnnotationContext.tsx"
 import * as S from "./SchemaContext.tsx"
 
-function PreloadedAnnotationTool(props: {
-  batch: Batch.t
-  segments: Array<Segment.t>
-  images: Map<number, Segment.t_image>
-  audios: Map<number, Segment.t_audio>
-}) {
+export function LoadFromBatchId() {
+  const maipl = MR.useMaipl()
+  const params = RR.useParams()
+  const batchId = Z.coerce.number().parse(params.batchId)
+  const batch = RQ.useQuery({
+    queryKey: ["batches", batchId],
+    queryFn: () => Batch.get(maipl.client, batchId),
+  })
+  if (batch.isFetching) return <p>Loading...</p>
+  if (batch.error) return <p>Error: {batch.error.message}</p>
+  if (batch.data == null) return <p>Error: Batch not found</p>
+  if (batch.data.segments.length == 0) return <p>Error: Segments not found</p>
+  return (
+    <RR.Navigate
+      to={`/annotate/${batchId}/segment/${batch.data.segments[0]}`}
+      replace={true}
+    />
+  )
+}
+
+export function LoadFromBatchIdAndSegmentId() {
+  const params = RR.useParams()
+  const batchId = Z.coerce.number().parse(params.batchId)
+  const segmentId = Z.coerce.number().parse(params.segmentId)
+  return (
+    <A.AnnotationContextProvider batchId={batchId} segmentId={segmentId}>
+      <AnnotationTool />
+    </A.AnnotationContextProvider>
+  )
+}
+
+function AnnotationTool() {
+  const ctx = A.useAnnotationContext()
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
-  const segmentId = RR.useParams()?.segmentId
   const queryClient = RQ.useQueryClient()
-
-  const { segment, audio, image } = R.useMemo(
-    () => ({
-      segment: props.segments.find(s => s.id == Number(segmentId)) ?? null,
-      audio: props.audios.get(Number(segmentId)),
-      image: props.images.get(Number(segmentId)),
-    }),
-    [props.audios, props.images, props.segments, segmentId],
+  const [regions, setRegions] = useRegionState(
+    () => new Map(ctx.annotations.map(a => [a.id, a.region])),
   )
-
-  const [regions, setRegions] = useRegionState()
-
-  const annotations = RQ.useQuery({
-    initialData: [],
-    queryKey: ["annotations", segment?.id],
-    queryFn: () =>
-      Annotation.readSegment(maipl.client, props.batch.id, segment!.id),
-    enabled: segment != null,
-  })
-
-  R.useEffect(() => {
-    if (annotations.data) {
-      setRegions(new Map(annotations.data.map(a => [a.id, a.region])))
-    }
-  }, [annotations.data, setRegions])
-
   const axes = useAxes(() => {
     return {
       seconds: linear(
-        segment?.start ?? 0,
-        segment?.end ?? 60,
+        ctx.active.segment?.start ?? 0,
+        ctx.active.segment?.end ?? 60,
         "seconds",
         formatTimestamp,
       ),
       hertz: linear(
-        props.batch.parameters.freq_max ?? 10000,
-        props.batch.parameters.freq_min ?? 0,
+        ctx.batch.parameters.freq_max ?? 10000,
+        ctx.batch.parameters.freq_min ?? 0,
         "hertz",
         formatHz,
       ),
     }
   }, [
-    segment?.start,
-    segment?.end,
-    props.batch.parameters.freq_max,
-    props.batch.parameters.freq_min,
+    ctx.active.segment?.start,
+    ctx.active.segment?.end,
+    ctx.batch.parameters.freq_max,
+    ctx.batch.parameters.freq_min,
   ])
 
   const saveMutation = RQ.useMutation({
@@ -102,16 +107,18 @@ function PreloadedAnnotationTool(props: {
           Success: Saved {segments.length} annotations
         </M.Alert>
       ))
-      queryClient.refetchQueries({ queryKey: ["annotations", segment?.id] })
+      queryClient.refetchQueries({
+        queryKey: ["annotations", ctx.active.segment?.id],
+      })
     },
   })
 
   const onSave = () => {
-    if (saveMutation.isIdle && segment != null) {
+    if (saveMutation.isIdle && ctx.active.segment != null) {
       return saveMutation.mutateAsync([
         maipl.client,
-        props.batch.id,
-        segment.id,
+        ctx.batch.id,
+        ctx.active.segment.id,
         Array.from(regions.values(), region => ({
           id: region.id,
           created_at: new Date(),
@@ -120,26 +127,8 @@ function PreloadedAnnotationTool(props: {
       ])
     }
   }
-
-  // no segments in batch
-  if (props.segments.length == 0) return <p>No segments in batch</p>
-  // url did not specify segmentId, navigate to first segment.id
-  if (segmentId == null)
-    return (
-      <RR.Navigate
-        to={`/annotate/${props.batch.id}/segment/${props.segments[0].id}`}
-        replace={true}
-      />
-    )
-  // fetching
-  if (annotations.isFetching) return <p>Loading...</p>
-  // error
-  if (annotations.error)
-    return <p>Error: {(annotations.error as Error).message}</p>
-  // annotations.data is loaded
-  // segmentId is a number
   return (
-    <S.SchemaContextProvider jsonSchema={props.batch.annotation_file_text}>
+    <S.SchemaContextProvider jsonSchema={ctx.batch.annotation_file_text}>
       <Specviz axes={axes} regions={regions} setRegions={setRegions}>
         <Grid
           container
@@ -150,7 +139,7 @@ function PreloadedAnnotationTool(props: {
         >
           <Grid xs={12}>
             <M.Stack direction="row">
-              <M.Typography variant="h5">{props.batch.batch_name}</M.Typography>
+              <M.Typography variant="h5">{ctx.batch.batch_name}</M.Typography>
               <M.Stack flexGrow={1} />
               <MR.ActionButton
                 children={<I.Save />}
@@ -162,25 +151,25 @@ function PreloadedAnnotationTool(props: {
           </Grid>
           <Grid xs={12}>
             <M.Stack>
-              {segment == null ? (
+              {ctx.active.segment == null ? (
                 <p>Choose a segment...</p>
-              ) : audio == null ? (
+              ) : ctx.active.audio == null ? (
                 <p>Error: Audio for segment could not be loaded.</p>
-              ) : image == null ? (
+              ) : ctx.active.image == null ? (
                 <p>Error: Image for segment could not be loaded</p>
               ) : (
                 <>
                   <Audio
-                    src={audio.audio}
-                    duration={segment.end - segment.start}
+                    src={ctx.active.audio.audio}
+                    duration={ctx.active.segment.end - ctx.active.segment.start}
                   />
                   <Navigator
-                    src={image.image}
+                    src={ctx.active.image.image}
                     xaxis={axes.seconds}
                     yaxis={axes.hertz}
                   />
                   <Visualization
-                    src={image.image}
+                    src={ctx.active.image.image}
                     xaxis={axes.seconds}
                     yaxis={axes.hertz}
                   />
@@ -195,21 +184,13 @@ function PreloadedAnnotationTool(props: {
             </M.Stack>
           </Grid>
           <Grid xs={4}>
-            <Segments
-              batch={props.batch}
-              segments={props.segments}
-              selectedId={segmentId}
-              sx={{ maxHeight: "40vh", overflow: "auto" }}
-            />
+            <Segments sx={{ height: "35vh", overflow: "auto" }} />
           </Grid>
           <Grid xs={4}>
-            <Annotations
-              batch={props.batch}
-              sx={{ maxHeight: "40vh", overflow: "auto" }}
-            />
+            <Annotations sx={{ height: "35vh", overflow: "auto" }} />
           </Grid>
           <Grid xs={4}>
-            <AnnotationForm sx={{ maxHeight: "40vh", overflow: "auto" }} />
+            <AnnotationForm sx={{ height: "35vh", overflow: "auto" }} />
           </Grid>
         </Grid>
       </Specviz>
@@ -251,27 +232,23 @@ function ToolPalette(props: M.StackProps) {
 }
 
 function Segments(props: {
-  batch: Batch.t
-  segments: Array<Segment.t>
-  selectedId: string
   sx?: M.SxProps
 }) {
+  const ctx = A.useAnnotationContext()
   return (
     <M.Paper sx={props.sx}>
       <M.List>
-        <M.ListSubheader>Segments ({props.segments.length})</M.ListSubheader>
-        {props.segments.map(segment => (
-          <M.ListItem disablePadding key={segment.id}>
+        <M.ListSubheader>Segments ({ctx.segments.length})</M.ListSubheader>
+        {ctx.segments.map(s => (
+          <M.ListItem disablePadding key={s.id}>
             <M.ListItemButton
               component={RR.Link}
-              to={`/annotate/${props.batch.id}/segment/${segment.id}`}
-              selected={String(segment.id) == props.selectedId}
+              to={`/annotate/${ctx.batch.id}/segment/${s.id}`}
+              selected={s.id == ctx.active.segment?.id}
             >
               <M.ListItemText
-                primary={segment.filename}
-                secondary={`${segment.start.toFixed(2)} - ${segment.end.toFixed(
-                  2,
-                )}`}
+                primary={s.filename}
+                secondary={`${s.start.toFixed(2)} - ${s.end.toFixed(2)}`}
               />
             </M.ListItemButton>
           </M.ListItem>
@@ -282,7 +259,6 @@ function Segments(props: {
 }
 
 function Annotations(props: {
-  batch: Batch.t
   sx?: M.SxProps
 }) {
   const labels = S.useLabels()
@@ -450,80 +426,6 @@ function PolyForm() {
       uiSchema={uiSchema}
       validator={validator}
     />
-  )
-}
-
-export default function AnnotationTool(props: { sx?: M.SxProps }) {
-  const maipl = MR.useMaipl()
-  const batchId = RR.useParams()?.batchId
-  const batch = RQ.useQuery({
-    enabled: batchId != null,
-    queryKey: ["batches", batchId],
-    queryFn: () => Batch.get(maipl.client, Number(batchId)),
-  })
-  const audio = RQ.useQuery({
-    enabled: batchId != null,
-    initialData: new Map(),
-    queryKey: ["batches", batchId, "audios"],
-    queryFn: () =>
-      Batch.audios(maipl.client, Number(batchId)).then(
-        arr => new Map(arr.map(audio => [audio.segment_id, audio])),
-      ),
-  })
-  const image = RQ.useQuery({
-    enabled: batchId != null,
-    initialData: new Map(),
-    queryKey: ["batches", batchId, "images"],
-    queryFn: () =>
-      Batch.images(maipl.client, Number(batchId)).then(
-        arr => new Map(arr.map(image => [image.segment_id, image])),
-      ),
-  })
-  const segments = RQ.useQuery({
-    enabled: batch.data != null,
-    initialData: [],
-    queryKey: ["batches", batchId, "segments"],
-    queryFn: () =>
-      // todo: change to
-      // Batch.segments(maipl.client, Number(batchId))
-      Segment.list(maipl.client, {
-        ids: batch.data!.segments,
-      }).then(r => r.data),
-  })
-  // url did not specify batchId
-  if (batchId == null) return <p>Batch ID not specified</p>
-  // fetching
-  if (
-    batch.isFetching ||
-    segments.isFetching ||
-    audio.isFetching ||
-    image.isFetching
-  )
-    return <p>Loading...</p>
-  // errors
-  if (batch.error) return <p>Error: {(batch.error as Error).message}</p>
-  if (audio.error) return <p>Error: {(audio.error as Error).message}</p>
-  if (image.error) return <p>Error: {(image.error as Error).message}</p>
-  if (segments.error) return <p>Error: {(segments.error as Error).message}</p>
-  // batch not found
-  if (batch.data == null) return <p>Batch not found</p>
-  // batch.data is loaded
-  return (
-    <M.Stack
-      sx={{
-        maxHeight: "100%",
-        overflow: "hidden",
-        padding: 2,
-        ...props.sx,
-      }}
-    >
-      <PreloadedAnnotationTool
-        batch={batch.data}
-        segments={segments.data}
-        images={image.data}
-        audios={audio.data}
-      />
-    </M.Stack>
   )
 }
 
