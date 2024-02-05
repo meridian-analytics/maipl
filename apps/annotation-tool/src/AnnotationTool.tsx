@@ -306,7 +306,8 @@ function Annotations(props: {
                   primary={
                     region.label == null
                       ? "Unlabeled"
-                      : labels.get(region.label) ?? `Unknown: ${region.label}`
+                      : labels.lookup(region.label) ??
+                        `Unknown: ${region.label}`
                   }
                   secondary={`${region.x.toFixed(2)} - ${(
                     region.x + region.width

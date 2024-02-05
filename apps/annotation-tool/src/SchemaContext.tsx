@@ -126,7 +126,11 @@ export function useSchema() {
   return R.useContext(SchemaContext)
 }
 
-export function useLabels(): Map<string, string> {
+type UseLabelsHook = {
+  lookup: (key: string | string[]) => string
+}
+
+export function useLabels(): UseLabelsHook {
   const { schema } = useSchema()
   const labels = R.useMemo(() => {
     const res: Map<string, string> = new Map()
@@ -143,5 +147,12 @@ export function useLabels(): Map<string, string> {
     }
     return res
   }, [schema])
-  return labels
+  const lookup = R.useCallback(
+    (key: string | string[]) =>
+      typeof key == "object"
+        ? key.map(k => labels.get(k) ?? `(NoLabel ${k})`).join(", ")
+        : labels.get(key) ?? `(NoLabel ${key})`,
+    [labels],
+  )
+  return { lookup }
 }
