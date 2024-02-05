@@ -53,12 +53,7 @@ export function AnnotationContextProvider(props: {
     initialData: [],
     enabled: batch.data != null,
     queryKey: ["batches", props.batchId, "segments"],
-    queryFn: () =>
-      // todo: change to
-      // Batch.segments(maipl.client, props.batchId)
-      Segment.list(maipl.client, {
-        ids: batch.data!.segments,
-      }).then(r => r.data),
+    queryFn: () => Batch.segments(maipl.client, props.batchId),
   })
   const annotations = RQ.useQuery({
     initialData: [],
