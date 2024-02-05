@@ -228,11 +228,7 @@ function EditTask(props: {
             if (value) setFolder(value as File.t_maipl_folder)
           }}
           value={folder}
-          values={[
-            File.t_maipl_folder.public,
-            File.t_maipl_folder.dataset,
-            File.t_maipl_folder.raw,
-          ]}
+          values={[File.t_maipl_folder.raw]}
         />
         <M.TextField
           label="Path"

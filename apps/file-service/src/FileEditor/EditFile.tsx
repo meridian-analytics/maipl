@@ -20,7 +20,7 @@ export const loader = (maipl: MR.t_context) =>
     // folder query param
     const url = new URL(request.url)
     const search = url.searchParams
-    const folder = search.get("folder") ?? "public"
+    const folder = search.get("folder") ?? "raw"
     File.invariantMaiplFolder(folder)
     // file resource
     const file = await File.get(maipl.client, fileId)

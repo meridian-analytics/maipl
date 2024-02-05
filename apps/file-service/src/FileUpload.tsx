@@ -50,7 +50,7 @@ export const loader = (_maipl: MR.t_context) =>
     // folder query param
     const url = new URL(request.url)
     const search = url.searchParams
-    const folder = search.get("folder") ?? "public"
+    const folder = search.get("folder") ?? "raw"
     File.invariantMaiplFolder(folder)
     // payload
     return { folder }
@@ -95,8 +95,6 @@ function Element() {
           }}
         />
       )
-    case File.t_maipl_folder.public:
-      return <FileUpload folder={folder} onClose={onClose} disabled={true} />
     case File.t_maipl_folder.raw:
       return (
         <FileUpload
