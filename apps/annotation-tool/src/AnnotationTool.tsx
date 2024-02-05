@@ -139,7 +139,7 @@ function PreloadedAnnotationTool(props: {
   // annotations.data is loaded
   // segmentId is a number
   return (
-    <S.SchemaContextProvider batch={props.batch}>
+    <S.SchemaContextProvider jsonSchema={props.batch.annotation_file_text}>
       <Specviz axes={axes} regions={regions} setRegions={setRegions}>
         <Grid
           container

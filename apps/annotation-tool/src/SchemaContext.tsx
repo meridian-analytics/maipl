@@ -4,7 +4,6 @@
  * Supported features are described by simple zod parsers
  */
 
-import { Batch } from "@maipl/api"
 import * as R from "react"
 import * as Z from "zod"
 
@@ -106,19 +105,19 @@ const defaultContext: MaiplSchema = {
 const SchemaContext = R.createContext<MaiplSchema>(defaultContext)
 
 export function SchemaContextProvider(props: {
-  batch: Batch.t
+  jsonSchema: string
   children: R.ReactNode
 }) {
   const schema = R.useMemo<MaiplSchema>(() => {
     try {
-      return MaiplSchemaFromJson.parse(props.batch.annotation_file_text)
+      return MaiplSchemaFromJson.parse(props.jsonSchema)
     } catch (err) {
       if (import.meta.env.DEV) {
         console.warn("SchemaContext parse error. Using default schema", err)
       }
       return defaultContext
     }
-  }, [props.batch.annotation_file_text])
+  }, [props.jsonSchema])
   return <SchemaContext.Provider value={schema} children={props.children} />
 }
 
