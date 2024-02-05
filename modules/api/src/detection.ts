@@ -79,16 +79,16 @@ const export_ = async (
     },
   )
   const columns = {
-    id: "DetectionId",
-    user_id: "UserId",
-    task: "TaskId",
-    file: "FileId",
-    file_path: "FilePath",
-    label: "Label",
-    score: "Score",
-    start: "Start",
-    end: "End",
-    created_at: "Date",
+    id: "detection",
+    user_id: "user",
+    task: "task",
+    file: "file",
+    file_path: "filename",
+    start: "start",
+    end: "end",
+    label: "label",
+    score: "score",
+    created_at: "date",
   }
   const path = filename ?? `detections-${Date.now()}.csv`
   return File.create(client, {
