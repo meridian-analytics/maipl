@@ -41,6 +41,7 @@ export {
   Menu,
   Modal,
   Navbar,
+  Panel,
   Picker,
   Profile,
   Switch,
