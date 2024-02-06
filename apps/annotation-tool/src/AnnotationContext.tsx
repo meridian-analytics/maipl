@@ -3,6 +3,7 @@ import * as MR from "@maipl/react"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as S from "./SchemaContext.tsx"
+import * as W from "./WorkspaceContext.tsx"
 
 type Context = {
   batch: Batch.t
@@ -99,10 +100,9 @@ export function AnnotationContextProvider(props: {
         },
       }}
     >
-      <S.SchemaContextProvider
-        jsonSchema={batch.data.annotation_file_text}
-        children={props.children}
-      />
+      <S.SchemaContextProvider jsonSchema={batch.data.annotation_file_text}>
+        <W.WorkspaceContextProvider children={props.children} />
+      </S.SchemaContextProvider>
     </AnnotationContext.Provider>
   )
 }
