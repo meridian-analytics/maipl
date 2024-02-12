@@ -1,42 +1,63 @@
-# Website
+## Adding Content
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+### 1. Adding a New Doc
 
-### Installation
+To add a new document to the documentation site, follow these steps:
 
-```
-$ yarn
-```
+- Navigate to the `docs` directory in the project.
+- Create a new markdown file with a unique name, e.g., `new-doc.md`.
+- Write your documentation content using Markdown syntax.
 
-### Local Development
+### 2. Adding a New Page
 
-```
-$ yarn start
-```
+To add a new page to the documentation site, follow these steps:
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+- Navigate to the pages directory in the project.
+- Create a new JavaScript file with a unique name, e.g., new-page.js.
+- Write your page content using React components.
 
-### Build
+The new page is then referenced in the `docusaurus.config.js` file under `navbar` as follows:
 
-```
-$ yarn build
-```
+{ to: "new-page.js", label: "A unique name for the page", position: "left/right" }
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+### 3. Adding a New React Component
 
-### Deployment
+To add a new React component to the documentation site, follow these steps:
 
-Using SSH:
+- Create a new JavaScript file for your component in the src/components directory, e.g., CustomComponent.js.
+- Write your React component code.
 
-```
-$ USE_SSH=true yarn deploy
-```
-
-Not using SSH:
+Once you've created the React component, you can use it within your documentation pages or markdown files.
 
 ```
-$ GIT_USER=<Your GitHub username> yarn deploy
+---
+id: custom-component-doc
+title: Custom Component Doc
+---
+
+# Custom Component Doc
+
+You can use the custom React component as follows:
+
+<CustomComponent />
 ```
 
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+### 4. Adding external links
 
+To add an external link to the documentation site, you use the following syntax:
+
+```
+[Link Text](URL)
+```
+
+Replace "Link Text" with the text you want to display for the link, and "URL" with the actual URL you want to link to.
+
+### 5. Adding internal links
+
+To link a different document within the documentation site, simply reference the filename without the .md extension
+
+```
+[Link to Another Document](another-document)
+```
+
+Replace "Link to Another Document" with the text you want to display for the link, and "another-document" with the filename you want to link to.
