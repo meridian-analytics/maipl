@@ -27,7 +27,7 @@ function useTable(props?: {
   const [selection, setSelection] = useSelection(props?.selection)
 
   const [folder, setFolder] = R.useState<File.t_maipl_folder>(
-    props?.maipl_folder ?? File.t_maipl_folder.public,
+    props?.maipl_folder ?? File.t_maipl_folder.raw,
   )
   const filter = useFilter({ path: props?.path ?? "", tag: props?.tag ?? "" })
   const debouncedFilter = useDebounce(filter, props?.debounceDelay)

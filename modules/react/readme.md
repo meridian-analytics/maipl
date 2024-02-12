@@ -76,6 +76,7 @@ function Filter
 function Modal
 function Navbar
 function Notifications
+function Panel
 ```
 
 <small>[back to top](#top)</small>

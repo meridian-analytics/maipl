@@ -151,6 +151,15 @@ type t_process_response = {
   message: string
 }
 
+/** Batch.t_read_segments_response */
+type t_read_segments_response = Array<
+  Omit<Segment.t, "start" | "end" | "created_at"> & {
+    start: string
+    end: string
+    created_at: string
+  }
+>
+
 /** Batch.t_update_request */
 type t_update_request = Omit<t, "created_at">
 
@@ -317,6 +326,24 @@ const process = async (client: Client.t, id: number): Promise<number> => {
   return response.task_id
 }
 
+/** Batch.segments: get unpaginated list of batch segments */
+const segments = async (
+  client: Client.t,
+  id: number,
+): Promise<Array<Segment.t>> => {
+  const response = await client
+    .get<t_read_segments_response>(
+      `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/segments/`,
+    )
+    .then(r => r.data)
+  return response.map(s => ({
+    ...s,
+    created_at: new Date(s.created_at),
+    end: Number(s.end),
+    start: Number(s.start),
+  }))
+}
+
 /** Batch.status: derivew batch status from celery task */
 const status = (batch: t_list_item): t_status => {
   if (batch.segments.length == 0) return t_status.empty
@@ -366,6 +393,7 @@ export {
   list,
   patch,
   process,
+  segments,
   status,
   t_status, // enum is type *and* value
   update,

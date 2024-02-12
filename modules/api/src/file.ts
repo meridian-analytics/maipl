@@ -17,7 +17,6 @@ export function invariantMaiplFolder(
 
 /** File.t_maipl_folder */
 enum t_maipl_folder {
-  public = "public",
   annotation = "annotation",
   config = "config",
   dataset = "dataset",

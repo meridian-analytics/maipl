@@ -237,7 +237,7 @@ function EditBatch(props: {
         {tab == Tab.files &&
           selectionType == SelectionType.manual &&
           importFile == null && (
-            <M.Stack>
+            <>
               <M.Stack direction="row" alignItems="center">
                 <M.TextField
                   label="Path"
@@ -254,7 +254,7 @@ function EditBatch(props: {
                 <M.Stack flexGrow={1} />
                 <M.Button
                   size="medium"
-                  children="Cancel selection"
+                  children="Go Back"
                   onClick={() => setSelectionType(SelectionType.initial)}
                 />
               </M.Stack>
@@ -274,7 +274,7 @@ function EditBatch(props: {
                   created_at: true,
                 }}
               />
-            </M.Stack>
+            </>
           )}
         {tab == Tab.files && importFile && (
           <M.Stack sx={style.base} direction="row" spacing={4}>
@@ -337,26 +337,26 @@ function EditBatch(props: {
             />
           </M.Stack>
         )}
-        {tab == Tab.parameters && (
-          <M.Stack
-            component={M.Paper}
-            sx={{
-              flexGrow: 1,
-              overflowY: "auto",
-              overflowX: "hidden",
-              paddingX: 2,
-            }}
-          >
-            <Form
-              children=" "
-              formData={parameters}
-              onChange={e => setParameters(e.formData)}
-              schema={BatchParameters.schema}
-              uiSchema={BatchParameters.uiSchema}
-              validator={validator}
-            />
-          </M.Stack>
-        )}
+        <M.Stack
+          component={M.Paper}
+          sx={{
+            flexGrow: 1,
+            overflowY: "auto",
+            overflowX: "hidden",
+            paddingX: 2,
+            // use height to ensure Form stays mounted; fixes #6
+            height: tab == Tab.parameters ? "auto" : 0,
+          }}
+        >
+          <Form
+            children=" "
+            formData={parameters}
+            onChange={e => setParameters(e.formData)}
+            schema={BatchParameters.schema}
+            uiSchema={BatchParameters.uiSchema}
+            validator={validator}
+          />
+        </M.Stack>
         <M.Stack direction="row">
           {selectionType == SelectionType.manual && (
             <M.Typography>
@@ -379,27 +379,6 @@ function EditBatch(props: {
             variant="contained"
           />
         </M.Stack>
-        <M.Typography sx={{ overflow: "auto" }}>
-          <pre>
-            <code>
-              {JSON.stringify(
-                {
-                  batch_name: name,
-                  description,
-                  annotationFile,
-                  importFile,
-                  filelist: importFile
-                    ? []
-                    : Array.from(table.selection.keys()),
-                  segmentParameters,
-                  parameters,
-                },
-                null,
-                2,
-              )}
-            </code>
-          </pre>
-        </M.Typography>
       </M.Stack>
     </MR.Modal>
   )
