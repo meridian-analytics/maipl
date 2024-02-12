@@ -6,7 +6,7 @@ To add a new document to the documentation site, follow these steps:
 
 - Navigate to the `docs` directory in the project.
 - Create a new markdown file with a unique name, e.g., `new-doc.md`.
-- Write your documentation content using Markdown syntax.
+- Write the documentation content using Markdown syntax.
 
 ### 2. Adding a New Page
 
@@ -14,7 +14,7 @@ To add a new page to the documentation site, follow these steps:
 
 - Navigate to the pages directory in the project.
 - Create a new JavaScript file with a unique name, e.g., new-page.js.
-- Write your page content using React components.
+- Write the page content using React components.
 
 The new page is then referenced in the `docusaurus.config.js` file under `navbar` as follows:
 
@@ -26,10 +26,10 @@ The new page is then referenced in the `docusaurus.config.js` file under `navbar
 
 To add a new React component to the documentation site, follow these steps:
 
-- Create a new JavaScript file for your component in the src/components directory, e.g., CustomComponent.js.
-- Write your React component code.
+- Create a new JavaScript file for the component in the src/components directory, e.g., CustomComponent.js.
+- Write the React component code.
 
-Once you've created the React component, you can use it within your documentation pages or markdown files.
+Once you've created the React component, you can use it within the documentation pages or markdown files.
 
 ```
 ---
@@ -64,13 +64,24 @@ To link a different document within the documentation site, simply reference the
 
 Replace `Link to Another Document` with the text you want to display for the link, and `another-document` with the filename you want to link to.
 
-### Updating Sidebar Structure
+### 6. Updating Sidebar Structure
 
 To add a stand alone document, simply add the `id` of the document to the docs directory in the `sidebar.config.js` file.
 
 To add a new category,
 
-- Add a new object to the docs array, specifying the type as "category".
+- Add a new object to the docs array, specifying the type as `category`.
 - Provide a label for the category and list the items it should contain.
 
 A `category type` creates a dropdown-like menu structure in the sidebar, allowing documentation content to be organised effectively.
+
+### 7. Adding Media files
+
+To add media files, such as images or videos:
+
+- Place the media files into the `static/img` directory of the project.
+- Reference the media files using relative paths and markdown syntax as follows:
+
+```
+![Alt Text](/img/photo.png)
+```
