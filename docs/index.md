@@ -3,6 +3,6 @@ id: intro
 title: Introduction
 ---
 
-import IntroPage from './intro';
+import IntroPage from './index';
 
 <IntroPage />
