@@ -18,7 +18,9 @@ To add a new page to the documentation site, follow these steps:
 
 The new page is then referenced in the `docusaurus.config.js` file under `navbar` as follows:
 
+```
 { to: "new-page.js", label: "A unique name for the page", position: "left/right" }
+```
 
 ### 3. Adding a New React Component
 
@@ -31,18 +33,18 @@ Once you've created the React component, you can use it within your documentatio
 
 ```
 ---
-id: custom-component-doc
-title: Custom Component Doc
+id: custom-component
+title: Custom Component Example
 ---
 
-# Custom Component Doc
+# Custom Component
 
 You can use the custom React component as follows:
 
 <CustomComponent />
 ```
 
-### 4. Adding external links
+### 4. Adding External Links
 
 To add an external link to the documentation site, you use the following syntax:
 
@@ -50,9 +52,9 @@ To add an external link to the documentation site, you use the following syntax:
 [Link Text](URL)
 ```
 
-Replace "Link Text" with the text you want to display for the link, and "URL" with the actual URL you want to link to.
+Replace `Link Text` with the text you want to display for the link, and `URL` with the actual URL you want to link to.
 
-### 5. Adding internal links
+### 5. Adding Internal Links
 
 To link a different document within the documentation site, simply reference the filename without the .md extension
 
@@ -60,4 +62,15 @@ To link a different document within the documentation site, simply reference the
 [Link to Another Document](another-document)
 ```
 
-Replace "Link to Another Document" with the text you want to display for the link, and "another-document" with the filename you want to link to.
+Replace `Link to Another Document` with the text you want to display for the link, and `another-document` with the filename you want to link to.
+
+### Updating Sidebar Structure
+
+To add a stand alone document, simply add the `id` of the document to the docs directory in the `sidebar.config.js` file.
+
+To add a new category,
+
+- Add a new object to the docs array, specifying the type as "category".
+- Provide a label for the category and list the items it should contain.
+
+A `category type` creates a dropdown-like menu structure in the sidebar, allowing documentation content to be organised effectively.
