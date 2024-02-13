@@ -9,6 +9,10 @@ export function filesize(bytes: number): string {
   return loop(bytes, 0)
 }
 
+export function duration(start: number, end: number, precision = 3): string {
+  return `${start.toFixed(precision)} - ${end.toFixed(precision)}`
+}
+
 export function pluralize(word: string, count: number): string {
   return `${word}${count == 1 ? "" : "s"}`
 }

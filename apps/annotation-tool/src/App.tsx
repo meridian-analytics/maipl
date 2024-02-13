@@ -1,7 +1,7 @@
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import AnnotationTool from "./AnnotationTool.tsx"
+import * as AnnotationTool from "./AnnotationTool.tsx"
 import Batches from "./Batches.tsx"
 import EditBatch from "./NewBatch.tsx"
 import ShowBatch from "./ShowBatch.tsx"
@@ -77,13 +77,11 @@ const router: MR.t_router = () => [
       },
       {
         path: "annotate/:batchId",
-        element: <AnnotationTool />,
-        children: [
-          {
-            path: "segment/:segmentId",
-            element: <AnnotationTool />,
-          },
-        ],
+        element: <AnnotationTool.LoadFromBatchId />,
+      },
+      {
+        path: "annotate/:batchId/segment/:segmentId",
+        element: <AnnotationTool.LoadFromBatchIdAndSegmentId />,
       },
     ],
   },

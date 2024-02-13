@@ -16,7 +16,7 @@ export const loader = (_maipl: MR.t_context) =>
     // folder query param
     const url = new URL(request.url)
     const search = url.searchParams
-    const folder = search.get("folder") ?? "public"
+    const folder = search.get("folder") ?? "raw"
     File.invariantMaiplFolder(folder)
     // payload
     return { folder }
@@ -113,7 +113,6 @@ export default function NewFile(props: {
             setValue={() => {}}
             value={props.folder}
             values={[
-              File.t_maipl_folder.public,
               File.t_maipl_folder.annotation,
               File.t_maipl_folder.config,
               File.t_maipl_folder.dataset,
