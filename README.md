@@ -7,10 +7,14 @@ To add a new document to the documentation site, follow these steps:
 - Navigate to the `docs` directory in the project.
 - Create a new markdown file with a unique name, e.g., `new-doc.md`.
 <<<<<<< HEAD
+<<<<<<< HEAD
 - Write the documentation content using Markdown syntax.
 =======
 - Write your documentation content using Markdown syntax.
 >>>>>>> e511facb (updated readme file)
+=======
+- Write the documentation content using Markdown syntax.
+>>>>>>> ad3456fb (updated README)
 
 ### 2. Adding a New Page
 
@@ -19,6 +23,9 @@ To add a new page to the documentation site, follow these steps:
 - Navigate to the pages directory in the project.
 - Create a new JavaScript file with a unique name, e.g., new-page.js.
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> ad3456fb (updated README)
 - Write the page content using React components.
 
 The new page is then referenced in the `docusaurus.config.js` file under `navbar` as follows:
@@ -90,6 +97,7 @@ To add media files, such as images or videos:
 ```
 ![Alt Text](/img/photo.png)
 ```
+<<<<<<< HEAD
 =======
 - Write your page content using React components.
 
@@ -139,3 +147,5 @@ To link a different document within the documentation site, simply reference the
 
 Replace "Link to Another Document" with the text you want to display for the link, and "another-document" with the filename you want to link to.
 >>>>>>> e511facb (updated readme file)
+=======
+>>>>>>> ad3456fb (updated README)
