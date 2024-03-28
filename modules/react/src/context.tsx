@@ -49,19 +49,15 @@ function MaiplProvider(props: {
   )
 }
 
+const queryClient = new RQ.QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+})
+
 function MaiplRootProvider(props: { children: R.ReactNode }) {
-  // react-query
-  const queryClient = R.useMemo(
-    () =>
-      new RQ.QueryClient({
-        defaultOptions: {
-          queries: {
-            refetchOnWindowFocus: false,
-          },
-        },
-      }),
-    [],
-  )
   return (
     <RQ.QueryClientProvider client={queryClient}>
       <M.ThemeProvider theme={MR.theme}>
