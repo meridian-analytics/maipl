@@ -12,9 +12,7 @@ export default function Panel(props: {
     <M.Stack
       component={M.Paper}
       spacing={0}
-      sx={{
-        ...props.sx,
-      }}
+      sx={props.sx}
     >
       <M.Stack
         direction="row"
