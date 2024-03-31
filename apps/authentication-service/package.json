@@ -23,8 +23,8 @@
   },
   "devDependencies": {
     "@tanstack/react-query-devtools": "^5.8.4",
-    "@types/react": "^18.2.38",
-    "@types/react-dom": "^18.2.16",
+    "@types/react": "^18.2.73",
+    "@types/react-dom": "^18.2.23",
     "@vitejs/plugin-react": "^4.2.1",
     "typescript": "^5.4.3",
     "vite": "^5.2.7"
