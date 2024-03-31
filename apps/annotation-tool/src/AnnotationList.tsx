@@ -26,11 +26,13 @@ export default function AnnotationList(props: {
         Object.keys(workspace.state.filters).length > 0
           ? [
               <MR.ActionButton
+                key="0"
                 children={<I.FilterList color="primary" />}
                 onClick={() => props.setShowFilters(true)}
                 title="Edit Filters"
               />,
               <MR.ActionButton
+                key="1"
                 children={<I.FilterListOff color="warning" />}
                 onClick={() => workspace.dispatch(W.actions.resetFilters())}
                 title="Reset Filters"
@@ -38,6 +40,7 @@ export default function AnnotationList(props: {
             ]
           : [
               <MR.ActionButton
+                key="0"
                 children={<I.FilterList color="primary" />}
                 onClick={() => props.setShowFilters(true)}
                 title="Open Filters"
