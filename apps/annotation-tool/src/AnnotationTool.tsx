@@ -24,7 +24,7 @@ import * as W from "./WorkspaceContext"
 export function LoadFromBatchId() {
   const maipl = MR.useMaipl()
   const params = RR.useParams()
-  const batchId = Z.coerce.number().parse(params.batchId)
+  const batchId = Z.coerce.number().parse(params["batchId"])
   const batch = RQ.useQuery({
     queryKey: ["batches", batchId],
     queryFn: () => Batch.get(maipl.client, batchId),
@@ -43,8 +43,8 @@ export function LoadFromBatchId() {
 
 export function LoadFromBatchIdAndSegmentId() {
   const params = RR.useParams()
-  const batchId = Z.coerce.number().parse(params.batchId)
-  const segmentId = Z.coerce.number().parse(params.segmentId)
+  const batchId = Z.coerce.number().parse(params["batchId"])
+  const segmentId = Z.coerce.number().parse(params["segmentId"])
   return (
     <A.AnnotationContextProvider batchId={batchId} segmentId={segmentId}>
       <AnnotationTool />
@@ -91,7 +91,7 @@ function AnnotationTool() {
           Error: Could not save annotations
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("AnnotationTool saveMutation error", err, vars)
       }
     },
@@ -174,13 +174,13 @@ function AnnotationTool() {
                 />
                 <Navigator
                   src={ctx.active.image.image}
-                  xaxis={axes.seconds}
-                  yaxis={axes.hertz}
+                  xaxis={axes["seconds"]}
+                  yaxis={axes["hertz"]}
                 />
                 <Visualization
                   src={ctx.active.image.image}
-                  xaxis={axes.seconds}
-                  yaxis={axes.hertz}
+                  xaxis={axes["seconds"]}
+                  yaxis={axes["hertz"]}
                 />
                 <M.Stack direction="row" flexShrink={0}>
                   <AudioControls direction="row" />

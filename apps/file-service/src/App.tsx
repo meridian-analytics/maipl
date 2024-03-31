@@ -71,7 +71,7 @@ function ErrorModal() {
           <M.Typography variant="h4">Bugger!</M.Typography>
         </M.Stack>
         <M.Alert severity="error">
-          {import.meta.env.PROD
+          {import.meta.env["PROD"]
             ? "Oops, something went wrong..."
             : error.message}
         </M.Alert>

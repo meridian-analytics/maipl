@@ -5,7 +5,7 @@ import Signin from "./signin"
 
 export default function App() {
   const router = RR.createBrowserRouter(routes, {
-    basename: import.meta.env.BASE_URL || "/",
+    basename: import.meta.env["BASE_URL"] || "/",
   })
   return (
     <MR.MaiplRootProvider>

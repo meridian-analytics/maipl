@@ -131,7 +131,7 @@ function EditBatch(props: {
           Error: Could not create batch
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("EditBatch create error", err, vars)
       }
     },

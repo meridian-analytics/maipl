@@ -35,7 +35,7 @@ function TaskActions(props: { task: Task.t }) {
           Error: Could not delete task #{vars[1]}
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("TaskActions deleteMutation error", err, vars)
       }
     },
@@ -60,7 +60,7 @@ function TaskActions(props: { task: Task.t }) {
           Error: Could not start task #{vars[1]}
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("Tasks startMutation error", err, vars)
       }
     },

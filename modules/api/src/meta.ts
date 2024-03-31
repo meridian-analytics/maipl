@@ -55,7 +55,7 @@ export function safeParse(meta: unknown): t_meta | null {
     if (typeof meta === "object") return { maipl: "audio", ...meta } as t_meta // todo: remove legacy metadata. return {...meta} as t_meta
     if (typeof meta === "string") return JSON.parse(meta) as t_meta
   } catch (e) {
-    if (import.meta.env.DEV) {
+    if (import.meta.env["DEV"]) {
       console.warn("Failed to parse meta", meta, e)
     }
   }

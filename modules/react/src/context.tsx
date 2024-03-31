@@ -177,7 +177,7 @@ function MaiplContextProvider(props: {
           ...props.router(context),
         ],
     {
-      basename: props.basename || import.meta.env.BASE_URL || "/",
+      basename: props.basename || import.meta.env["BASE_URL"] || "/",
     },
   )
 

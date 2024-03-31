@@ -68,7 +68,7 @@ export const MaiplSchemaFromJson = Z.preprocess(json => {
   try {
     return JSON.parse(String(json))
   } catch (err) {
-    if (import.meta.env.DEV) {
+    if (import.meta.env["DEV"]) {
       console.warn("Json parse error. Using default schema", err)
     }
     return defaultContext
@@ -112,7 +112,7 @@ export function SchemaContextProvider(props: {
     try {
       return MaiplSchemaFromJson.parse(props.jsonSchema)
     } catch (err) {
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.warn("SchemaContext parse error. Using default schema", err)
       }
       return defaultContext
@@ -133,13 +133,13 @@ export function useLabels(): UseLabelsHook {
   const { schema } = useSchema()
   const labels = R.useMemo(() => {
     const res: Map<string, string> = new Map()
-    if (schema.properties.label) {
-      if ("oneOf" in schema.properties.label) {
-        for (const m of schema.properties.label.oneOf) {
+    if (schema.properties["label"]) {
+      if ("oneOf" in schema.properties["label"]) {
+        for (const m of schema.properties["label"].oneOf) {
           res.set(m.const, m.title)
         }
-      } else if ("anyOf" in schema.properties.label) {
-        for (const m of schema.properties.label.anyOf) {
+      } else if ("anyOf" in schema.properties["label"]) {
+        for (const m of schema.properties["label"].anyOf) {
           res.set(m.const, m.title)
         }
       }

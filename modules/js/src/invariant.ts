@@ -3,7 +3,7 @@ export function invariant(
   message?: string,
 ): asserts condition {
   if (condition) return
-  const e = import.meta.env.PROD
+  const e = import.meta.env["PROD"]
     ? "Invariant violation"
     : `Invariant violation: ${message ?? "truthy value expected"}`
   throw Error(e)

@@ -9,7 +9,7 @@ import * as RR from "react-router-dom"
 export default function DetectionsLoader() {
   const navigate = RR.useNavigate()
   const params = RR.useParams()
-  const taskId = F.safeParseInteger(params.taskId, null)
+  const taskId = F.safeParseInteger(params["taskId"], null)
   const maipl = MR.useMaipl()
 
   const { data: task, error } = RQ.useQuery({
@@ -97,7 +97,7 @@ function Detections(props: {
           Error: Could not export detections for task #{vars[1].task}
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("DetectionsLoader exportMutation error", err, vars)
       }
     },
