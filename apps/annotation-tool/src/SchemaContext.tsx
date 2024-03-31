@@ -15,6 +15,7 @@ export const OptionsSchema = Z.array(
 )
 
 export const EnumSchema = Z.object({
+  default: Z.string().optional(),
   enum: Z.array(Z.string()),
   title: Z.string().optional(),
   type: Z.literal("string"),
@@ -22,17 +23,20 @@ export const EnumSchema = Z.object({
 
 export const AnyOfSchema = Z.object({
   anyOf: OptionsSchema,
+  default: Z.string().optional(),
   title: Z.string().optional(),
   type: Z.literal("string"),
 })
 
 export const OneOfSchema = Z.object({
+  default: Z.string().optional(),
   oneOf: OptionsSchema,
   title: Z.string().optional(),
   type: Z.literal("string"),
 })
 
 export const NumberSchema = Z.object({
+  default: Z.number().optional(),
   maximum: Z.number().optional(),
   minimum: Z.number().optional(),
   multipleOf: Z.number().optional(),
@@ -41,6 +45,7 @@ export const NumberSchema = Z.object({
 })
 
 export const StringSchema = Z.object({
+  default: Z.string().optional(),
   title: Z.string().optional(),
   type: Z.literal("string"),
 })
