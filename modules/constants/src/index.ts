@@ -1,5 +1,3 @@
-/// <reference types="vite/client" />
-
 import { safeParseBoolean, safeParseString } from "@maipl/format"
 
 export const MAIPL_ANNOTATION_BACKEND = safeParseString(

@@ -3,15 +3,12 @@
   "private": true,
   "scripts": {
     "@check": "biome check --apply .",
-    "@format": "biome format --write .",
-    "@build": "tsc && pnpm --parallel -F \"./apps/*\" build",
+    "@build": "pnpm --parallel -F \"./apps/*\" build",
     "@preview": "docker compose up --build",
     "@start": "pnpm --parallel -F \"./apps/*\" start",
-    "@tsc": "tsc"
+    "@tsc": "pnpm --parallel -F \"./apps/*\" exec tsc"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.6.3",
-    "@types/node": "^20.9.3",
-    "typescript": "^5.3.2"
+    "@biomejs/biome": "1.6.3"
   }
 }
