@@ -1,5 +1,5 @@
 import * as K from "@maipl/constants"
-import type * as Client from "./client.ts"
+import type * as Client from "./client"
 
 /** Task.t */
 type t = {

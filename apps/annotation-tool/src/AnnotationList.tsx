@@ -4,8 +4,8 @@ import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import { useSpecviz } from "specviz-react/hooks"
-import * as S from "./SchemaContext.tsx"
-import * as W from "./WorkspaceContext.tsx"
+import * as S from "./SchemaContext"
+import * as W from "./WorkspaceContext"
 
 export default function AnnotationList(props: {
   setShowFilters: (state: boolean) => void

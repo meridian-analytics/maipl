@@ -1,8 +1,8 @@
 import * as F from "@maipl/format"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import * as A from "./AnnotationContext.tsx"
-import Panel from "./Panel.tsx"
+import * as A from "./AnnotationContext"
+import Panel from "./Panel"
 
 export default function SegmentList(props: {
   sx?: M.SxProps

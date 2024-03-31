@@ -1,7 +1,7 @@
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import Signin from "./signin.tsx"
+import Signin from "./signin"
 
 export default function App() {
   const router = RR.createBrowserRouter(routes, {

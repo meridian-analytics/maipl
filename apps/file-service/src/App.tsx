@@ -2,9 +2,9 @@ import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import { EditFile, NewFile } from "./FileEditor.tsx"
-import * as FileUpload from "./FileUpload.tsx"
-import * as Files from "./Files.tsx"
+import { EditFile, NewFile } from "./FileEditor"
+import * as FileUpload from "./FileUpload"
+import * as Files from "./Files"
 
 export default function App() {
   return <MR.MaiplProvider router={router} />

@@ -9,7 +9,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import type * as A from "axios"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import * as MR from "./index.ts"
+import * as MR from "./index"
 
 type t_client = Client.t
 

@@ -1,11 +1,11 @@
 import * as K from "@maipl/constants"
 import * as CSV from "@maipl/csv"
 import * as F from "@maipl/format"
-import * as Annotation from "./annotation.ts"
-import type * as Client from "./client.ts"
-import * as File from "./file.ts"
-import type * as Segment from "./segment.ts"
-import type { t_page, t_page_params } from "./types.ts"
+import * as Annotation from "./annotation"
+import type * as Client from "./client"
+import * as File from "./file"
+import type * as Segment from "./segment"
+import type { t_page, t_page_params } from "./types"
 
 /** Batch.t: batch details with pre-fetched segments and user */
 type t = {

@@ -3,9 +3,9 @@ import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import { Form } from "@rjsf/mui"
 import validator from "@rjsf/validator-ajv8"
-import NumberMinMaxWidget from "./NumberMinMaxWidget.tsx"
-import * as S from "./SchemaContext.tsx"
-import * as W from "./WorkspaceContext.tsx"
+import NumberMinMaxWidget from "./NumberMinMaxWidget"
+import * as S from "./SchemaContext"
+import * as W from "./WorkspaceContext"
 
 export default function AnnotationFilters(props: {
   setShowFilters: (show: boolean) => void

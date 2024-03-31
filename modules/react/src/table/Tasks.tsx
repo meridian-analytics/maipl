@@ -3,7 +3,7 @@ import * as F from "@maipl/format"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as RT from "@tanstack/react-table"
-import { useMaipl } from "../context.tsx"
+import { useMaipl } from "../context"
 import BaseTable, {
   type ColumnDef,
   type PaginationState,

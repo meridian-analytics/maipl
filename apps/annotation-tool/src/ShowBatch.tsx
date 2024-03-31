@@ -7,7 +7,7 @@ import validator from "@rjsf/validator-ajv8"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import * as BatchParameters from "./schema/BatchParametersSchema.ts"
+import * as BatchParameters from "./schema/BatchParametersSchema"
 
 export default function ShowBatchLoader() {
   const maipl = MR.useMaipl()

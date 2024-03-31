@@ -6,8 +6,8 @@ import validator from "@rjsf/validator-ajv8"
 import { ErrorBoundary } from "react-error-boundary"
 import { Encoder } from "specviz-react"
 import { useSpecviz } from "specviz-react/hooks"
-import * as S from "./SchemaContext.tsx"
-import * as W from "./WorkspaceContext.tsx"
+import * as S from "./SchemaContext"
+import * as W from "./WorkspaceContext"
 
 export default function AnnotationForm(props: {
   sx?: M.SxProps

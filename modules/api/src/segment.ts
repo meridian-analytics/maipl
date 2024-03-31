@@ -1,6 +1,6 @@
 import * as K from "@maipl/constants"
-import type * as Client from "./client.ts"
-import type { t_page, t_page_params } from "./types.ts"
+import type * as Client from "./client"
+import type { t_page, t_page_params } from "./types"
 
 /** Segment.t */
 type t = {

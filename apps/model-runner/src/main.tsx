@@ -1,6 +1,6 @@
 import * as R from "react"
 import * as RDC from "react-dom/client"
-import App from "./App.tsx"
+import App from "./App"
 
 RDC.createRoot(document.getElementById("root")!).render(
   <R.StrictMode>

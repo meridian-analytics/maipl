@@ -4,8 +4,8 @@ import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as RR from "react-router-dom"
-import { useMaipl } from "../context.tsx"
-import Modal from "./Modal.tsx"
+import { useMaipl } from "../context"
+import Modal from "./Modal"
 
 function Usages() {
   const { client } = useMaipl()

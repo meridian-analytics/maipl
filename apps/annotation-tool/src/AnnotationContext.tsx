@@ -2,8 +2,8 @@ import { Annotation, Batch, type Segment } from "@maipl/api"
 import * as MR from "@maipl/react"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
-import * as S from "./SchemaContext.tsx"
-import * as W from "./WorkspaceContext.tsx"
+import * as S from "./SchemaContext"
+import * as W from "./WorkspaceContext"
 
 type Context = {
   batch: Batch.t

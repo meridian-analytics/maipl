@@ -1,10 +1,10 @@
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import * as AnnotationTool from "./AnnotationTool.tsx"
-import Batches from "./Batches.tsx"
-import EditBatch from "./NewBatch.tsx"
-import ShowBatch from "./ShowBatch.tsx"
+import * as AnnotationTool from "./AnnotationTool"
+import Batches from "./Batches"
+import EditBatch from "./NewBatch"
+import ShowBatch from "./ShowBatch"
 
 export default function App() {
   return <MR.MaiplProvider router={router} />
