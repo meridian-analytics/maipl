@@ -36,7 +36,7 @@ function NullForm(props: { sx?: M.SxProps }) {
       sx={props.sx}
       title="Edit Annotation"
       contents={
-        <M.Box sx={{ marginTop: -6, padding: 2 }}>
+        <M.Box sx={{ marginTop: -4, padding: 2 }}>
           <Form
             children=" "
             formData={{}}
@@ -83,7 +83,7 @@ function MonoForm(props: {
         />,
       ]}
       contents={
-        <M.Box sx={{ marginTop: -6, padding: 2 }}>
+        <M.Box sx={{ marginTop: -4, padding: 2 }}>
           <Form
             children=" "
             formData={region}
@@ -142,7 +142,7 @@ function PolyForm(props: {
       sx={props.sx}
       title="Edit Annotation"
       contents={
-        <M.Box sx={{ marginTop: -6, padding: 2 }}>
+        <M.Box sx={{ marginTop: -4, padding: 2 }}>
           <Form
             children=" "
             formData={{}}
