@@ -9,11 +9,7 @@ export default function Panel(props: {
   sx?: M.SxProps
 }) {
   return (
-    <M.Stack
-      component={M.Paper}
-      spacing={0}
-      sx={props.sx}
-    >
+    <M.Stack component={M.Paper} spacing={0} sx={props.sx}>
       <M.Stack
         direction="row"
         alignItems="center"
