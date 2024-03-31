@@ -1,8 +1,8 @@
 import * as K from "@maipl/constants"
 import * as CSV from "@maipl/csv"
-import * as Client from "./client.ts"
+import type * as Client from "./client.ts"
 import * as File from "./file.ts"
-import { Require, t_page, t_page_params } from "./types.ts"
+import type { Require, t_page, t_page_params } from "./types.ts"
 
 /** Detection.t */
 type t = {

@@ -1,4 +1,4 @@
-import { File, t_page } from "@maipl/api"
+import { File, type t_page } from "@maipl/api"
 import { filesize, fuzzyTime } from "@maipl/format"
 import * as RQ from "@tanstack/react-query"
 import * as RT from "@tanstack/react-table"
@@ -6,9 +6,9 @@ import * as R from "react"
 import { useMaipl } from "../context.tsx"
 import { useDebounce, useFilter } from "../hooks.ts"
 import BaseTable, {
-  ColumnDef,
-  PaginationState,
-  SelectionState,
+  type ColumnDef,
+  type PaginationState,
+  type SelectionState,
   usePagination,
   useSelection,
 } from "./Table.tsx"

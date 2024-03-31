@@ -5,9 +5,9 @@ import * as RQ from "@tanstack/react-query"
 import * as RT from "@tanstack/react-table"
 import { useMaipl } from "../context.tsx"
 import BaseTable, {
-  ColumnDef,
-  PaginationState,
-  SelectionState,
+  type ColumnDef,
+  type PaginationState,
+  type SelectionState,
   usePagination,
   useSelection,
 } from "./Table.tsx"

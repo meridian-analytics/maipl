@@ -1,5 +1,5 @@
 import * as M from "@mui/material"
-import * as JSF from "@rjsf/utils"
+import type * as JSF from "@rjsf/utils"
 
 type State = [null | number, null | number]
 

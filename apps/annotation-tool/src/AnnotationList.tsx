@@ -1,4 +1,4 @@
-import { Annotation } from "@maipl/api"
+import type { Annotation } from "@maipl/api"
 import * as F from "@maipl/format"
 import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"

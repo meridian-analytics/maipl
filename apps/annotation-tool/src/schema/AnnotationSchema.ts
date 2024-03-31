@@ -1,4 +1,4 @@
-import { RJSFSchema, UiSchema } from "@rjsf/utils"
+import type { RJSFSchema, UiSchema } from "@rjsf/utils"
 
 export const schema: RJSFSchema = {
   type: "object",

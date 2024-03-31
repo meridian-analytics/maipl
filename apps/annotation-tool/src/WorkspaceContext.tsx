@@ -1,4 +1,4 @@
-import { Annotation } from "@maipl/api"
+import type { Annotation } from "@maipl/api"
 import * as R from "react"
 import * as A from "./AnnotationContext.tsx"
 import * as S from "./SchemaContext.tsx"

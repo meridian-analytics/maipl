@@ -1,5 +1,5 @@
 import * as M from "@mui/material"
-import * as RR from "react-router-dom"
+import type * as RR from "react-router-dom"
 
 export default function ActionButton({
   title,

@@ -1,4 +1,4 @@
-import { Annotation, Batch, Segment } from "@maipl/api"
+import { Annotation, Batch, type Segment } from "@maipl/api"
 import * as MR from "@maipl/react"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"

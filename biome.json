@@ -22,8 +22,6 @@
       "style": {
         "noCommaOperator": "off",
         "noNonNullAssertion": "off",
-        "useExportType": "off",
-        "useImportType": "off",
         "useTemplate": "off"
       },
       "suspicious": {
