@@ -29,9 +29,10 @@ interface t_region {
   height: number
   xunit: string
   yunit: string
-  score?: number
-  label?: string
+  [key: string]: t_region_value
 }
+
+type t_region_value = boolean | number | string | string[]
 
 /** Annotation.t_create_request */
 type t_create_request = Omit<t, "id" | "created_at" | "user_id">

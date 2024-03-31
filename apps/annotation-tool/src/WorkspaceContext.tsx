@@ -24,7 +24,8 @@ type Action =
 
 type FilterValueString = string | string[]
 type FilterValueNumber = [null | number, null | number]
-type FilterValue = FilterValueString | FilterValueNumber
+type FilterValueBoolean = boolean
+type FilterValue = FilterValueString | FilterValueNumber | FilterValueBoolean
 type Filters = Record<string, FilterValue>
 
 export const actions = {
@@ -116,16 +117,18 @@ function filterAuxField(
   if (key in filters) {
     if (key in region) {
       switch (field.type) {
+        case "boolean":
+          return filterAuxBoolean(
+            region[key],
+            filters[key] as FilterValueBoolean,
+          )
         case "string":
           return filterAuxString(
-            region[key as keyof Annotation.t_region]! as FilterValueString,
-            rjsfCheckboxesBugfix(filters[key] as FilterValueString),
+            region[key],
+            rjsfCheckboxesBugfix(filters[key]) as FilterValueString,
           )
         case "number":
-          return filterAuxNumber(
-            Number(region[key as keyof Annotation.t_region]),
-            filters[key] as FilterValueNumber,
-          )
+          return filterAuxNumber(region[key], filters[key] as FilterValueNumber)
       }
     }
     return false
@@ -133,10 +136,7 @@ function filterAuxField(
   return true
 }
 
-function filterAuxString(
-  value: FilterValueString,
-  filter: FilterValueString,
-): boolean {
+function filterAuxString(value: unknown, filter: FilterValueString): boolean {
   if (Array.isArray(value) && Array.isArray(filter)) {
     return filter.length == 0 || value.some(v => filter.includes(v))
   }
@@ -146,20 +146,26 @@ function filterAuxString(
   if (Array.isArray(filter)) {
     return filter.length == 0 || filter.includes(value as string)
   }
-  return value == filter
+  return value === filter
 }
 
-function filterAuxNumber(value: number, filter: FilterValueNumber): boolean {
-  const [min, max] = filter
-  if (min != null && value < min) {
+function filterAuxNumber(value: unknown, filter: FilterValueNumber): boolean {
+  if (typeof value != "number" || !Array.isArray(filter)) {
     return false
   }
-  if (max != null && value > max) {
+  if (filter[0] != null && value < filter[0]) {
+    return false
+  }
+  if (filter[1] != null && value > filter[1]) {
     return false
   }
   return true
 }
 
-export function rjsfCheckboxesBugfix(a: string | string[]) {
+function filterAuxBoolean(value: unknown, filter: FilterValueBoolean): boolean {
+  return value == filter
+}
+
+export function rjsfCheckboxesBugfix(a: unknown) {
   return Array.isArray(a) ? a.filter(Boolean) : a
 }

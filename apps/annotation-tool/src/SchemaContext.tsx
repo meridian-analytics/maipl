@@ -50,8 +50,16 @@ export const StringSchema = Z.object({
   type: Z.literal("string"),
 })
 
+export const BooleanSchema = Z.object({
+  default: Z.boolean().optional(),
+  title: Z.string().optional(),
+  type: Z.literal("boolean"),
+})
+
 export const FieldSchema = Z.union([
   AnyOfSchema,
+  BooleanSchema,
+  EnumSchema,
   OneOfSchema,
   NumberSchema,
   StringSchema,
@@ -86,6 +94,7 @@ export type OneOfSchema = Z.infer<typeof OneOfSchema>
 export type AnyOfSchema = Z.infer<typeof AnyOfSchema>
 export type NumberSchema = Z.infer<typeof NumberSchema>
 export type StringSchema = Z.infer<typeof StringSchema>
+export type BooleanSchema = Z.infer<typeof BooleanSchema>
 export type FieldSchema = Z.infer<typeof FieldSchema>
 export type JsonSchema = Z.infer<typeof JsonSchema>
 export type UiSchema = Z.infer<typeof UiSchema>
@@ -131,33 +140,37 @@ export function useSchema() {
 }
 
 type UseLabelsHook = {
-  lookup: (key: string | string[]) => string
+  lookup: (key: unknown | unknown[]) => string
 }
 
 export function useLabels(): UseLabelsHook {
   const { schema } = useSchema()
   const labels = R.useMemo(() => {
     const res: Map<string, string> = new Map()
-    if (schema.properties["label"]) {
-      if ("oneOf" in schema.properties["label"]) {
-        for (const m of schema.properties["label"].oneOf) {
+    const label = schema.properties["label"]
+    if (label) {
+      if ("oneOf" in label) {
+        for (const m of label.oneOf) {
           res.set(m.const, m.title)
         }
-      } else if ("anyOf" in schema.properties["label"]) {
-        for (const m of schema.properties["label"].anyOf) {
+      } else if ("anyOf" in label) {
+        for (const m of label.anyOf) {
           res.set(m.const, m.title)
         }
-      }
+      } else if ("enum" in label)
+        for (const m of label.enum) {
+          res.set(m, m)
+        }
     }
     return res
   }, [schema])
-  const lookup = R.useCallback(
-    (key: string | string[]) =>
-      typeof key == "object"
+  const lookup: UseLabelsHook["lookup"] = R.useCallback(
+    key =>
+      Array.isArray(key)
         ? key.length == 0
           ? "(Unlabeled)"
           : key.map(k => labels.get(k) ?? `(NoLabel ${k})`).join(", ")
-        : labels.get(key) ?? `(NoLabel ${key})`,
+        : labels.get(key as string) ?? `(NoLabel ${key})`,
     [labels],
   )
   return { lookup }

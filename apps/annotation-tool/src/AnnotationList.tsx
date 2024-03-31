@@ -58,7 +58,7 @@ export default function AnnotationList(props: {
                 >
                   <M.ListItemText
                     primary={labels.lookup(
-                      W.rjsfCheckboxesBugfix(region.label ?? ""),
+                      W.rjsfCheckboxesBugfix(region["label"]),
                     )}
                     secondary={F.duration(region.x, region.x + region.width)}
                   />
