@@ -9,7 +9,8 @@
     "@maipl/csv": "workspace:^",
     "@maipl/format": "workspace:^",
     "@maipl/js": "workspace:^",
-    "axios": "^1.6.8"
+    "axios": "^1.6.8",
+    "specviz-react": "git+https://git-dev.cs.dal.ca/meridian/specviz-react#0.7.0-rc.2"
   },
   "exports": {
     ".": "./src/index.ts"

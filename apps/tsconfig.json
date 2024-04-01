@@ -17,7 +17,7 @@
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedParameters": false, // todo: true; currently disabled due to specviz
     "noPropertyAccessFromIndexSignature": true
   }
 }

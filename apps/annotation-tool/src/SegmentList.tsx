@@ -19,7 +19,7 @@ export default function SegmentList(props: {
               <M.ListItemButton
                 component={RR.Link}
                 to={`/annotate/${ctx.batch.id}/segment/${s.id}`}
-                selected={s.id == ctx.active.segment?.id}
+                selected={s.id == ctx.active.segment.id}
               >
                 <M.ListItemText
                   primary={s.filename}

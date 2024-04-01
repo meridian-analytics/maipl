@@ -1,9 +1,8 @@
-import type { Annotation } from "@maipl/api"
 import * as F from "@maipl/format"
 import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
-import { useSpecviz } from "specviz-react/hooks"
+import type * as Specviz from "specviz-react"
 import * as S from "./SchemaContext"
 import * as W from "./WorkspaceContext"
 
@@ -11,12 +10,11 @@ export default function AnnotationList(props: {
   setShowFilters: (state: boolean) => void
   sx?: M.SxProps
 }) {
-  function order(a: Annotation.t_region, b: Annotation.t_region) {
+  function order(a: Specviz.Region, b: Specviz.Region) {
     return a.x == b.x ? a.y - b.y : a.x - b.x
   }
   const labels = S.useLabels()
   const workspace = W.useWorkspace()
-  const specviz = useSpecviz()
   return (
     <MR.Panel
       sx={props.sx}
@@ -54,9 +52,11 @@ export default function AnnotationList(props: {
             .map(region => (
               <M.ListItem disablePadding key={region.id}>
                 <M.ListItemButton
-                  selected={specviz.selection.has(region.id)}
+                  selected={workspace.state.selection.has(region.id)}
                   onClick={() =>
-                    specviz.setSelection(() => new Set([region.id]))
+                    workspace.dispatch(
+                      W.actions.setSelection(new Set([region.id])),
+                    )
                   }
                 >
                   <M.ListItemText

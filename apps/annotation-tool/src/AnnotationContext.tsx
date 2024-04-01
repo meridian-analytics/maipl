@@ -5,17 +5,19 @@ import * as R from "react"
 import * as S from "./SchemaContext"
 import * as W from "./WorkspaceContext"
 
+type Active = {
+  audio: Segment.t_audio
+  image: Segment.t_image
+  segment: Segment.t
+}
+
 type Context = {
   batch: Batch.t
   audio: Map<number, Segment.t_audio>
   image: Map<number, Segment.t_image>
   segments: Segment.t[]
   annotations: Annotation.t[]
-  active: {
-    audio?: Segment.t_audio
-    image?: Segment.t_image
-    segment?: Segment.t
-  }
+  active: Active
 }
 
 const defaultContext: Context = {
@@ -24,7 +26,7 @@ const defaultContext: Context = {
   image: new Map(),
   segments: [],
   annotations: [],
-  active: {},
+  active: null as unknown as Active,
 }
 
 const AnnotationContext = R.createContext(defaultContext)
@@ -83,7 +85,14 @@ export function AnnotationContextProvider(props: {
   if (audio.data.size == 0) return <p>Audios not found</p>
   if (image.data.size == 0) return <p>Images not found</p>
   if (segments.data.length == 0) return <p>Segments not found</p>
-
+  // dereference active objects
+  const activeAudio = audio.data.get(props.segmentId)
+  const activeImage = image.data.get(props.segmentId)
+  const activeSegment = segments.data.find(s => s.id == props.segmentId)
+  // active objects not found
+  if (activeAudio == null) return <p>Audio not found</p>
+  if (activeImage == null) return <p>Image not found</p>
+  if (activeSegment == null) return <p>Segment not found</p>
   // loaded
   return (
     <AnnotationContext.Provider
@@ -94,9 +103,9 @@ export function AnnotationContextProvider(props: {
         segments: segments.data,
         annotations: annotations.data,
         active: {
-          audio: audio.data.get(props.segmentId),
-          image: image.data.get(props.segmentId),
-          segment: segments.data.find(s => s.id == props.segmentId),
+          audio: activeAudio,
+          image: activeImage,
+          segment: activeSegment,
         },
       }}
     >

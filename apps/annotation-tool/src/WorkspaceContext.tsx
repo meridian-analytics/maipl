@@ -1,25 +1,24 @@
-import type { Annotation } from "@maipl/api"
 import * as R from "react"
+import type * as Specviz from "specviz-react"
 import * as A from "./AnnotationContext"
 import * as S from "./SchemaContext"
 
-type Regions = Map<string, Annotation.t_region>
-
 type Context = {
   dispatch: R.Dispatch<Action>
-  filteredRegions: Regions
+  filteredRegions: Specviz.Regions
   state: State
 }
 
 type State = {
   filters: Filters
-  regions: Regions
+  regions: Specviz.Regions
+  selection: Specviz.Selection
 }
 
 type Action =
-  | { kind: "updateRegions"; regions: Regions }
-  | { kind: "updateRegion"; region: Annotation.t_region }
-  | { kind: "setFilters"; filters: Filters }
+  | { kind: "setFilters"; filters: R.SetStateAction<Filters> }
+  | { kind: "setRegions"; regions: R.SetStateAction<Specviz.Regions> }
+  | { kind: "setSelection"; selection: R.SetStateAction<Specviz.Selection> }
   | { kind: "resetFilters" }
 
 type FilterValueString = string | string[]
@@ -31,13 +30,13 @@ type Filters = Record<string, FilterValue>
 export const actions = {
   resetFilters: (): Action => ({ kind: "resetFilters" }),
   setFilters: (filters: Filters): Action => ({ kind: "setFilters", filters }),
-  updateRegions: (regions: Regions): Action => ({
-    kind: "updateRegions",
+  setRegions: (regions: R.SetStateAction<Specviz.Regions>): Action => ({
+    kind: "setRegions",
     regions,
   }),
-  updateRegion: (region: Annotation.t_region): Action => ({
-    kind: "updateRegion",
-    region,
+  setSelection: (selection: R.SetStateAction<Specviz.Selection>): Action => ({
+    kind: "setSelection",
+    selection,
   }),
 }
 
@@ -46,19 +45,28 @@ function reducer(state: State, action: Action): State {
     case "resetFilters":
       return { ...state, filters: {} }
     case "setFilters":
-      return { ...state, filters: action.filters }
-    case "updateRegions":
       return {
         ...state,
-        regions: Array.from(action.regions.values()).reduce(
-          (m, r) => m.set(r.id, r),
-          new Map(state.regions),
-        ),
+        filters:
+          typeof action.filters == "function"
+            ? action.filters(state.filters)
+            : action.filters,
       }
-    case "updateRegion":
+    case "setRegions":
       return {
         ...state,
-        regions: new Map(state.regions).set(action.region.id, action.region),
+        regions:
+          typeof action.regions == "function"
+            ? action.regions(state.regions)
+            : action.regions,
+      }
+    case "setSelection":
+      return {
+        ...state,
+        selection:
+          typeof action.selection == "function"
+            ? action.selection(state.selection)
+            : action.selection,
       }
   }
 }
@@ -71,6 +79,7 @@ const defaultContext: Context = {
   state: {
     filters: {},
     regions: new Map(),
+    selection: new Set(),
   },
 }
 
@@ -84,7 +93,7 @@ export function WorkspaceContextProvider(props: { children: R.ReactNode }) {
     regions: new Map(ctx.annotations.map(a => [a.id, a.region])),
   }))
   const filteredRegions = R.useMemo(() => {
-    const m: Regions = new Map()
+    const m: Specviz.Regions = new Map()
     for (const region of state.regions.values()) {
       if (
         Object.entries(schema.properties).every(([key, field]) =>
@@ -109,7 +118,7 @@ export function useWorkspace() {
 }
 
 function filterAuxField(
-  region: Annotation.t_region,
+  region: Specviz.Region,
   key: string,
   field: S.FieldSchema,
   filters: Filters,

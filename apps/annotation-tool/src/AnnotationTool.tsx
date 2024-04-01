@@ -6,16 +6,17 @@ import Grid from "@mui/material/Unstable_Grid2"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import { Audio, Navigator, Specviz, Visualization } from "specviz-react"
-import { linear } from "specviz-react/axis"
-import { formatHz, formatTimestamp } from "specviz-react/format"
-import { useAxes } from "specviz-react/hooks"
+import * as Specviz from "specviz-react"
+import * as Audio from "specviz-react/audio"
+import * as Axis from "specviz-react/axis"
+import * as Format from "specviz-react/format"
 import * as Z from "zod"
 import * as A from "./AnnotationContext"
 import AnnotationFilters from "./AnnotationFilters"
 import AnnotationForm from "./AnnotationForm"
 import AnnotationList from "./AnnotationList"
 import AudioControls from "./AudioControls"
+import * as AudioFocus from "./AudioFocus"
 import Keybinds from "./Keybinds"
 import SegmentList from "./SegmentList"
 import ToolPalette from "./ToolPalette"
@@ -60,24 +61,24 @@ function AnnotationTool() {
   const notify = MR.useNotify()
   const workspace = W.useWorkspace()
   const queryClient = RQ.useQueryClient()
-  const axes = useAxes(() => {
+  const axes: Specviz.Axes = R.useMemo(() => {
     return {
-      seconds: linear(
-        ctx.active.segment?.start ?? 0,
-        ctx.active.segment?.end ?? 60,
+      seconds: Axis.linear(
+        ctx.active.segment.start,
+        ctx.active.segment.end,
         "seconds",
-        formatTimestamp,
+        Format.timestamp,
       ),
-      hertz: linear(
-        ctx.batch.parameters.freq_max ?? 10000,
-        ctx.batch.parameters.freq_min ?? 0,
+      hertz: Axis.linear(
+        ctx.batch.parameters.freq_max,
+        ctx.batch.parameters.freq_min,
         "hertz",
-        formatHz,
+        Format.hz,
       ),
     }
   }, [
-    ctx.active.segment?.start,
-    ctx.active.segment?.end,
+    ctx.active.segment.start,
+    ctx.active.segment.end,
     ctx.batch.parameters.freq_max,
     ctx.batch.parameters.freq_min,
   ])
@@ -105,7 +106,7 @@ function AnnotationTool() {
         </M.Alert>
       ))
       queryClient.refetchQueries({
-        queryKey: ["annotations", ctx.active.segment?.id],
+        queryKey: ["annotations", ctx.active.segment.id],
       })
     },
   })
@@ -128,87 +129,117 @@ function AnnotationTool() {
   const [showFilters, setShowFilters] = R.useState(false)
 
   return (
-    <Specviz
-      axes={axes}
-      regions={workspace.filteredRegions}
-      setRegions={s =>
-        workspace.dispatch(
-          W.actions.updateRegions(
-            typeof s == "function" ? s(workspace.filteredRegions) : s,
-          ),
-        )
-      }
-    >
-      <Grid
-        container
-        sx={{
-          maxHeight: "100%",
-          overflow: "hidden",
-        }}
-      >
-        <Grid xs={12}>
-          <M.Stack direction="row">
-            <M.Typography variant="h5">{ctx.batch.batch_name}</M.Typography>
-            <M.Stack flexGrow={1} />
-            <MR.ActionButton
-              children={<I.Save />}
-              disabled={saveMutation.isPending}
-              onClick={() => onSave()}
-              title="Save Batch"
-            />
-          </M.Stack>
-        </Grid>
-        <Grid xs={12}>
-          <M.Stack>
-            {ctx.active.segment == null ? (
-              <p>Choose a segment...</p>
-            ) : ctx.active.audio == null ? (
-              <p>Error: Audio for segment could not be loaded.</p>
-            ) : ctx.active.image == null ? (
-              <p>Error: Image for segment could not be loaded</p>
-            ) : (
-              <>
-                <Audio
-                  src={ctx.active.audio.audio}
-                  duration={ctx.active.segment.end - ctx.active.segment.start}
+    <Audio.Provider url={ctx.active.audio.audio}>
+      <AudioFocus.Provider>
+        <Specviz.Provider
+          axes={axes}
+          regions={workspace.filteredRegions}
+          selection={workspace.state.selection}
+          setRegions={s => workspace.dispatch(W.actions.setRegions(s))}
+          setSelection={s => workspace.dispatch(W.actions.setSelection(s))}
+        >
+          <Grid
+            container
+            sx={{
+              maxHeight: "100%",
+              overflow: "hidden",
+            }}
+          >
+            <Grid xs={12}>
+              <M.Stack direction="row">
+                <M.Typography variant="h5">{ctx.batch.batch_name}</M.Typography>
+                <M.Stack flexGrow={1} />
+                <MR.ActionButton
+                  children={<I.Save />}
+                  disabled={saveMutation.isPending}
+                  onClick={() => onSave()}
+                  title="Save Batch"
                 />
-                <Navigator
-                  src={ctx.active.image.image}
-                  xaxis={axes["seconds"]}
-                  yaxis={axes["hertz"]}
+              </M.Stack>
+            </Grid>
+            <Grid xs={12}>
+              <VisualizationTool />
+            </Grid>
+            <Grid xs={4}>
+              <SegmentList sx={panelStyle} />
+            </Grid>
+            <Grid xs={4}>
+              {showFilters ? (
+                <AnnotationFilters
+                  setShowFilters={setShowFilters}
+                  sx={panelStyle}
                 />
-                <Visualization
-                  src={ctx.active.image.image}
-                  xaxis={axes["seconds"]}
-                  yaxis={axes["hertz"]}
+              ) : (
+                <AnnotationList
+                  setShowFilters={setShowFilters}
+                  sx={panelStyle}
                 />
-                <M.Stack direction="row" flexShrink={0}>
-                  <AudioControls direction="row" />
-                  <M.Stack flexGrow={1} />
-                  <ToolPalette direction="row" />
-                </M.Stack>
-                <Keybinds />
-              </>
-            )}
-          </M.Stack>
-        </Grid>
-        <Grid xs={4}>
-          <SegmentList sx={panelStyle} />
-        </Grid>
-        <Grid xs={4}>
-          {showFilters ? (
-            <AnnotationFilters
-              setShowFilters={setShowFilters}
-              sx={panelStyle}
-            />
-          ) : (
-            <AnnotationList setShowFilters={setShowFilters} sx={panelStyle} />
-          )}
-        </Grid>
-        <Grid xs={4}>
-          <AnnotationForm sx={panelStyle} />
-        </Grid>
-      </Grid>
-    </Specviz>
+              )}
+            </Grid>
+            <Grid xs={4}>
+              <AnnotationForm sx={panelStyle} />
+            </Grid>
+          </Grid>
+        </Specviz.Provider>
+      </AudioFocus.Provider>
+    </Audio.Provider>
+  )
+}
+
+function VisualizationTool() {
+  const ctx = A.useAnnotationContext()
+  const axis = Axis.useContext()
+  const seconds = axis["seconds"]
+  const hertz = axis["hertz"]
+  if (seconds == null) throw Error("axis not found: seconds")
+  if (hertz == null) throw Error("axis not found: hertz")
+  return (
+    <M.Stack>
+      <Specviz.Navigator
+        src={ctx.active.image.image}
+        xaxis={seconds}
+        yaxis={hertz}
+      />
+      <Specviz.Visualization
+        children={MyAnnotationSvg}
+        src={ctx.active.image.image}
+        xaxis={seconds}
+        yaxis={hertz}
+      />
+      <M.Stack direction="row" flexShrink={0}>
+        <AudioControls direction="row" />
+        <M.Stack flexGrow={1} />
+        <ToolPalette direction="row" />
+      </M.Stack>
+      <Keybinds />
+    </M.Stack>
+  )
+}
+
+function MyAnnotationSvg(props: Specviz.AnnotationProps) {
+  const lines = props.selected
+    ? [
+        `${props.region["label"]} ${props.region["score"] ?? 0}`,
+        `${Format.timestamp(props.region.x)} - ${Format.timestamp(
+          props.region.x + props.region.width,
+        )}`,
+        props.region.yunit == "hertz"
+          ? `${Format.hz(props.region.y)} - ${Format.hz(
+              props.region.y + props.region.height,
+            )}`
+          : "",
+      ]
+    : [`${props.region["label"]} ${props.region["score"] ?? 0}`]
+  return (
+    <R.Fragment>
+      {lines.map((line, lineno) => (
+        <text
+          key={String(lineno)}
+          x="4"
+          y={String(4 + 24 * lineno)}
+          children={line}
+        />
+      ))}
+    </R.Fragment>
   )
 }
