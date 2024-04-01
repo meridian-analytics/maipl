@@ -9,7 +9,7 @@
     "@maipl/csv": "workspace:^",
     "@maipl/format": "workspace:^",
     "@maipl/js": "workspace:^",
-    "axios": "^1.5.1"
+    "axios": "^1.6.8"
   },
   "exports": {
     ".": "./src/index.ts"
