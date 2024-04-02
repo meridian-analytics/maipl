@@ -66,8 +66,8 @@ importers:
         specifier: ^6.22.3
         version: 6.22.3(react-dom@18.2.0)(react@18.2.0)
       specviz-react:
-        specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react#0.7.0-rc.2
-        version: git-dev.cs.dal.ca/meridian/specviz-react/f05e7f8cc3611080be2cb2e4a7c9635a76a7e4e4
+        specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react#0.7.0-rc.3
+        version: git-dev.cs.dal.ca/meridian/specviz-react/f542bf55947e954f653f66b9f04bb27f82ce6ac9
       zod:
         specifier: ^3.22.4
         version: 3.22.4
@@ -359,8 +359,8 @@ importers:
         specifier: ^1.6.8
         version: 1.6.8
       specviz-react:
-        specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react#0.7.0-rc.2
-        version: git-dev.cs.dal.ca/meridian/specviz-react/f05e7f8cc3611080be2cb2e4a7c9635a76a7e4e4
+        specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react#0.7.0-rc.3
+        version: git-dev.cs.dal.ca/meridian/specviz-react/f542bf55947e954f653f66b9f04bb27f82ce6ac9
 
   modules/async: {}
 
@@ -2468,10 +2468,10 @@ packages:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
     dev: false
 
-  git-dev.cs.dal.ca/meridian/specviz-react/f05e7f8cc3611080be2cb2e4a7c9635a76a7e4e4:
-    resolution: {commit: f05e7f8cc3611080be2cb2e4a7c9635a76a7e4e4, repo: https://git-dev.cs.dal.ca/meridian/specviz-react, type: git}
+  git-dev.cs.dal.ca/meridian/specviz-react/f542bf55947e954f653f66b9f04bb27f82ce6ac9:
+    resolution: {commit: f542bf55947e954f653f66b9f04bb27f82ce6ac9, repo: https://git-dev.cs.dal.ca/meridian/specviz-react, type: git}
     name: specviz-react
-    version: 0.7.0-rc.2
+    version: 0.7.0-rc.3
     dependencies:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
