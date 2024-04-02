@@ -1,23 +1,23 @@
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
-import { useSpecviz } from "specviz-react/hooks"
+import * as Audio from "specviz-react/audio"
 
 export default function AudioControls(props: M.StackProps) {
-  const { transport, transportState } = useSpecviz()
+  const audio = Audio.useContext()
   return (
     <M.Stack {...props}>
       <M.Button
-        onClick={_ => transport.seek(0)}
+        onClick={_ => audio.transport.seek(0)}
         children={<I.SkipPrevious />}
       />
       <M.Button
-        onClick={_ => transport.play()}
-        className={transportState.type === "play" ? "active" : ""}
+        onClick={_ => audio.transport.play()}
+        className={audio.transport.state.pause ? "" : "active"}
         children={<I.PlayArrow />}
       />
       <M.Button
-        onClick={_ => transport.stop()}
-        className={transportState.type === "stop" ? "active" : ""}
+        onClick={_ => audio.transport.stop()}
+        className={audio.transport.state.pause ? "active" : ""}
         children={<I.Stop />}
       />
     </M.Stack>

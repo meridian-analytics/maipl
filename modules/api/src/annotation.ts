@@ -1,6 +1,7 @@
 import * as K from "@maipl/constants"
-import * as Client from "./client.ts"
-import { t_page, t_page_params } from "./types.ts"
+import type * as Specviz from "specviz-react"
+import type * as Client from "./client"
+import type { t_page, t_page_params } from "./types"
 
 /** Annotation.t */
 type t = {
@@ -13,24 +14,11 @@ type t = {
   /** Backing file identifier */
   file: number
   /** Selected region for the annotation */
-  region: t_region
+  region: Specviz.Region
   /** Segment identifier this annotation belongs to */
   segment: number
   /** Annotator identifier */
   user_id: number // todo: inconsistent naming
-}
-
-/** Annotation.t_region */
-interface t_region {
-  id: string
-  x: number
-  y: number
-  width: number
-  height: number
-  xunit: string
-  yunit: string
-  score?: number
-  label?: string
 }
 
 /** Annotation.t_create_request */
@@ -164,7 +152,6 @@ const list = async (
 
 export {
   type t,
-  type t_region,
   type t_create_request,
   type t_create_response,
   type t_read_segment_response,

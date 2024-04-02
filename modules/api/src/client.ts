@@ -1,4 +1,5 @@
-import axios, * as A from "axios"
+import axios from "axios"
+import type * as A from "axios"
 
 type t_config = {
   headers?: Record<string, string>

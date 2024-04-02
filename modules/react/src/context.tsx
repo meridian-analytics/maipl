@@ -1,4 +1,4 @@
-import { Auth, Client, Profile, User } from "@maipl/api"
+import { Auth, Client, Profile, type User } from "@maipl/api"
 import * as Async from "@maipl/async"
 import * as K from "@maipl/constants"
 import * as JS from "@maipl/js"
@@ -6,10 +6,10 @@ import * as PKCE from "@maipl/pkce"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
-import * as A from "axios"
+import type * as A from "axios"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import * as MR from "./index.ts"
+import * as MR from "./index"
 
 type t_client = Client.t
 
@@ -49,19 +49,15 @@ function MaiplProvider(props: {
   )
 }
 
+const queryClient = new RQ.QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+})
+
 function MaiplRootProvider(props: { children: R.ReactNode }) {
-  // react-query
-  const queryClient = R.useMemo(
-    () =>
-      new RQ.QueryClient({
-        defaultOptions: {
-          queries: {
-            refetchOnWindowFocus: false,
-          },
-        },
-      }),
-    [],
-  )
   return (
     <RQ.QueryClientProvider client={queryClient}>
       <M.ThemeProvider theme={MR.theme}>
@@ -181,7 +177,7 @@ function MaiplContextProvider(props: {
           ...props.router(context),
         ],
     {
-      basename: props.basename || import.meta.env.BASE_URL || "/",
+      basename: props.basename || import.meta.env["BASE_URL"] || "/",
     },
   )
 

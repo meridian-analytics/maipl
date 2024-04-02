@@ -10,7 +10,7 @@ export default function EditTaskLoader() {
   const maipl = MR.useMaipl()
   const navigate = RR.useNavigate()
   const params = RR.useParams()
-  const taskId = F.safeParseInteger(params.taskId, null)
+  const taskId = F.safeParseInteger(params["taskId"], null)
 
   const { data: task, error } = RQ.useQuery({
     enabled: taskId != null,
@@ -111,7 +111,7 @@ function EditTask(props: {
           Error: Could not create task
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("EditTask createMutation error", err, vars)
       }
     },

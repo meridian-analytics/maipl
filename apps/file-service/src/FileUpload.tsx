@@ -243,7 +243,7 @@ function FileUploadStep2(props: {
   const uploadFile = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof File.create>) => File.create(...vars),
     onError: (err, vars) => {
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("FileUpload uploadMutation error", err, vars)
       }
       setStatus(status => new Map(status).set(vars[1].path, "error"))
@@ -297,7 +297,7 @@ function FileUploadStep2(props: {
           Error: There was an error uploading files
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("FileUpload uploadMutation error", error, vars)
       }
     },

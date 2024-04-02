@@ -1,14 +1,14 @@
-import { Detection, t_page } from "@maipl/api"
+import { Detection, type t_page } from "@maipl/api"
 import * as F from "@maipl/format"
 import * as RQ from "@tanstack/react-query"
 import * as RT from "@tanstack/react-table"
-import { useMaipl } from "../context.tsx"
-import { useDebounce, useFilter } from "../hooks.ts"
+import { useMaipl } from "../context"
+import { useDebounce, useFilter } from "../hooks"
 
 import BaseTable, {
-  ColumnDef,
-  PaginationState,
-  SelectionState,
+  type ColumnDef,
+  type PaginationState,
+  type SelectionState,
   usePagination,
   useSelection,
 } from "./Table.tsx"

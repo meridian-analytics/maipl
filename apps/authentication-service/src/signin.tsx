@@ -49,7 +49,7 @@ export default function Signin() {
           Error: Could not login
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("Signin loginMutation error", err, vars)
       }
     },

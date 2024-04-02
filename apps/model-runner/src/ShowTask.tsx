@@ -9,7 +9,7 @@ export default function ShowTaskLoader() {
   const maipl = MR.useMaipl()
   const navigate = RR.useNavigate()
   const params = RR.useParams()
-  const taskId = F.safeParseInteger(params.taskId, null)
+  const taskId = F.safeParseInteger(params["taskId"], null)
 
   const { data: task, error } = RQ.useQuery({
     enabled: taskId != null,

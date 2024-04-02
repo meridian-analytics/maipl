@@ -1,6 +1,6 @@
-import { t_page, t_page_params } from "@maipl/api"
+import type { t_page, t_page_params } from "@maipl/api"
 import * as K from "@maipl/constants"
-import * as Client from "./client.ts"
+import type * as Client from "./client"
 
 /** User.t */
 type t = {

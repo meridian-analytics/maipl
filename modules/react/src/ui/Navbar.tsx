@@ -1,9 +1,9 @@
-import { User } from "@maipl/api"
+import type { User } from "@maipl/api"
 import * as M from "@mui/material"
-import * as R from "react"
+import type * as R from "react"
 import * as RR from "react-router-dom"
-import { useMaipl } from "../context.tsx"
-import Menu from "./Menu.tsx"
+import { useMaipl } from "../context"
+import Menu from "./Menu"
 
 export default function Navbar(props: {
   children?: R.ReactNode

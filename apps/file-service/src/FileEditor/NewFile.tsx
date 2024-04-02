@@ -62,7 +62,7 @@ export default function NewFile(props: {
           Error: Could not create file "{vars[1].path}"
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("FileEditor createMutation error", err, vars)
       }
     },

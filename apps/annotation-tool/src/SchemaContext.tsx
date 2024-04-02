@@ -15,6 +15,7 @@ export const OptionsSchema = Z.array(
 )
 
 export const EnumSchema = Z.object({
+  default: Z.string().optional(),
   enum: Z.array(Z.string()),
   title: Z.string().optional(),
   type: Z.literal("string"),
@@ -22,17 +23,20 @@ export const EnumSchema = Z.object({
 
 export const AnyOfSchema = Z.object({
   anyOf: OptionsSchema,
+  default: Z.string().optional(),
   title: Z.string().optional(),
   type: Z.literal("string"),
 })
 
 export const OneOfSchema = Z.object({
+  default: Z.string().optional(),
   oneOf: OptionsSchema,
   title: Z.string().optional(),
   type: Z.literal("string"),
 })
 
 export const NumberSchema = Z.object({
+  default: Z.number().optional(),
   maximum: Z.number().optional(),
   minimum: Z.number().optional(),
   multipleOf: Z.number().optional(),
@@ -41,12 +45,21 @@ export const NumberSchema = Z.object({
 })
 
 export const StringSchema = Z.object({
+  default: Z.string().optional(),
   title: Z.string().optional(),
   type: Z.literal("string"),
 })
 
+export const BooleanSchema = Z.object({
+  default: Z.boolean().optional(),
+  title: Z.string().optional(),
+  type: Z.literal("boolean"),
+})
+
 export const FieldSchema = Z.union([
   AnyOfSchema,
+  BooleanSchema,
+  EnumSchema,
   OneOfSchema,
   NumberSchema,
   StringSchema,
@@ -68,7 +81,7 @@ export const MaiplSchemaFromJson = Z.preprocess(json => {
   try {
     return JSON.parse(String(json))
   } catch (err) {
-    if (import.meta.env.DEV) {
+    if (import.meta.env["DEV"]) {
       console.warn("Json parse error. Using default schema", err)
     }
     return defaultContext
@@ -81,6 +94,7 @@ export type OneOfSchema = Z.infer<typeof OneOfSchema>
 export type AnyOfSchema = Z.infer<typeof AnyOfSchema>
 export type NumberSchema = Z.infer<typeof NumberSchema>
 export type StringSchema = Z.infer<typeof StringSchema>
+export type BooleanSchema = Z.infer<typeof BooleanSchema>
 export type FieldSchema = Z.infer<typeof FieldSchema>
 export type JsonSchema = Z.infer<typeof JsonSchema>
 export type UiSchema = Z.infer<typeof UiSchema>
@@ -112,7 +126,7 @@ export function SchemaContextProvider(props: {
     try {
       return MaiplSchemaFromJson.parse(props.jsonSchema)
     } catch (err) {
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.warn("SchemaContext parse error. Using default schema", err)
       }
       return defaultContext
@@ -126,33 +140,37 @@ export function useSchema() {
 }
 
 type UseLabelsHook = {
-  lookup: (key: string | string[]) => string
+  lookup: (key: unknown | unknown[]) => string
 }
 
 export function useLabels(): UseLabelsHook {
   const { schema } = useSchema()
   const labels = R.useMemo(() => {
     const res: Map<string, string> = new Map()
-    if (schema.properties.label) {
-      if ("oneOf" in schema.properties.label) {
-        for (const m of schema.properties.label.oneOf) {
+    const label = schema.properties["label"]
+    if (label) {
+      if ("oneOf" in label) {
+        for (const m of label.oneOf) {
           res.set(m.const, m.title)
         }
-      } else if ("anyOf" in schema.properties.label) {
-        for (const m of schema.properties.label.anyOf) {
+      } else if ("anyOf" in label) {
+        for (const m of label.anyOf) {
           res.set(m.const, m.title)
         }
-      }
+      } else if ("enum" in label)
+        for (const m of label.enum) {
+          res.set(m, m)
+        }
     }
     return res
   }, [schema])
-  const lookup = R.useCallback(
-    (key: string | string[]) =>
-      typeof key == "object"
+  const lookup: UseLabelsHook["lookup"] = R.useCallback(
+    key =>
+      Array.isArray(key)
         ? key.length == 0
           ? "(Unlabeled)"
           : key.map(k => labels.get(k) ?? `(NoLabel ${k})`).join(", ")
-        : labels.get(key) ?? `(NoLabel ${key})`,
+        : labels.get(key as string) ?? `(NoLabel ${key})`,
     [labels],
   )
   return { lookup }

@@ -1,5 +1,5 @@
 import * as M from "@mui/material"
-import * as R from "react"
+import type * as R from "react"
 
 export default function Panel(props: {
   title: string
@@ -9,13 +9,7 @@ export default function Panel(props: {
   sx?: M.SxProps
 }) {
   return (
-    <M.Stack
-      component={M.Paper}
-      spacing={0}
-      sx={{
-        ...props.sx,
-      }}
-    >
+    <M.Stack component={M.Paper} spacing={0} sx={props.sx}>
       <M.Stack
         direction="row"
         alignItems="center"

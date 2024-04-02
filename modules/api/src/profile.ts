@@ -1,6 +1,6 @@
 import * as K from "@maipl/constants"
-import * as Client from "./client.ts"
-import * as User from "./user.ts"
+import type * as Client from "./client"
+import type * as User from "./user"
 
 /** Profile.t_update_request */
 type t_update_request = Omit<User.t, "id">

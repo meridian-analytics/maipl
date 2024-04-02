@@ -15,7 +15,7 @@ export const element = <Element />
 export const loader = (maipl: MR.t_context) =>
   (async ({ request, params }) => {
     // file id
-    const fileId = F.safeParseInteger(params.fileId, null)
+    const fileId = F.safeParseInteger(params["fileId"], null)
     JS.invariant(fileId != null, `EditFile fileId: ${fileId}`)
     // folder query param
     const url = new URL(request.url)
@@ -83,7 +83,7 @@ export default function EditFile(props: {
           Error: Could not update file "{vars[2].path}"
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("FileEditor updateMutation error", err, vars)
       }
     },

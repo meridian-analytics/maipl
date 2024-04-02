@@ -1,10 +1,10 @@
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import Detections from "./Detections.tsx"
-import EditTask from "./EditTask.tsx"
-import ShowTask from "./ShowTask.tsx"
-import Tasks from "./Tasks.tsx"
+import Detections from "./Detections"
+import EditTask from "./EditTask"
+import ShowTask from "./ShowTask"
+import Tasks from "./Tasks"
 
 export default function App() {
   return <MR.MaiplProvider router={router} />

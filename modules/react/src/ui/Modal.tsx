@@ -1,5 +1,5 @@
 import * as M from "@mui/material"
-import * as R from "react"
+import type * as R from "react"
 
 const style = {
   backgroundColor: M.colors.grey[50],

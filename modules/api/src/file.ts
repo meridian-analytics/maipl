@@ -1,10 +1,10 @@
 import { hexDigest, sha256 } from "@maipl/buffer"
 import * as K from "@maipl/constants"
 import * as JS from "@maipl/js"
-import * as A from "axios"
-import * as Client from "./client.ts"
-import * as Meta from "./meta.ts"
-import { t_page, t_page_params } from "./types.ts"
+import type * as A from "axios"
+import type * as Client from "./client"
+import * as Meta from "./meta"
+import type { t_page, t_page_params } from "./types"
 
 export function invariantMaiplFolder(
   folder: string,

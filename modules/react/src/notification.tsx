@@ -1,7 +1,7 @@
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
-import * as MR from "./index.ts"
+import * as MR from "./index"
 
 type t_notification_context = {
   notifications: Array<t_notification>

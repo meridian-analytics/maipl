@@ -1,46 +1,54 @@
-import { useSpecviz } from "specviz-react/hooks"
-import { Bindings, Keypress } from "specviz-react/keybinds"
+import * as Specviz from "specviz-react"
+import * as Audio from "specviz-react/audio"
 
 export default function Keybinds() {
-  const { command, transport } = useSpecviz()
+  const audio = Audio.useContext()
+  const region = Specviz.useRegions()
+  const input = Specviz.useInput()
   return (
-    <Bindings>
-      <Keypress bind="Escape" onKeyDown={command.deselect} />
-      <Keypress
+    <Specviz.Bindings>
+      <Specviz.Keypress bind="Escape" onKeyDown={region.deselect} />
+      <Specviz.Keypress
         bind="ArrowLeft"
         onKeyDown={e => {
           e.preventDefault()
-          command.moveSelection(-0.01, 0)
+          region.moveSelection(-0.01, 0)
         }}
       />
-      <Keypress
+      <Specviz.Keypress
         bind="ArrowRight"
         onKeyDown={e => {
           e.preventDefault()
-          command.moveSelection(0.01, 0)
+          region.moveSelection(0.01, 0)
         }}
       />
-      <Keypress
+      <Specviz.Keypress
         bind="ArrowUp"
         onKeyDown={e => {
           e.preventDefault()
-          command.moveSelection(0, -0.03)
+          region.moveSelection(0, -0.03)
         }}
       />
-      <Keypress
+      <Specviz.Keypress
         bind="ArrowDown"
         onKeyDown={e => {
           e.preventDefault()
-          command.moveSelection(0, 0.03)
+          region.moveSelection(0, 0.03)
         }}
       />
-      <Keypress bind="a" onKeyDown={() => command.tool("annotate")} />
-      <Keypress bind="s" onKeyDown={() => command.tool("select")} />
-      <Keypress bind="d" onKeyDown={() => command.tool("zoom")} />
-      <Keypress bind="f" onKeyDown={() => command.tool("pan")} />
-      <Keypress bind="z" onKeyDown={() => transport.seek(0)} />
-      <Keypress bind="x" onKeyDown={() => transport.play()} />
-      <Keypress bind="c" onKeyDown={() => transport.stop()} />
-    </Bindings>
+      <Specviz.Keypress
+        bind="a"
+        onKeyDown={() => input.setToolState("annotate")}
+      />
+      <Specviz.Keypress
+        bind="s"
+        onKeyDown={() => input.setToolState("select")}
+      />
+      <Specviz.Keypress bind="d" onKeyDown={() => input.setToolState("zoom")} />
+      <Specviz.Keypress bind="f" onKeyDown={() => input.setToolState("pan")} />
+      <Specviz.Keypress bind="z" onKeyDown={() => audio.transport.seek(0)} />
+      <Specviz.Keypress bind="x" onKeyDown={() => audio.transport.play()} />
+      <Specviz.Keypress bind="c" onKeyDown={() => audio.transport.stop()} />
+    </Specviz.Bindings>
   )
 }

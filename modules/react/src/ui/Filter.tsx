@@ -1,6 +1,6 @@
 import * as M from "@mui/material"
-import * as R from "react"
-import { useFilter } from "../hooks.ts"
+import type * as R from "react"
+import type { useFilter } from "../hooks"
 
 export default function Filter(props: {
   filter: ReturnType<typeof useFilter<Record<string, string>>>
