@@ -5,6 +5,7 @@ import type * as A from "axios"
 import type * as Client from "./client"
 import * as Meta from "./meta"
 import type { t_page, t_page_params } from "./types"
+import type * as User from "./user"
 
 export function invariantMaiplFolder(
   folder: string,
@@ -12,6 +13,15 @@ export function invariantMaiplFolder(
   JS.invariant(
     folder in t_maipl_folder,
     `"${folder}" is not a valid maipl folder`,
+  )
+}
+
+export function invariantFilterShared(
+  shared: string,
+): asserts shared is t_filter_shared {
+  JS.invariant(
+    shared in t_filter_shared,
+    `"${shared}" is not a valid share filter`,
   )
 }
 
@@ -46,6 +56,8 @@ type t = {
   path: string
   /** Sha256 integrity checksum */
   sha256: string
+  /** File share */
+  shared_to: User.t[]
   /** File size in bytes */
   size: number
   /** File tag */
@@ -82,10 +94,19 @@ type t_filter_params = {
   maipl_folder?: t_maipl_folder
   /** File path contains ... */
   path?: string
+  /** File share status */
+  shared?: t_filter_shared
   /** File tag contains ... */
   tag?: string
   /** File owner identifier */
   owner?: number
+}
+
+/** File.t_filter_shared */
+enum t_filter_shared {
+  all = "all",
+  true = "true",
+  false = "false",
 }
 
 /** File.t_create_request */
@@ -133,6 +154,18 @@ type t_list_response = t_page<
     meta: string
   }
 >
+
+/** File.t_file_share */
+type t_file_share = {
+  file: number
+  changes: t_file_share_change[]
+}
+
+/** File.t_file_share_change */
+type t_file_share_change = [number, boolean]
+
+/** File.t_share_request: update shares */
+type t_share_request = Array<t_file_share>
 
 /** File.t_update_request */
 type t_update_request = t_create_request
@@ -231,6 +264,10 @@ function safeMeta<
     : Meta.safeRead(file.meta, kind, field, orElse)
 }
 
+function share(client: Client.t, body: t_share_request): Promise<void> {
+  return client.post(`${K.MAIPL_FILE_BACKEND}/api/file/share/`, body)
+}
+
 function read(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -289,11 +326,16 @@ export {
   type t_create_request,
   type t_create_response,
   type t_delete_request,
+  type t_filter_params,
+  t_filter_shared, // enum
+  type t_file_share,
+  type t_file_share_change,
   type t_get_request,
   type t_get_response,
   type t_list_request,
   type t_list_response,
   t_maipl_folder, // enum
+  type t_share_request,
   type t_update_request,
   type t_update_response,
   type t_usage,
@@ -302,6 +344,7 @@ export {
   discoverMeta,
   get,
   list,
+  share,
   safeMeta,
   update,
   usage,
