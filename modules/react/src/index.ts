@@ -46,4 +46,5 @@ export {
   Profile,
   Switch,
   theme,
+  UserAvatar,
 } from "./ui.tsx"
