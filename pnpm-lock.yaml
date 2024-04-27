@@ -355,9 +355,6 @@ importers:
       '@maipl/format':
         specifier: workspace:^
         version: link:../format
-      '@maipl/js':
-        specifier: workspace:^
-        version: link:../js
       axios:
         specifier: ^1.6.8
         version: 1.6.8

@@ -1,29 +1,10 @@
 import { hexDigest, sha256 } from "@maipl/buffer"
 import * as K from "@maipl/constants"
-import * as JS from "@maipl/js"
 import type * as A from "axios"
 import type * as Client from "./client"
 import * as Meta from "./meta"
 import type { t_page, t_page_params } from "./types"
 import type * as User from "./user"
-
-export function invariantMaiplFolder(
-  folder: string,
-): asserts folder is t_maipl_folder {
-  JS.invariant(
-    folder in t_maipl_folder,
-    `"${folder}" is not a valid maipl folder`,
-  )
-}
-
-export function invariantFilterShared(
-  shared: string,
-): asserts shared is t_filter_shared {
-  JS.invariant(
-    shared in t_filter_shared,
-    `"${shared}" is not a valid share filter`,
-  )
-}
 
 /** File.t_maipl_folder */
 enum t_maipl_folder {

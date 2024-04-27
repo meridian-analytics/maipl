@@ -1,5 +1,6 @@
 import { File } from "@maipl/api"
 import * as F from "@maipl/format"
+import * as JS from "@maipl/js"
 import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
@@ -51,7 +52,7 @@ export const loader = (_maipl: MR.t_context) =>
     const url = new URL(request.url)
     const search = url.searchParams
     const folder = search.get("folder") ?? "raw"
-    File.invariantMaiplFolder(folder)
+    JS.invariantEnum(folder, File.t_maipl_folder, "File.t_maipl_folder")
     // payload
     return { folder }
   }) satisfies RR.LoaderFunction

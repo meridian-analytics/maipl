@@ -1,4 +1,5 @@
 import { File, type User } from "@maipl/api"
+import * as JS from "@maipl/js"
 import * as MR from "@maipl/react"
 import * as Tree from "@maipl/tree"
 import * as I from "@mui/icons-material"
@@ -39,8 +40,8 @@ export const loader = (_maipl: MR.t_context) =>
     const search = url.searchParams
     const folder = search.get("folder") ?? File.t_maipl_folder.raw
     const shared = search.get("shared") ?? File.t_filter_shared.all
-    File.invariantMaiplFolder(folder)
-    File.invariantFilterShared(shared)
+    JS.invariantEnum(folder, File.t_maipl_folder, "File.t_maipl_folder")
+    JS.invariantEnum(shared, File.t_filter_shared, "File.t_filter_shared")
     // payload
     return { folder, shared }
   }) satisfies RR.LoaderFunction
