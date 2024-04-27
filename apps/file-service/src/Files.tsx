@@ -266,8 +266,8 @@ export default function Files(props: { sx?: M.SxProps }) {
             value={shared}
             values={{
               All: File.t_filter_shared.all,
-              Shared: File.t_filter_shared.true,
-              Private: File.t_filter_shared.false,
+              Shared: File.t_filter_shared.public,
+              Private: File.t_filter_shared.private,
             }}
           />
           <M.Stack flexGrow={1} />

@@ -86,8 +86,8 @@ type t_filter_params = {
 /** File.t_filter_shared */
 enum t_filter_shared {
   all = "all",
-  true = "true",
-  false = "false",
+  public = "true",
+  private = "false",
 }
 
 /** File.t_create_request */
