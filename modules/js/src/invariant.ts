@@ -9,13 +9,13 @@ export function invariant(
   throw Error(e)
 }
 
-export function invariantEnum<T extends Record<string, string>>(
+export function invariantEnum<T extends Record<string, string | number>>(
   value: unknown,
   enum_: T,
   label?: string,
 ): asserts value is T[keyof T] {
   invariant(
-    new Set(Object.values(enum_)).has(value as string),
+    Object.values(enum_).includes(value as string | number),
     `"${value}" is not a member of ${label ?? "enum"}`,
   )
 }
