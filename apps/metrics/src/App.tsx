@@ -1,6 +1,7 @@
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
+import Metrics from "./Metrics"
 
 export default function App() {
   return <MR.MaiplProvider router={router} />
@@ -28,7 +29,7 @@ const router: MR.t_router = () => [
     children: [
       {
         path: "/",
-        element: <M.Typography variant="h1">Hello, metrics!</M.Typography>,
+        element: <Metrics />,
       },
     ],
   },
