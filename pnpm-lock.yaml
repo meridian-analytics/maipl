@@ -205,6 +205,9 @@ importers:
       react-router-typesafe:
         specifier: ^1.4.4
         version: 1.4.4(react-router-dom@6.22.3)(react@18.2.0)(typescript@5.4.3)
+      ts-pattern:
+        specifier: ^5.1.1
+        version: 5.1.1
     devDependencies:
       '@tanstack/react-query-devtools':
         specifier: ^5.28.10
@@ -352,9 +355,6 @@ importers:
       '@maipl/format':
         specifier: workspace:^
         version: link:../format
-      '@maipl/js':
-        specifier: workspace:^
-        version: link:../js
       axios:
         specifier: ^1.6.8
         version: 1.6.8
@@ -2368,6 +2368,10 @@ packages:
   /to-fast-properties@2.0.0:
     resolution: {integrity: sha512-/OaKK0xYrs3DmxRYqL/yDc+FxFUVYhDlXMhRmv3z915w2HF1tnN1omB354j8VUGO/hbRzyD6Y3sA7v7GS/ceog==}
     engines: {node: '>=4'}
+
+  /ts-pattern@5.1.1:
+    resolution: {integrity: sha512-i+owkHr5RYdQxj8olUgRrqpiWH9x27PuWVfXwDmJ/n/CoF/SAa7WW1i2oUpPDMQpJ4U+bGRUcZkVq7i1m3zFCg==}
+    dev: false
 
   /tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}

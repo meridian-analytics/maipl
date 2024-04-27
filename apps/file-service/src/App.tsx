@@ -3,6 +3,7 @@ import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
 import { EditFile, NewFile } from "./FileEditor"
+import * as FileShare from "./FileShare"
 import * as FileUpload from "./FileUpload"
 import * as Files from "./Files"
 
@@ -36,6 +37,12 @@ const router: MR.t_router = context => [
         errorElement: <ErrorModal />,
         loader: Files.loader(context),
         children: [
+          {
+            path: "share",
+            element: FileShare.element,
+            errorElement: <ErrorModal />,
+            loader: FileShare.loader(context),
+          },
           {
             path: "upload",
             element: FileUpload.element,
