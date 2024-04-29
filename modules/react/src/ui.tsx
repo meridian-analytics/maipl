@@ -9,4 +9,11 @@ export { default as Picker } from "./ui/Picker.tsx"
 export { default as Profile } from "./ui/Profile.tsx"
 export { default as Switch } from "./ui/Switch.tsx"
 export { default as theme } from "./ui/theme.ts"
-export { default as UserAvatar } from "./ui/UserAvatar.tsx"
+export {
+  type UserAvatarProps,
+  default as UserAvatar,
+} from "./ui/UserAvatar.tsx"
+export {
+  type UserAvatarGroupProps,
+  default as UserAvatarGroup,
+} from "./ui/UserAvatarGroup.tsx"

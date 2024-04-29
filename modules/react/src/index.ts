@@ -35,6 +35,8 @@ export {
 } from "./table.tsx"
 
 export {
+  type UserAvatarProps,
+  type UserAvatarGroupProps,
   ActionButton,
   Dashboard,
   Filter,
@@ -47,4 +49,5 @@ export {
   Switch,
   theme,
   UserAvatar,
+  UserAvatarGroup,
 } from "./ui.tsx"
