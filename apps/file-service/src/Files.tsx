@@ -1,4 +1,4 @@
-import { File, type User } from "@maipl/api"
+import { File } from "@maipl/api"
 import * as JS from "@maipl/js"
 import * as MR from "@maipl/react"
 import * as Tree from "@maipl/tree"
@@ -20,12 +20,6 @@ type UseLoaderData = ReturnType<typeof loader>
 type Selection = ReturnType<typeof MR.Files.useTable>["selection"]
 
 type SetSelection = ReturnType<typeof MR.Files.useTable>["setSelection"]
-
-const avatarSxProps: M.AvatarProps["sx"] = {
-  width: 24,
-  height: 24,
-  fontSize: 12,
-}
 
 const defaultContext: Context = {
   selection: new Map(),
@@ -158,6 +152,19 @@ function FileActions(props: { file: File.t }) {
   )
 }
 
+function ShareAvatars(props: { file: File.t }) {
+  const maipl = MR.useMaipl()
+  return (
+    <MR.UserAvatarGroup
+      users={
+        props.file.user_id != maipl.user?.id
+          ? [props.file.owner]
+          : props.file.shared_to
+      }
+    />
+  )
+}
+
 export default function Files(props: { sx?: M.SxProps }) {
   const qs = RRT.useLoaderData<UseLoaderData>()
   const setSearch = RR.useSearchParams()[1]
@@ -212,7 +219,7 @@ export default function Files(props: { sx?: M.SxProps }) {
         ),
         MR.Files.column.accessor("shared_to", {
           header: "Share",
-          cell: info => <ShareAvatars users={info.getValue()} />,
+          cell: info => <ShareAvatars file={info.row.original} />,
         }),
         MR.Files.column.display({
           id: "actions",
@@ -363,21 +370,5 @@ export default function Files(props: { sx?: M.SxProps }) {
         />
       </M.Stack>
     </Context.Provider>
-  )
-}
-
-function ShareAvatars(props: { users: User.t[] }) {
-  return (
-    <M.AvatarGroup
-      children={props.users.map(user => (
-        <MR.UserAvatar key={user.id} user={user} sx={avatarSxProps} />
-      ))}
-      max={4}
-      slotProps={{
-        additionalAvatar: {
-          sx: avatarSxProps,
-        },
-      }}
-    />
   )
 }

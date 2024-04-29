@@ -35,6 +35,8 @@ type t = {
   meta: Meta.t_meta | null
   /** The complete file path, including name */
   path: string
+  /** File owner, user object */
+  owner: User.t
   /** Sha256 integrity checksum */
   sha256: string
   /** File share */
