@@ -1,7 +1,5 @@
 import * as M from "@mui/material"
-import * as RQ from "@tanstack/react-query"
 import * as R from "react"
-import * as MR from "./index"
 
 type t_notification_context = {
   notifications: Array<t_notification>
@@ -51,23 +49,15 @@ function NotificationProvider(props: { children: R.ReactNode }) {
 
 function Notifications() {
   const context = R.useContext(NotificationContext)
-  const isNotifying = context.notifications.length > 0
-  const isFetching = RQ.useIsFetching() > 0
-  const isMutating = RQ.useIsMutating() > 0
-  const isSynchronizing = MR.useDebounce(isFetching || isMutating, 1000) // debounce to prevent flickering
-  const isOpen = isNotifying || isSynchronizing
+  const notification = context.notifications[0]
+  if (notification == null) return null
+
   return (
     <M.Snackbar
-      open={isOpen}
       anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-    >
-      <M.Stack>
-        {isNotifying && context.notifications[0]}
-        {isSynchronizing && (
-          <M.Alert severity="info" children="Synchronizing with server..." />
-        )}
-      </M.Stack>
-    </M.Snackbar>
+      children={notification}
+      open={true}
+    />
   )
 }
 

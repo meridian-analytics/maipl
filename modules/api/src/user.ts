@@ -1,4 +1,3 @@
-import type { t_page, t_page_params } from "@maipl/api"
 import * as K from "@maipl/constants"
 import type * as Client from "./client"
 
@@ -17,9 +16,6 @@ type t = {
 /** User.t_get_request */
 type t_get_request = number
 
-/** User.t_list_request */
-type t_list_request = t_page_params
-
 /** User.get: Get user details by identifier */
 const get = async (client: Client.t, id: t_get_request): Promise<t> => {
   return client
@@ -27,13 +23,10 @@ const get = async (client: Client.t, id: t_get_request): Promise<t> => {
     .then(r => r.data)
 }
 
-/** User.list: Get paginated list of all users */
-const list = async (
-  client: Client.t,
-  params: t_list_request,
-): Promise<t_page<t>> => {
+/** User.list: Get unpaginated list of all users */
+const list = async (client: Client.t): Promise<Array<t>> => {
   return client
-    .get<t_page<t>>(`${K.MAIPL_AUTH_BACKEND}/api/user/`, { params })
+    .get<Array<t>>(`${K.MAIPL_AUTH_BACKEND}/api/user/`)
     .then(r => r.data)
 }
 

@@ -79,3 +79,7 @@ export function truncate(s: string, maxLength: number) {
   const half = Math.floor(maxLength / 2)
   return s.length > maxLength ? s.slice(0, half) + "…" + s.slice(-half) : s
 }
+
+export function unit(count: number, label: string, plural?: string): string {
+  return `${count} ${count == 1 ? label : plural ?? label + "s"}`
+}
