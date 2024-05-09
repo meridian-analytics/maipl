@@ -26,26 +26,29 @@ function useTable(props?: {
 }) {
   const [pagination, setPagination] = usePagination(props?.pagination)
   const [selection, setSelection] = useSelection(props?.selection)
-
   const [folder, setFolder] = R.useState<File.t_maipl_folder>(
     props?.maipl_folder ?? File.t_maipl_folder.raw,
   )
-  const filter = useFilter({
-    path: props?.path ?? "",
-    shared: props?.shared ?? File.t_filter_shared.all,
-    tag: props?.tag ?? "",
-  })
+  const filter = useFilter(
+    R.useMemo(
+      () => ({
+        path: props?.path ?? "",
+        shared: props?.shared ?? File.t_filter_shared.all,
+        tag: props?.tag ?? "",
+      }),
+      [props?.path, props?.shared, props?.tag],
+    ),
+  )
   const debouncedFilter = useDebounce(filter, props?.debounceDelay)
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: hack fixes bug above in queryParams
+  // biome-ignore lint/correctness/useExhaustiveDependencies: go to first page when query changes
   R.useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
   }, [
+    pagination.pageSize,
     debouncedFilter.get("path"),
     debouncedFilter.get("shared"),
     debouncedFilter.get("tag"),
   ])
-
   return {
     folder,
     filter,
