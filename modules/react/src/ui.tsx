@@ -1,6 +1,5 @@
 export { default as ActionButton } from "./ui/ActionButton.tsx"
 export { default as Dashboard } from "./ui/Dashboard.tsx"
-export { default as Filter } from "./ui/Filter.tsx"
 export { default as Menu } from "./ui/Menu.tsx"
 export { default as Modal } from "./ui/Modal.tsx"
 export { default as Navbar } from "./ui/Navbar.tsx"
