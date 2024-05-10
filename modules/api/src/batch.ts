@@ -109,17 +109,16 @@ enum t_status {
 type t_list_item = Omit<t, "parameters">
 
 /** Batch.t_create_request */
-type t_create_request = Omit<
-  t,
-  | "id"
-  | "annotation_file_text"
-  | "created_at"
-  | "progress"
-  | "user_id"
-  | "segments"
-  | "task_id"
-  | "task_status"
->
+type t_create_request = {
+  allow_change_settings: boolean
+  annotation_file: number
+  batch_name: string
+  description: string
+  filelist: Array<number>
+  import_file: null | number
+  parameters: t_parameters
+  segment_parameters: t_segment_parameters
+}
 
 /** Batch.t_create_response */
 type t_create_response = Omit<t, "created_at"> & { created_at: string }
