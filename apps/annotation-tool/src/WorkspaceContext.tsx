@@ -1,42 +1,42 @@
-import { Annotation } from "@maipl/api"
 import * as R from "react"
-import * as A from "./AnnotationContext.tsx"
-import * as S from "./SchemaContext.tsx"
-
-type Regions = Map<string, Annotation.t_region>
+import type * as Specviz from "specviz-react"
+import * as A from "./AnnotationContext"
+import * as S from "./SchemaContext"
 
 type Context = {
   dispatch: R.Dispatch<Action>
-  filteredRegions: Regions
+  filteredRegions: Specviz.Regions
   state: State
 }
 
 type State = {
   filters: Filters
-  regions: Regions
+  regions: Specviz.Regions
+  selection: Specviz.Selection
 }
 
 type Action =
-  | { kind: "updateRegions"; regions: Regions }
-  | { kind: "updateRegion"; region: Annotation.t_region }
-  | { kind: "setFilters"; filters: Filters }
+  | { kind: "setFilters"; filters: R.SetStateAction<Filters> }
+  | { kind: "setRegions"; regions: R.SetStateAction<Specviz.Regions> }
+  | { kind: "setSelection"; selection: R.SetStateAction<Specviz.Selection> }
   | { kind: "resetFilters" }
 
 type FilterValueString = string | string[]
 type FilterValueNumber = [null | number, null | number]
-type FilterValue = FilterValueString | FilterValueNumber
+type FilterValueBoolean = boolean
+type FilterValue = FilterValueString | FilterValueNumber | FilterValueBoolean
 type Filters = Record<string, FilterValue>
 
 export const actions = {
   resetFilters: (): Action => ({ kind: "resetFilters" }),
   setFilters: (filters: Filters): Action => ({ kind: "setFilters", filters }),
-  updateRegions: (regions: Regions): Action => ({
-    kind: "updateRegions",
+  setRegions: (regions: R.SetStateAction<Specviz.Regions>): Action => ({
+    kind: "setRegions",
     regions,
   }),
-  updateRegion: (region: Annotation.t_region): Action => ({
-    kind: "updateRegion",
-    region,
+  setSelection: (selection: R.SetStateAction<Specviz.Selection>): Action => ({
+    kind: "setSelection",
+    selection,
   }),
 }
 
@@ -45,19 +45,28 @@ function reducer(state: State, action: Action): State {
     case "resetFilters":
       return { ...state, filters: {} }
     case "setFilters":
-      return { ...state, filters: action.filters }
-    case "updateRegions":
       return {
         ...state,
-        regions: Array.from(action.regions.values()).reduce(
-          (m, r) => m.set(r.id, r),
-          new Map(state.regions),
-        ),
+        filters:
+          typeof action.filters == "function"
+            ? action.filters(state.filters)
+            : action.filters,
       }
-    case "updateRegion":
+    case "setRegions":
       return {
         ...state,
-        regions: new Map(state.regions).set(action.region.id, action.region),
+        regions:
+          typeof action.regions == "function"
+            ? action.regions(state.regions)
+            : action.regions,
+      }
+    case "setSelection":
+      return {
+        ...state,
+        selection:
+          typeof action.selection == "function"
+            ? action.selection(state.selection)
+            : action.selection,
       }
   }
 }
@@ -70,6 +79,7 @@ const defaultContext: Context = {
   state: {
     filters: {},
     regions: new Map(),
+    selection: new Set(),
   },
 }
 
@@ -83,7 +93,7 @@ export function WorkspaceContextProvider(props: { children: R.ReactNode }) {
     regions: new Map(ctx.annotations.map(a => [a.id, a.region])),
   }))
   const filteredRegions = R.useMemo(() => {
-    const m: Regions = new Map()
+    const m: Specviz.Regions = new Map()
     for (const region of state.regions.values()) {
       if (
         Object.entries(schema.properties).every(([key, field]) =>
@@ -108,7 +118,7 @@ export function useWorkspace() {
 }
 
 function filterAuxField(
-  region: Annotation.t_region,
+  region: Specviz.Region,
   key: string,
   field: S.FieldSchema,
   filters: Filters,
@@ -116,16 +126,18 @@ function filterAuxField(
   if (key in filters) {
     if (key in region) {
       switch (field.type) {
+        case "boolean":
+          return filterAuxBoolean(
+            region[key],
+            filters[key] as FilterValueBoolean,
+          )
         case "string":
           return filterAuxString(
-            region[key as keyof Annotation.t_region]! as FilterValueString,
-            rjsfCheckboxesBugfix(filters[key] as FilterValueString),
+            region[key],
+            rjsfCheckboxesBugfix(filters[key]) as FilterValueString,
           )
         case "number":
-          return filterAuxNumber(
-            Number(region[key as keyof Annotation.t_region]),
-            filters[key] as FilterValueNumber,
-          )
+          return filterAuxNumber(region[key], filters[key] as FilterValueNumber)
       }
     }
     return false
@@ -133,10 +145,7 @@ function filterAuxField(
   return true
 }
 
-function filterAuxString(
-  value: FilterValueString,
-  filter: FilterValueString,
-): boolean {
+function filterAuxString(value: unknown, filter: FilterValueString): boolean {
   if (Array.isArray(value) && Array.isArray(filter)) {
     return filter.length == 0 || value.some(v => filter.includes(v))
   }
@@ -146,20 +155,26 @@ function filterAuxString(
   if (Array.isArray(filter)) {
     return filter.length == 0 || filter.includes(value as string)
   }
-  return value == filter
+  return value === filter
 }
 
-function filterAuxNumber(value: number, filter: FilterValueNumber): boolean {
-  const [min, max] = filter
-  if (min != null && value < min) {
+function filterAuxNumber(value: unknown, filter: FilterValueNumber): boolean {
+  if (typeof value != "number" || !Array.isArray(filter)) {
     return false
   }
-  if (max != null && value > max) {
+  if (filter[0] != null && value < filter[0]) {
+    return false
+  }
+  if (filter[1] != null && value > filter[1]) {
     return false
   }
   return true
 }
 
-export function rjsfCheckboxesBugfix(a: string | string[]) {
+function filterAuxBoolean(value: unknown, filter: FilterValueBoolean): boolean {
+  return value == filter
+}
+
+export function rjsfCheckboxesBugfix(a: unknown) {
   return Array.isArray(a) ? a.filter(Boolean) : a
 }

@@ -2,9 +2,10 @@ import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import { EditFile, NewFile } from "./FileEditor.tsx"
-import * as FileUpload from "./FileUpload.tsx"
-import * as Files from "./Files.tsx"
+import { EditFile, NewFile } from "./FileEditor"
+import * as FileShare from "./FileShare"
+import * as FileUpload from "./FileUpload"
+import * as Files from "./Files"
 
 export default function App() {
   return <MR.MaiplProvider router={router} />
@@ -36,6 +37,12 @@ const router: MR.t_router = context => [
         errorElement: <ErrorModal />,
         loader: Files.loader(context),
         children: [
+          {
+            path: "share",
+            element: FileShare.element,
+            errorElement: <ErrorModal />,
+            loader: FileShare.loader(context),
+          },
           {
             path: "upload",
             element: FileUpload.element,
@@ -71,7 +78,7 @@ function ErrorModal() {
           <M.Typography variant="h4">Bugger!</M.Typography>
         </M.Stack>
         <M.Alert severity="error">
-          {import.meta.env.PROD
+          {import.meta.env["PROD"]
             ? "Oops, something went wrong..."
             : error.message}
         </M.Alert>

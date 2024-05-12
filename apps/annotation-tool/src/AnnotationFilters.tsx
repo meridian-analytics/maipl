@@ -3,9 +3,9 @@ import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import { Form } from "@rjsf/mui"
 import validator from "@rjsf/validator-ajv8"
-import NumberMinMaxWidget from "./NumberMinMaxWidget.tsx"
-import * as S from "./SchemaContext.tsx"
-import * as W from "./WorkspaceContext.tsx"
+import NumberMinMaxWidget from "./NumberMinMaxWidget"
+import * as S from "./SchemaContext"
+import * as W from "./WorkspaceContext"
 
 export default function AnnotationFilters(props: {
   setShowFilters: (show: boolean) => void
@@ -39,11 +39,13 @@ export default function AnnotationFilters(props: {
         Object.keys(workspace.state.filters).length > 0
           ? [
               <MR.ActionButton
+                key="0"
                 children={<I.FilterList color="info" />}
                 onClick={() => props.setShowFilters(false)}
                 title="Apply Filters"
               />,
               <MR.ActionButton
+                key="1"
                 children={<I.FilterListOff color="warning" />}
                 onClick={() => {
                   workspace.dispatch(W.actions.resetFilters())
@@ -54,6 +56,7 @@ export default function AnnotationFilters(props: {
             ]
           : [
               <MR.ActionButton
+                key="0"
                 children={<I.FilterList />}
                 onClick={() => props.setShowFilters(false)}
                 title="Close Filters"

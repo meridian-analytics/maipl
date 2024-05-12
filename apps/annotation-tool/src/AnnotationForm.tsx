@@ -4,16 +4,17 @@ import * as M from "@mui/material"
 import { Form } from "@rjsf/mui"
 import validator from "@rjsf/validator-ajv8"
 import { ErrorBoundary } from "react-error-boundary"
-import { Encoder } from "specviz-react"
-import { useSpecviz } from "specviz-react/hooks"
-import * as S from "./SchemaContext.tsx"
-import * as W from "./WorkspaceContext.tsx"
+import * as Specviz from "specviz-react"
+import * as Audio from "specviz-react/audio"
+import * as AudioFocus from "./AudioFocus"
+import * as S from "./SchemaContext"
+import * as W from "./WorkspaceContext"
 
 export default function AnnotationForm(props: {
   sx?: M.SxProps
 }) {
-  const specviz = useSpecviz()
-  const ids = [...specviz.selection]
+  const workspace = W.useWorkspace()
+  const ids = Array.from(workspace.state.selection)
   return (
     <ErrorBoundary
       fallbackRender={({ error }) => <p>Error: {error.message}</p>}
@@ -36,7 +37,7 @@ function NullForm(props: { sx?: M.SxProps }) {
       sx={props.sx}
       title="Edit Annotation"
       contents={
-        <M.Box sx={{ marginTop: -6, padding: 2 }}>
+        <M.Box sx={{ marginTop: -4, padding: 2 }}>
           <Form
             children=" "
             formData={{}}
@@ -56,9 +57,11 @@ function MonoForm(props: {
   sx?: M.SxProps
 }) {
   const workspace = W.useWorkspace()
-  const specviz = useSpecviz()
+  const audio = Audio.useContext()
+  const regions = Specviz.useRegions()
+  const focus = AudioFocus.useContext()
+  const region = workspace.state.regions.get(props.regionId)
   const { schema, uiSchema } = S.useSchema()
-  const region = workspace.filteredRegions.get(props.regionId)
   if (region == null)
     return <p>Warning: Selected region is hidden by one or more filters</p>
   return (
@@ -66,30 +69,47 @@ function MonoForm(props: {
       sx={props.sx}
       title="Edit Annotation"
       actions={[
+        focus.region &&
+        !audio.transport.state.pause &&
+        region.id == focus.region.id ? (
+          <MR.ActionButton
+            key="0"
+            children={<I.Stop />}
+            onClick={() => {
+              audio.transport.stop()
+              focus.setFocusRegion(null)
+            }}
+            title="Stop Annotation"
+          />
+        ) : (
+          <MR.ActionButton
+            key="0"
+            children={<I.PlayArrow />}
+            onClick={() => {
+              focus.setFocusRegion(region.id)
+              audio.transport.play()
+            }}
+            title="Play Annotation"
+          />
+        ),
         <MR.ActionButton
-          children={<I.PlayArrow />}
-          onClick={() => specviz.transport.loop(region.id)}
-          title="Play Annotation"
-        />,
-        <MR.ActionButton
-          children={<I.Stop />}
-          onClick={() => specviz.transport.stop()}
-          title="Stop Annotation"
-        />,
-        <MR.ActionButton
+          key="1"
           children={<I.DeleteForever />}
-          onClick={() => specviz.command.delete()}
+          onClick={regions.delete}
           title="Delete Annotation"
         />,
       ]}
       contents={
-        <M.Box sx={{ marginTop: -6, padding: 2 }}>
+        <M.Box sx={{ marginTop: -4, padding: 2 }}>
           <Form
             children=" "
             formData={region}
             onChange={e =>
               workspace.dispatch(
-                W.actions.updateRegion({ ...region, ...e.formData }),
+                // todo: add Speviz.Region.update command
+                W.actions.setRegions(prev =>
+                  new Map(prev).set(region.id, { ...region, ...e.formData }),
+                ),
               )
             }
             readonly={false}
@@ -112,19 +132,19 @@ function MonoForm(props: {
           justifyContent="space-between"
         >
           <M.Box className="encoder">
-            <Encoder.X {...region} />
+            <Specviz.Encoder.X {...region} />
             <M.Typography>Offset</M.Typography>
           </M.Box>
           <M.Box className="encoder">
-            <Encoder.X2 {...region} />
+            <Specviz.Encoder.X2 {...region} />
             <M.Typography>Duration</M.Typography>
           </M.Box>
           <M.Box className="encoder">
-            <Encoder.Y2 {...region} />
+            <Specviz.Encoder.Y2 {...region} />
             <M.Typography>Min</M.Typography>
           </M.Box>
           <M.Box className="encoder">
-            <Encoder.Y1 {...region} />
+            <Specviz.Encoder.Y1 {...region} />
             <M.Typography>Max</M.Typography>
           </M.Box>
         </M.Stack>
@@ -142,7 +162,7 @@ function PolyForm(props: {
       sx={props.sx}
       title="Edit Annotation"
       contents={
-        <M.Box sx={{ marginTop: -6, padding: 2 }}>
+        <M.Box sx={{ marginTop: -4, padding: 2 }}>
           <Form
             children=" "
             formData={{}}

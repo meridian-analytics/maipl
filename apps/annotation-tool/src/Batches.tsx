@@ -45,7 +45,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
           Error: Could not delete batch "{props.batch.batch_name}"
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("BatchActions deleteMutation error", err, vars)
       }
     },
@@ -71,7 +71,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
           Error: Could not export batch "{props.batch.batch_name}"
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("BatchActions exportMutation error", err, vars)
       }
     },
@@ -97,7 +97,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
           Error: Could not process batch "{props.batch.batch_name}"
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("BatchActions processMutation error", err, vars)
       }
     },

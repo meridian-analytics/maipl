@@ -4,25 +4,27 @@
   "version": "0.1.0",
   "type": "module",
   "dependencies": {
-    "@emotion/react": "^11.11.1",
-    "@emotion/styled": "^11.11.0",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
     "@maipl/api": "workspace:^",
     "@maipl/async": "workspace:^",
     "@maipl/constants": "workspace:^",
     "@maipl/format": "workspace:^",
     "@maipl/js": "workspace:^",
     "@maipl/pkce": "workspace:^",
-    "@mui/icons-material": "^5.14.18",
-    "@mui/material": "^5.14.18",
-    "@tanstack/react-query": "^5.8.4",
-    "@tanstack/react-query-devtools": "^5.8.4",
-    "@tanstack/react-table": "^8.10.3",
-    "@types/react": "^18.2.38",
-    "@types/react-dom": "^18.2.16",
-    "axios": "^1.5.1",
+    "@mui/icons-material": "^5.15.14",
+    "@mui/material": "^5.15.14",
+    "@tanstack/react-query": "^5.28.9",
+    "@tanstack/react-table": "^8.15.3",
+    "axios": "^1.6.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.19.0"
+    "react-router-dom": "^6.22.3"
+  },
+  "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.28.10",
+    "@types/react": "^18.2.73",
+    "@types/react-dom": "^18.2.23"
   },
   "exports": {
     ".": "./src/index.ts"

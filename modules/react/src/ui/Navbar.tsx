@@ -1,13 +1,16 @@
-import { User } from "@maipl/api"
+import type { User } from "@maipl/api"
+import * as MR from "@maipl/react"
+import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
-import * as R from "react"
+import * as RQ from "@tanstack/react-query"
+import type * as R from "react"
 import * as RR from "react-router-dom"
-import { useMaipl } from "../context.tsx"
-import Menu from "./Menu.tsx"
+import { useMaipl } from "../context"
+import Menu from "./Menu"
 
 export default function Navbar(props: {
   children?: R.ReactNode
-  sx?: M.SxProps
+  sx?: M.AppBarProps["sx"]
 }) {
   const maipl = useMaipl()
   return (
@@ -25,12 +28,14 @@ export default function Navbar(props: {
           {maipl.user == null ? (
             <>
               <M.Stack flexGrow={1} />
-              <M.Typography children="..." />
+              <Synchronizing />
+              <GuestMenu />
             </>
           ) : (
             <>
               {props.children ?? <M.Stack flexGrow={1} />}
-              <UserNavBar user={maipl.user} />
+              <Synchronizing />
+              <UserMenu user={maipl.user} />
             </>
           )}
         </M.Stack>
@@ -39,7 +44,15 @@ export default function Navbar(props: {
   )
 }
 
-function UserNavBar(props: { user: User.t }) {
+function GuestMenu() {
+  return (
+    <Menu>
+      <M.MenuItem children="About" component={RR.Link} to="/about" />
+    </Menu>
+  )
+}
+
+function UserMenu(props: { user: User.t }) {
   const maipl = useMaipl()
   return (
     <Menu>
@@ -52,4 +65,12 @@ function UserNavBar(props: { user: User.t }) {
       />
     </Menu>
   )
+}
+
+function Synchronizing() {
+  const isFetching = RQ.useIsFetching() > 0
+  const isMutating = RQ.useIsMutating() > 0
+  const isSynchronizing = MR.useDebounce(isFetching || isMutating, 1000) // debounce to prevent flickering
+  if (isSynchronizing) return <I.Sync sx={{ color: M.colors.green[400] }} />
+  return <I.Sync color="disabled" />
 }

@@ -1,5 +1,5 @@
 import * as K from "@maipl/constants"
-import * as Client from "./client.ts"
+import * as Client from "./client"
 
 /** Auth.taccess: an access token */
 type t_access = {

@@ -1,1 +1,1 @@
-export { invariant } from "./invariant.ts"
+export { invariant, invariantEnum } from "./invariant.ts"

@@ -1,5 +1,6 @@
 import { File } from "@maipl/api"
 import * as F from "@maipl/format"
+import * as JS from "@maipl/js"
 import * as MR from "@maipl/react"
 import { Editor } from "@monaco-editor/react"
 import * as M from "@mui/material"
@@ -17,7 +18,7 @@ export const loader = (_maipl: MR.t_context) =>
     const url = new URL(request.url)
     const search = url.searchParams
     const folder = search.get("folder") ?? "raw"
-    File.invariantMaiplFolder(folder)
+    JS.invariantEnum(folder, File.t_maipl_folder, "File.t_maipl_folder")
     // payload
     return { folder }
   }) satisfies RR.LoaderFunction
@@ -62,7 +63,7 @@ export default function NewFile(props: {
           Error: Could not create file "{vars[1].path}"
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("FileEditor createMutation error", err, vars)
       }
     },

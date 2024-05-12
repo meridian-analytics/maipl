@@ -7,13 +7,13 @@ import validator from "@rjsf/validator-ajv8"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import * as BatchParameters from "./schema/BatchParametersSchema.ts"
+import * as BatchParameters from "./schema/BatchParametersSchema"
 
 export default function ShowBatchLoader() {
   const maipl = MR.useMaipl()
   const navigate = RR.useNavigate()
   const params = RR.useParams()
-  const batchId = F.safeParseInteger(params.batchId, null)
+  const batchId = F.safeParseInteger(params["batchId"], null)
 
   const { data: batch, error } = RQ.useQuery({
     enabled: batchId != null,
@@ -99,7 +99,7 @@ function ShowBatch(props: {
           Error: Could not update batch
         </M.Alert>
       ))
-      if (import.meta.env.DEV) {
+      if (import.meta.env["DEV"]) {
         console.error("ShowBatch update error", err, vars)
       }
     },

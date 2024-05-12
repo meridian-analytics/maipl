@@ -1,14 +1,14 @@
-import { Batch, t_page } from "@maipl/api"
+import { Batch, type t_page } from "@maipl/api"
 import { iso8601 } from "@maipl/format"
 import * as RQ from "@tanstack/react-query"
 import * as RT from "@tanstack/react-table"
 import * as R from "react"
-import { useMaipl } from "../context.tsx"
-import { useDebounce, useFilter } from "../hooks.ts"
+import { useMaipl } from "../context"
+import { useDebounce, useFilter } from "../hooks"
 import BaseTable, {
-  ColumnDef,
-  PaginationState,
-  SelectionState,
+  type ColumnDef,
+  type PaginationState,
+  type SelectionState,
   usePagination,
   useSelection,
 } from "./Table.tsx"
@@ -23,15 +23,14 @@ function useTable(props?: {
 }) {
   const [pagination, setPagination] = usePagination(props?.pagination)
   const [selection, setSelection] = useSelection(props?.selection)
-
-  const filter = useFilter({ name: props?.name ?? "" })
+  const filter = useFilter(
+    R.useMemo(() => ({ name: props?.name ?? "" }), [props?.name]),
+  )
   const debouncedFilter = useDebounce(filter, props?.debounceDelay)
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: hack fixes bug above in queryParams
+  // biome-ignore lint/correctness/useExhaustiveDependencies: go to first page when query changes
   R.useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
-  }, [setPagination, pagination.pageSize, debouncedFilter.get("name")])
-
+  }, [pagination.pageSize, debouncedFilter.get("name")])
   return {
     filter,
     debouncedFilter,

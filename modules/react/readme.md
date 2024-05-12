@@ -72,7 +72,6 @@ const theme
 
 function ActionButton
 function Dashboard
-function Filter
 function Modal
 function Navbar
 function Notifications

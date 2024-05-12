@@ -1,35 +1,35 @@
 import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
-import { useSpecviz } from "specviz-react/hooks"
+import * as Specviz from "specviz-react"
 
 export default function ToolPalette(props: M.StackProps) {
-  const { command, toolState } = useSpecviz()
+  const input = Specviz.useInput()
   return (
     <M.Stack {...props}>
       <MR.ActionButton
         children={<I.AddLocation />}
-        className={toolState === "annotate" ? "active" : ""}
-        onClick={_ => command.tool("annotate")}
+        className={input.toolState === "annotate" ? "active" : ""}
+        onClick={_ => input.setToolState("annotate")}
         title="Annotate"
       />
 
       <MR.ActionButton
         children={<I.SelectAllOutlined />}
-        className={toolState === "select" ? "active" : ""}
-        onClick={_ => command.tool("select")}
+        className={input.toolState === "select" ? "active" : ""}
+        onClick={_ => input.setToolState("select")}
         title="Select"
       />
       <MR.ActionButton
         children={<I.ZoomInOutlined />}
-        className={toolState === "zoom" ? "active" : ""}
-        onClick={_ => command.tool("zoom")}
+        className={input.toolState === "zoom" ? "active" : ""}
+        onClick={_ => input.setToolState("zoom")}
         title="Zoom"
       />
       <MR.ActionButton
         children={<I.PanToolOutlined />}
-        className={toolState === "pan" ? "active" : ""}
-        onClick={_ => command.tool("pan")}
+        className={input.toolState === "pan" ? "active" : ""}
+        onClick={_ => input.setToolState("pan")}
         title="Pan"
       />
     </M.Stack>

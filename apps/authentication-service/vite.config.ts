@@ -11,18 +11,17 @@ function safeNumber(value: string, orElse: number): number {
 export default V.defineConfig(config => {
   const env = V.loadEnv(config.mode, "./")
   return {
-    base: env.VITE_BASE_URL || "/",
+    base: env["VITE_BASE_URL"] || "/",
     build: {
       emptyOutDir: true,
     },
     define: {
       global: "window",
-      "process.env.NODE_ENV": null,
     },
     envPrefix: "MAIPL_",
     plugins: [react()],
     server: {
-      port: safeNumber(env.VITE_PORT, 3000),
+      port: safeNumber(env["VITE_PORT"], 3000),
     },
   }
 })

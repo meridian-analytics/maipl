@@ -1,0 +1,78 @@
+import * as R from "react"
+import type * as Specviz from "specviz-react"
+import * as Audio2 from "specviz-react/audio"
+import * as A from "./AnnotationContext"
+import * as W from "./WorkspaceContext"
+
+type State = {
+  focusRegion: null | string
+}
+
+type Context = {
+  region: null | Specviz.Region
+  setFocusRegion: (regionId: State["focusRegion"]) => void
+}
+
+const defaultContext: Context = {
+  region: null,
+  setFocusRegion() {
+    throw Error("setFocusRegion called outside of context")
+  },
+}
+
+const Context = R.createContext(defaultContext)
+
+export type ProviderProps = {
+  children: R.ReactNode
+}
+
+export function Provider(props: ProviderProps) {
+  const ctx = A.useAnnotationContext()
+  const workspace = W.useWorkspace()
+  const [state, setState] = R.useState<State>({
+    focusRegion: null,
+  })
+  const setFocusRegion: Context["setFocusRegion"] = regionId => {
+    setState(prev => {
+      if (prev.focusRegion === regionId) {
+        return { focusRegion: null }
+      }
+      return { focusRegion: regionId }
+    })
+  }
+
+  const region = state.focusRegion
+    ? workspace.state.regions.get(state.focusRegion) ?? null
+    : null
+
+  const fx: Audio2.FxContext.Context = R.useMemo(() => {
+    return region == null
+      ? Audio2.FxContext.default
+      : {
+          hpf: region.yunit === "hertz" ? region.y : undefined,
+          lpf: region.yunit === "hertz" ? region.y + region.height : undefined,
+          loop: [
+            region.x - ctx.active.segment.start,
+            region.x - ctx.active.segment.start + region.width,
+          ],
+        }
+  }, [ctx.active.segment.start, region])
+
+  return (
+    <Context.Provider
+      value={{
+        region,
+        setFocusRegion,
+      }}
+    >
+      <Audio2.FxContext.Provider value={fx}>
+        <Audio2.AudioEffect />
+        {props.children}
+      </Audio2.FxContext.Provider>
+    </Context.Provider>
+  )
+}
+
+export function useContext() {
+  return R.useContext(Context)
+}
