@@ -73,10 +73,16 @@ const theme
 function ActionButton
 function Dashboard
 function ErrorModal
+function Menu
 function Modal
 function Navbar
 function Notifications
 function Panel
+function Picker
+function Profile
+function Switch
+function UserAvatar
+function UserAvatarGroup
 ```
 
 <small>[back to top](#top)</small>
