@@ -3,7 +3,7 @@ import * as M from "@mui/material"
 import * as RR from "react-router-dom"
 import * as AnnotationTool from "./AnnotationTool"
 import Batches from "./Batches"
-import EditBatch from "./NewBatch"
+import NewBatch from "./NewBatch"
 import ShowBatch from "./ShowBatch"
 
 export default function App() {
@@ -67,7 +67,7 @@ const router: MR.t_router = () => [
         children: [
           {
             path: "new",
-            element: <EditBatch />,
+            element: <NewBatch />,
           },
           {
             path: ":batchId",
