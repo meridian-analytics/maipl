@@ -5,9 +5,9 @@ export {
   MaiplProvider,
   MaiplRootProvider,
   useMaipl,
-} from "./context.tsx"
+} from "./context"
 
-export { useDebounce, useFilter } from "./hooks.ts"
+export { useDebounce, useFilter } from "./hooks"
 
 export {
   type t_notification_context,
@@ -16,7 +16,7 @@ export {
   NotificationProvider,
   Notifications,
   useNotify,
-} from "./notification.tsx"
+} from "./notification"
 
 export {
   type ColumnDef,
@@ -32,7 +32,7 @@ export {
   usePagination,
   useSelection,
   useTable,
-} from "./table.tsx"
+} from "./table"
 
 export {
   type UserAvatarProps,
@@ -49,4 +49,4 @@ export {
   theme,
   UserAvatar,
   UserAvatarGroup,
-} from "./ui.tsx"
+} from "./ui"

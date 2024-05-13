@@ -12,7 +12,7 @@ import BaseTable, {
   type SelectionState,
   usePagination,
   useSelection,
-} from "./Table.tsx"
+} from "./Table"
 
 const column = RT.createColumnHelper<Detection.t>()
 
