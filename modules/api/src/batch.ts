@@ -6,6 +6,7 @@ import type * as Client from "./client"
 import * as File from "./file"
 import type * as Segment from "./segment"
 import type { t_page, t_page_params } from "./types"
+import type * as User from "./user"
 
 /** Batch.t: batch details with pre-fetched segments and user */
 type t = {
@@ -27,6 +28,8 @@ type t = {
   filelist: Array<number>
   /** Import file id, if used */
   import_file: null | number
+  /** Batch owner, user object */
+  owner: User.t
   /** Spectrogram parameters */
   parameters: t_parameters
   /** Batch progress */
@@ -35,6 +38,8 @@ type t = {
   segment_parameters: t_segment_parameters
   /** List of segment identifiers */
   segments: Array<number>
+  /** Batch share */
+  shared_to: [User.t, t_role][]
   /** Batch owner */
   user_id: number
   /** celery task, for processing */
@@ -96,6 +101,21 @@ enum t_celery_status {
   success = "SUCCESS",
 }
 
+/**
+ * Batch.t_role:
+ *
+ * The backend uses a unique numeric id for each role.
+ *
+ * The labels are cosmetic, for front-end use only
+ */
+enum t_role {
+  unassigned = 0,
+  viewer = 1,
+  contributor = 2,
+  collaborator = 3,
+  owner = 4,
+}
+
 /** Batch.t_status */
 enum t_status {
   empty = "EMPTY",
@@ -134,6 +154,13 @@ type t_filter_params = {
   user?: number
 }
 
+/** Batch.t_filter_shared */
+enum t_filter_shared {
+  all = "all",
+  public = "true",
+  private = "false",
+}
+
 /** Batch.t_list_request */
 type t_list_request = t_page_params & t_filter_params
 
@@ -159,8 +186,21 @@ type t_read_segments_response = Array<
   }
 >
 
+/** Batch.t_share_change:
+ *
+ * A tuple of (user_id, role_id)
+ *
+ * ```ts
+ * [5, 4] // assign user=5 to role=4
+ * [3, 0] // unassign user=3
+ * ```
+ */
+type t_share_change = [number, number]
+
 /** Batch.t_update_request */
-type t_update_request = Omit<t, "created_at">
+type t_update_request = Omit<t, "created_at" | "shared_to"> & {
+  shared_to: t_share_change[]
+}
 
 /** Batch.audios: get list of batch audios */
 const audios = async (
@@ -394,6 +434,8 @@ export {
   process,
   segments,
   status,
-  t_status, // enum is type *and* value
+  t_filter_shared, // enum
+  t_role, // enum
+  t_status, // enum
   update,
 }

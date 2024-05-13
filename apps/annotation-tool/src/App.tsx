@@ -4,7 +4,7 @@ import * as RR from "react-router-dom"
 import * as AnnotationTool from "./AnnotationTool"
 import Batches from "./Batches"
 import NewBatch from "./NewBatch"
-import ShowBatch from "./ShowBatch"
+import * as ShowBatch from "./ShowBatch"
 
 export default function App() {
   return <MR.MaiplProvider router={router} />
@@ -52,7 +52,7 @@ function LocalNavigation() {
   )
 }
 
-const router: MR.t_router = () => [
+const router: MR.t_router = context => [
   {
     path: "/",
     element: <Layout />,
@@ -71,7 +71,9 @@ const router: MR.t_router = () => [
           },
           {
             path: ":batchId",
-            element: <ShowBatch />,
+            element: <ShowBatch.Element />,
+            errorElement: <MR.ErrorModal />,
+            loader: ShowBatch.loader(context),
           },
         ],
       },
