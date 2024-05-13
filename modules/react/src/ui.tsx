@@ -1,5 +1,6 @@
 export { default as ActionButton } from "./ui/ActionButton"
 export { default as Dashboard } from "./ui/Dashboard"
+export { default as ErrorModal } from "./ui/ErrorModal"
 export { default as Menu } from "./ui/Menu"
 export { default as Modal } from "./ui/Modal"
 export { default as Navbar } from "./ui/Navbar"

@@ -1,5 +1,4 @@
 import * as MR from "@maipl/react"
-import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
 import { EditFile, NewFile } from "./FileEditor"
@@ -34,31 +33,31 @@ const router: MR.t_router = context => [
       {
         path: "/",
         element: Files.element,
-        errorElement: <ErrorModal />,
+        errorElement: <MR.ErrorModal />,
         loader: Files.loader(context),
         children: [
           {
             path: "share",
             element: FileShare.element,
-            errorElement: <ErrorModal />,
+            errorElement: <MR.ErrorModal />,
             loader: FileShare.loader(context),
           },
           {
             path: "upload",
             element: FileUpload.element,
-            errorElement: <ErrorModal />,
+            errorElement: <MR.ErrorModal />,
             loader: FileUpload.loader(context),
           },
           {
             path: "new",
             element: NewFile.element,
-            errorElement: <ErrorModal />,
+            errorElement: <MR.ErrorModal />,
             loader: NewFile.loader(context),
           },
           {
             path: ":fileId/edit",
             element: EditFile.element,
-            errorElement: <ErrorModal />,
+            errorElement: <MR.ErrorModal />,
             loader: EditFile.loader(context),
           },
         ],
@@ -66,26 +65,3 @@ const router: MR.t_router = context => [
     ],
   },
 ]
-
-function ErrorModal() {
-  const error = RR.useRouteError() as Error
-  const navigate = RR.useNavigate()
-  return (
-    <MR.Modal onClose={() => navigate(-1)}>
-      <M.Stack padding={2}>
-        <M.Stack direction="row" alignItems="center">
-          <I.PestControl fontSize="large" />
-          <M.Typography variant="h4">Bugger!</M.Typography>
-        </M.Stack>
-        <M.Alert severity="error">
-          {import.meta.env["PROD"]
-            ? "Oops, something went wrong..."
-            : error.message}
-        </M.Alert>
-        <M.Stack direction="row-reverse">
-          <M.Button color="primary" children="Go Back" />
-        </M.Stack>
-      </M.Stack>
-    </MR.Modal>
-  )
-}

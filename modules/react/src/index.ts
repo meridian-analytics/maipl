@@ -39,6 +39,7 @@ export {
   type UserAvatarGroupProps,
   ActionButton,
   Dashboard,
+  ErrorModal,
   Menu,
   Modal,
   Navbar,
