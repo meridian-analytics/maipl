@@ -29,7 +29,7 @@ export default function EditBatchLoader() {
 
   return (
     <MR.Modal onClose={onClose}>
-      <EditBatch onClose={onClose} />
+      <NewBatch onClose={onClose} />
     </MR.Modal>
   )
 }
@@ -54,8 +54,7 @@ function optionsForFiles(files: Map<number, File.t>): Record<string, string> {
   )
 }
 
-function EditBatch(props: {
-  batch?: Batch.t
+function NewBatch(props: {
   onClose: () => void
 }) {
   const maipl = MR.useMaipl()

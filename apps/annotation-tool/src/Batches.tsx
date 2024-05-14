@@ -31,10 +31,6 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
     }
   }
 
-  const onShare = () => {
-    console.warn("todo: onShare", props.batch)
-  }
-
   const deleteMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Batch.delete>) => {
       return Batch.delete(...vars)
@@ -140,12 +136,17 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
       />
       <M.Divider />
       <M.MenuItem
-        children="Detail"
-        disabled={Object.keys(props.batch.segment_parameters ?? {}).length == 0} // todo: nosegments remove
+        children="Settings"
         component={RR.Link}
+        disabled={props.batch.user_id != maipl.user?.id} // todo: batchpermissions
         to={`/batches/${props.batch.id}`}
       />
-      <M.MenuItem onClick={onShare} children="Share" />
+      <M.MenuItem
+        children="Share"
+        component={RR.Link}
+        disabled={props.batch.user_id != maipl.user?.id} // todo: batchpermissions
+        to={`/batches/${props.batch.id}?tab=share`}
+      />
       <M.Divider />
       <M.MenuItem
         children="Create Annotations"
@@ -182,6 +183,19 @@ function BatchStatus(props: { batch: Batch.t_list_item }) {
   }
 }
 
+function ShareAvatars(props: { batch: Batch.t_list_item }) {
+  const maipl = MR.useMaipl()
+  return (
+    <MR.UserAvatarGroup
+      users={
+        props.batch.user_id != maipl.user?.id
+          ? [props.batch.owner]
+          : props.batch.shared_to.map(([user, _role]) => user)
+      }
+    />
+  )
+}
+
 export default function BatchesTable(props: { sx?: M.SxProps }) {
   const maipl = MR.useMaipl()
   const queryClient = RQ.useQueryClient()
@@ -206,6 +220,11 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
 
   const columns = R.useMemo(
     () => [
+      MR.Batches.column.display({
+        id: "share",
+        header: "Share",
+        cell: info => <ShareAvatars batch={info.row.original} />,
+      }),
       MR.Batches.column.display({
         id: "status",
         header: "Status",
@@ -262,7 +281,9 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
         setPagination={setPagination}
         setSelection={setSelection}
         visibility={{
+          progress: false,
           select: false,
+          user_id: false,
         }}
       />
     </M.Stack>
