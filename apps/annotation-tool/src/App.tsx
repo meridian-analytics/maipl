@@ -3,8 +3,8 @@ import * as M from "@mui/material"
 import * as RR from "react-router-dom"
 import * as AnnotationTool from "./AnnotationTool"
 import Batches from "./Batches"
-import EditBatch from "./NewBatch"
-import ShowBatch from "./ShowBatch"
+import NewBatch from "./NewBatch"
+import * as ShowBatch from "./ShowBatch"
 
 export default function App() {
   return <MR.MaiplProvider router={router} />
@@ -12,19 +12,21 @@ export default function App() {
 
 function Layout() {
   return (
-    <M.Stack
-      sx={{
-        backgroundColor: M.colors.grey[50],
-        height: "100vh",
-        maxHeight: "100vh",
-      }}
-    >
+    <>
       <MR.Notifications />
-      <MR.Navbar>
-        <LocalNavigation />
-      </MR.Navbar>
-      <RR.Outlet />
-    </M.Stack>
+      <M.Stack
+        sx={{
+          backgroundColor: M.colors.grey[50],
+          height: "100vh",
+          maxHeight: "100vh",
+        }}
+      >
+        <MR.Navbar>
+          <LocalNavigation />
+        </MR.Navbar>
+        <RR.Outlet />
+      </M.Stack>
+    </>
   )
 }
 
@@ -52,7 +54,7 @@ function LocalNavigation() {
   )
 }
 
-const router: MR.t_router = () => [
+const router: MR.t_router = context => [
   {
     path: "/",
     element: <Layout />,
@@ -67,11 +69,13 @@ const router: MR.t_router = () => [
         children: [
           {
             path: "new",
-            element: <EditBatch />,
+            element: <NewBatch />,
           },
           {
             path: ":batchId",
-            element: <ShowBatch />,
+            element: <ShowBatch.Element />,
+            errorElement: <MR.ErrorModal />,
+            loader: ShowBatch.loader(context),
           },
         ],
       },

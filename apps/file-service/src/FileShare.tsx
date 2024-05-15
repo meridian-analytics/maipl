@@ -68,9 +68,7 @@ export default function FileShare(props: {
     [fileContext.selection],
   )
 
-  const [shares, setShares] = R.useState<Map<number, ShareState>>(
-    () => new Map(currShareState),
-  )
+  const [shares, setShares] = R.useState(() => new Map(currShareState))
 
   const hasChanges = R.useMemo(() => {
     for (const [uid, next] of shares) {

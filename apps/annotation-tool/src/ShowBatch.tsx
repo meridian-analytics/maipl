@@ -1,5 +1,6 @@
-import { Batch, File } from "@maipl/api"
+import { Batch, File, User } from "@maipl/api"
 import * as F from "@maipl/format"
+import * as JS from "@maipl/js"
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import { Form } from "@rjsf/mui"
@@ -7,52 +8,78 @@ import validator from "@rjsf/validator-ajv8"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
+import * as RRT from "react-router-typesafe"
+import BatchShare from "./BatchShare"
 import * as BatchParameters from "./schema/BatchParametersSchema"
 
-export default function ShowBatchLoader() {
-  const maipl = MR.useMaipl()
+export enum Tab {
+  files = "files",
+  spectrogram = "spectrogram",
+  segments = "segments",
+  share = "share",
+}
+
+type LoaderProps = {
+  annotationFile: File.t
+  batch: Batch.t
+  users: Array<User.t>
+  tab: Tab
+}
+
+type ShowBatchProps = {
+  annotationFile: File.t
+  batch: Batch.t
+  onClose: () => void
+  users: Array<User.t>
+  tab: Tab
+}
+
+export const loader = (maipl: MR.t_context) =>
+  (async ({ request, params }): Promise<LoaderProps> => {
+    // get batch id
+    const batchId = F.safeParseInteger(params["batchId"], null)
+    if (batchId == null) throw Error(`Invalid batch id: ${batchId}`)
+    // batch and user dependencies
+    const [batch, users] = await Promise.all([
+      Batch.get(maipl.client, batchId),
+      User.list(maipl.client),
+    ])
+    // annotationFile dependency
+    const annotationFile = await File.get(maipl.client, batch.annotation_file)
+    // tab present in url
+    const u = new URL(request.url)
+    const tab = u.searchParams.get("tab")
+    if (tab) {
+      JS.invariantEnum(tab, Tab, "ShowBatch.Tab")
+      return { batch, users, annotationFile, tab }
+    }
+    // tab not preset in url
+    return { batch, users, annotationFile, tab: Tab.files }
+  }) satisfies RR.LoaderFunction
+
+export function Element() {
+  const { annotationFile, batch, tab, users } =
+    RRT.useLoaderData<ReturnType<typeof loader>>()
   const navigate = RR.useNavigate()
-  const params = RR.useParams()
-  const batchId = F.safeParseInteger(params["batchId"], null)
-
-  const { data: batch, error } = RQ.useQuery({
-    enabled: batchId != null,
-    queryKey: ["batches", batchId],
-    queryFn: () => Batch.get(maipl.client, batchId!),
-  })
-
   const onClose = () => {
-    navigate(-1)
+    navigate("/batches")
   }
-
   return (
-    <MR.Modal onClose={onClose}>
-      {error != null ? (
-        <M.Typography>{(error as Error).message}</M.Typography>
-      ) : batch == null ? (
-        <M.CircularProgress />
-      ) : (
-        <ShowBatch key={batchId} batch={batch} onClose={onClose} />
-      )}
-    </MR.Modal>
+    <ShowBatch
+      annotationFile={annotationFile}
+      batch={batch}
+      onClose={onClose}
+      tab={tab}
+      users={users}
+    />
   )
 }
 
-enum Tab {
-  files = "files",
-  parameters = "parameters",
-  segments = "segments",
-}
-
-function ShowBatch(props: {
-  batch: Batch.t
-  onClose: () => void
-}) {
+export default function ShowBatch(props: ShowBatchProps) {
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
   const queryClient = RQ.useQueryClient()
-
-  const [tab, setTab] = R.useState<Tab>(Tab.files)
+  const [_searchParams, setSearchParams] = RR.useSearchParams()
 
   // field: name
   const [name, setName] = R.useState(props.batch.batch_name)
@@ -71,6 +98,11 @@ function ShowBatch(props: {
   // field: segment_parameters
   const [segmentParameters, setSegmentParameters] = R.useState(
     props.batch.segment_parameters,
+  )
+
+  // field: share_to
+  const [shareTo, setShareTo] = R.useState<Map<number, Batch.t_role>>(
+    () => new Map(),
   )
 
   const table = MR.Files.useTable({
@@ -135,13 +167,14 @@ function ShowBatch(props: {
           filelist: Array.from(table.selection.keys()),
           parameters,
           segment_parameters: segmentParameters,
+          shared_to: Array.from(shareTo.entries()),
         },
       ])
     }
   }
 
   return (
-    <MR.Modal onClose={props.onClose} sx={{ minWidth: 600 }}>
+    <MR.Modal onClose={props.onClose} sx={{ minWidth: 700 }}>
       <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
         <M.Typography variant="h6">
           {props.batch == null ? "Create new batch ..." : name}
@@ -162,26 +195,30 @@ function ShowBatch(props: {
             label="Annotation Configuration"
             setValue={() => {}}
             value={String(annotationFile)}
-            values={{
-              [annotationFile ?? "null"]: annotationFile
-                ? String(annotationFile)
-                : "null",
-            }}
+            values={
+              annotationFile == null
+                ? { NullFile: "null" }
+                : {
+                    [`${props.annotationFile.maipl_folder}/${props.annotationFile.path}`]:
+                      String(annotationFile),
+                  }
+            }
             fullWidth
           />
         </M.Stack>
         <M.Stack direction="row" flexGrow={1} justifyContent="center">
           <M.Tabs
             indicatorColor="primary"
-            onChange={(_e, value) => setTab(value as Tab)}
-            value={tab}
+            onChange={(_e, value) => setSearchParams({ tab: value })}
+            value={props.tab ?? Tab.files}
           >
             <M.Tab label="Files" value={Tab.files} />
             <M.Tab label="Segments" value={Tab.segments} />
-            <M.Tab label="Spectrogram" value={Tab.parameters} />
+            <M.Tab label="Spectrogram" value={Tab.spectrogram} />
+            <M.Tab label="Share" value={Tab.share} />
           </M.Tabs>
         </M.Stack>
-        {tab == Tab.files && (
+        {props.tab == Tab.files && (
           <M.Stack>
             <M.Stack direction="row" alignItems="center">
               <M.TextField
@@ -216,7 +253,7 @@ function ShowBatch(props: {
             />
           </M.Stack>
         )}
-        {tab == Tab.segments && (
+        {props.tab == Tab.segments && (
           <M.Stack>
             <M.TextField
               label="Length (seconds)"
@@ -255,7 +292,7 @@ function ShowBatch(props: {
             />
           </M.Stack>
         )}
-        {tab == Tab.parameters && (
+        {props.tab == Tab.spectrogram && (
           <M.Stack
             component={M.Paper}
             sx={{
@@ -275,6 +312,14 @@ function ShowBatch(props: {
               validator={validator}
             />
           </M.Stack>
+        )}
+        {props.tab == Tab.share && (
+          <BatchShare
+            batch={props.batch}
+            shareTo={shareTo}
+            setShareTo={setShareTo}
+            users={props.users}
+          />
         )}
         <M.Stack direction="row">
           <M.Typography>

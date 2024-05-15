@@ -144,7 +144,15 @@ type t_file_share = {
   changes: t_file_share_change[]
 }
 
-/** File.t_file_share_change */
+/** File.t_file_share_change
+ *
+ * A (user_id, add/remove) tuple
+ *
+ * ```ts
+ * [5, true] // share file with user 5
+ * [6, false] // unshare file with user 6
+ * ```
+ */
 type t_file_share_change = [number, boolean]
 
 /** File.t_share_request: update shares */

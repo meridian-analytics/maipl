@@ -3,6 +3,7 @@ import * as F from "@maipl/format"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as RT from "@tanstack/react-table"
+import * as R from "react"
 import { useMaipl } from "../context"
 import BaseTable, {
   type ColumnDef,
@@ -10,7 +11,7 @@ import BaseTable, {
   type SelectionState,
   usePagination,
   useSelection,
-} from "./Table.tsx"
+} from "./Table"
 
 const column = RT.createColumnHelper<Task.t>()
 
@@ -20,6 +21,10 @@ function useTable(props?: {
 }) {
   const [pagination, setPagination] = usePagination(props?.pagination)
   const [selection, setSelection] = useSelection(props?.selection)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: go to first page when query changes
+  R.useEffect(() => {
+    setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
+  }, [pagination.pageSize])
   return {
     pagination,
     selection,
