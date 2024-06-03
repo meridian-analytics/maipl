@@ -10,7 +10,7 @@ import BaseTable, {
   type SelectionState,
   usePagination,
   useSelection,
-} from "./Table.tsx"
+} from "./Table"
 
 const column = RT.createColumnHelper<Segment.t>()
 
@@ -23,16 +23,20 @@ function useTable(props?: {
 }) {
   const [pagination, setPagination] = usePagination(props?.pagination)
   const [selection, setSelection] = useSelection(props?.selection)
-  const filter = useFilter({
-    filename: props?.filename ?? "",
-    tag: props?.tag ?? "",
-  })
+  const filter = useFilter(
+    R.useMemo(
+      () => ({
+        filename: props?.filename ?? "",
+        tag: props?.tag ?? "",
+      }),
+      [props?.filename, props?.tag],
+    ),
+  )
   const debouncedFilter = useDebounce(filter, props?.debounceDelay)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: hack fixes bug above in queryParams
+  // biome-ignore lint/correctness/useExhaustiveDependencies: go to first page when query changes
   R.useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
   }, [
-    setPagination,
     pagination.pageSize,
     debouncedFilter.get("filename"),
     debouncedFilter.get("tag"),

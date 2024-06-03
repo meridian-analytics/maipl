@@ -9,17 +9,19 @@ export default function App() {
 
 function Layout() {
   return (
-    <M.Stack
-      sx={{
-        backgroundColor: M.colors.grey[50],
-        height: "100vh",
-        maxHeight: "100vh",
-      }}
-    >
+    <>
       <MR.Notifications />
-      <MR.Navbar />
-      <RR.Outlet />
-    </M.Stack>
+      <M.Stack
+        sx={{
+          backgroundColor: M.colors.grey[50],
+          height: "100vh",
+          maxHeight: "100vh",
+        }}
+      >
+        <MR.Navbar />
+        <RR.Outlet />
+      </M.Stack>
+    </>
   )
 }
 

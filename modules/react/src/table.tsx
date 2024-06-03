@@ -6,11 +6,11 @@ export {
   usePagination,
   useSelection,
   useTable,
-} from "./table/Table.tsx"
-export { default as Table } from "./table/Table.tsx"
+} from "./table/Table"
+export { default as Table } from "./table/Table"
 
-export * as Batches from "./table/Batches.tsx"
-export * as Detections from "./table/Detections.tsx"
-export * as Files from "./table/Files.tsx"
-export * as Segments from "./table/Segments.tsx"
-export * as Tasks from "./table/Tasks.tsx"
+export * as Batches from "./table/Batches"
+export * as Detections from "./table/Detections"
+export * as Files from "./table/Files"
+export * as Segments from "./table/Segments"
+export * as Tasks from "./table/Tasks"

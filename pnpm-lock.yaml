@@ -26,6 +26,9 @@ importers:
       '@maipl/format':
         specifier: workspace:^
         version: link:../../modules/format
+      '@maipl/js':
+        specifier: workspace:^
+        version: link:../../modules/js
       '@maipl/react':
         specifier: workspace:^
         version: link:../../modules/react
@@ -65,6 +68,9 @@ importers:
       react-router-dom:
         specifier: ^6.22.3
         version: 6.22.3(react-dom@18.2.0)(react@18.2.0)
+      react-router-typesafe:
+        specifier: ^1.4.4
+        version: 1.4.4(react-router-dom@6.22.3)(react@18.2.0)(typescript@5.4.3)
       specviz-react:
         specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react#0.7.0-rc.3
         version: git-dev.cs.dal.ca/meridian/specviz-react/f542bf55947e954f653f66b9f04bb27f82ce6ac9

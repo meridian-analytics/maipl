@@ -1,4 +1,4 @@
-import { File, type User } from "@maipl/api"
+import { File } from "@maipl/api"
 import * as JS from "@maipl/js"
 import * as MR from "@maipl/react"
 import * as Tree from "@maipl/tree"
@@ -13,15 +13,13 @@ type Context = {
   selection: Selection
 }
 
+type LoaderData = Awaited<ReturnType<UseLoaderData>>
+
+type UseLoaderData = ReturnType<typeof loader>
+
 type Selection = ReturnType<typeof MR.Files.useTable>["selection"]
 
 type SetSelection = ReturnType<typeof MR.Files.useTable>["setSelection"]
-
-const avatarSxProps = {
-  width: 24,
-  height: 24,
-  fontSize: 12,
-}
 
 const defaultContext: Context = {
   selection: new Map(),
@@ -38,13 +36,22 @@ export const loader = (_maipl: MR.t_context) =>
     // query params
     const url = new URL(request.url)
     const search = url.searchParams
-    const folder = search.get("folder") ?? File.t_maipl_folder.raw
-    const shared = search.get("shared") ?? File.t_filter_shared.all
-    JS.invariantEnum(folder, File.t_maipl_folder, "File.t_maipl_folder")
-    JS.invariantEnum(shared, File.t_filter_shared, "File.t_filter_shared")
-    // payload
-    return { folder, shared }
+    return parseParams(search)
   }) satisfies RR.LoaderFunction
+
+function parseParams(search: URLSearchParams) {
+  const folder = search.get("folder") ?? File.t_maipl_folder.raw
+  const path = search.get("path") ?? ""
+  const tag = search.get("tag") ?? ""
+  const shared = search.get("shared") ?? File.t_filter_shared.all
+  const page = Number.parseInt(search.get("page") ?? "1")
+  const size = Number.parseInt(search.get("size") ?? "100")
+  JS.invariantEnum(folder, File.t_maipl_folder, "File.t_maipl_folder")
+  JS.invariantEnum(shared, File.t_filter_shared, "File.t_filter_shared")
+  JS.invariant(!Number.isNaN(page), "page must be a number")
+  JS.invariant(!Number.isNaN(size), "size must be a number")
+  return { folder, path, tag, shared, page, size }
+}
 
 function SelectionActions(props: {
   selection: Selection
@@ -145,18 +152,37 @@ function FileActions(props: { file: File.t }) {
   )
 }
 
-export default function Files(props: { sx?: M.SxProps }) {
-  const {
-    debouncedFilter,
-    filter,
-    pagination,
-    selection,
-    setPagination,
-    setSelection,
-  } = MR.Files.useTable()
+function ShareAvatars(props: { file: File.t }) {
+  const maipl = MR.useMaipl()
+  return (
+    <MR.UserAvatarGroup
+      users={
+        props.file.user_id != maipl.user?.id
+          ? [props.file.owner]
+          : props.file.shared_to
+      }
+    />
+  )
+}
 
-  const [_search, setSearch] = RR.useSearchParams()
-  const { folder, shared } = RRT.useLoaderData<ReturnType<typeof loader>>()
+export default function Files(props: { sx?: M.SxProps }) {
+  const qs = RRT.useLoaderData<UseLoaderData>()
+  const setSearch = RR.useSearchParams()[1]
+  const { selection, setSelection } = MR.Files.useTable()
+
+  function setState(value: LoaderData, options?: RR.NavigateOptions) {
+    setSearch(
+      {
+        folder: value.folder,
+        path: value.path,
+        tag: value.tag,
+        shared: value.shared,
+        page: String(value.page),
+        size: String(value.size),
+      },
+      options,
+    )
+  }
 
   const extraColumns = R.useMemo(
     () =>
@@ -193,7 +219,7 @@ export default function Files(props: { sx?: M.SxProps }) {
         ),
         MR.Files.column.accessor("shared_to", {
           header: "Share",
-          cell: info => <ShareAvatars users={info.getValue()} />,
+          cell: info => <ShareAvatars file={info.row.original} />,
         }),
         MR.Files.column.display({
           id: "actions",
@@ -205,12 +231,12 @@ export default function Files(props: { sx?: M.SxProps }) {
   )
 
   const { data: files } = MR.Files.useQuery({
-    maipl_folder: folder,
-    path: debouncedFilter.get("path"),
-    tag: debouncedFilter.get("tag"),
-    page: pagination.pageIndex + 1, // bug: when query changes, page needs to be reset
-    size: pagination.pageSize,
-    shared: shared,
+    maipl_folder: qs.folder,
+    path: qs.path,
+    tag: qs.tag,
+    page: qs.page,
+    size: qs.size,
+    shared: qs.shared,
   })
 
   return (
@@ -230,11 +256,18 @@ export default function Files(props: { sx?: M.SxProps }) {
             label="Folder"
             setValue={folder => {
               if (folder) {
-                setSearch({ folder, shared }, { replace: true })
-                setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
+                JS.invariantEnum(
+                  folder,
+                  File.t_maipl_folder,
+                  "File.t_maipl_folder",
+                )
+                setState(
+                  { ...qs, folder, page: 1, size: qs.size },
+                  { replace: true },
+                )
               }
             }}
-            value={folder}
+            value={qs.folder}
             values={[
               File.t_maipl_folder.annotation,
               File.t_maipl_folder.config,
@@ -245,29 +278,56 @@ export default function Files(props: { sx?: M.SxProps }) {
           />
           <M.TextField
             label="Path"
-            onChange={e => filter.set("path", e.currentTarget.value)}
+            onChange={e =>
+              setState(
+                {
+                  ...qs,
+                  path: e.currentTarget.value,
+                  page: 1,
+                  size: qs.size,
+                },
+                { replace: true },
+              )
+            }
             placeholder="path/to/folder"
-            value={filter.get("path")}
+            value={qs.path}
           />
           <M.TextField
             label="Tag"
-            onChange={e => filter.set("tag", e.currentTarget.value)}
+            onChange={e =>
+              setState(
+                {
+                  ...qs,
+                  tag: e.currentTarget.value,
+                  page: 1,
+                  size: qs.size,
+                },
+                { replace: true },
+              )
+            }
             placeholder="my-tag"
-            value={filter.get("tag")}
+            value={qs.tag}
           />
           <MR.Picker
             label="Shared"
             setValue={shared => {
               if (shared) {
-                setSearch({ folder, shared }, { replace: true })
-                setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
+                JS.invariantEnum(
+                  shared,
+                  File.t_filter_shared,
+                  "File.t_filter_shared",
+                )
+                setState(
+                  { ...qs, shared, page: 1, size: qs.size },
+                  { replace: true },
+                )
               }
             }}
-            value={shared}
+            value={qs.shared}
             values={{
               All: File.t_filter_shared.all,
-              Shared: File.t_filter_shared.true,
-              Private: File.t_filter_shared.false,
+              Shared: File.t_filter_shared.public,
+              Private: File.t_filter_shared.private,
             }}
           />
           <M.Stack flexGrow={1} />
@@ -277,9 +337,27 @@ export default function Files(props: { sx?: M.SxProps }) {
           columns={extraColumns}
           rows={files.data}
           count={files.count}
-          pagination={pagination}
+          pagination={{
+            pageIndex: qs.page - 1,
+            pageSize: qs.size,
+          }}
           selection={selection}
-          setPagination={setPagination}
+          setPagination={value => {
+            if (typeof value == "function") {
+              const m = value({ pageIndex: qs.page - 1, pageSize: qs.size })
+              setState({
+                ...qs,
+                page: m.pageIndex + 1,
+                size: m.pageSize,
+              })
+            } else {
+              setState({
+                ...qs,
+                page: value.pageIndex + 1,
+                size: value.pageSize,
+              })
+            }
+          }}
           setSelection={setSelection}
           visibility={{
             basename: false,
@@ -292,21 +370,5 @@ export default function Files(props: { sx?: M.SxProps }) {
         />
       </M.Stack>
     </Context.Provider>
-  )
-}
-
-function ShareAvatars(props: { users: User.t[] }) {
-  return (
-    <M.AvatarGroup
-      children={props.users.map(user => (
-        <MR.UserAvatar key={user.id} user={user} sx={avatarSxProps} />
-      ))}
-      max={4}
-      slotProps={{
-        additionalAvatar: {
-          sx: avatarSxProps,
-        },
-      }}
-    />
   )
 }

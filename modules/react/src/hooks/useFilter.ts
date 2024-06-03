@@ -12,6 +12,16 @@ type t_use_filter<T extends t_use_filter_state> = {
   clear: () => void
 }
 
+/**
+ * react/hooks/useFilter
+ *
+ * You *must* memoize the `initFilter` or `useFilter` will cause a render loop
+ *
+ * ```ts
+ * useFilter({...}) // ❌ render loop!
+ * useFilter(useMemo(() => ({...}), [...])) // ✅ OK
+ * ```
+ */
 export default function useFilter<T extends t_use_filter_state>(
   initFilter: T,
   initEnabled = true,

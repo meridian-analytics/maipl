@@ -35,6 +35,8 @@ type t = {
   meta: Meta.t_meta | null
   /** The complete file path, including name */
   path: string
+  /** File owner, user object */
+  owner: User.t
   /** Sha256 integrity checksum */
   sha256: string
   /** File share */
@@ -86,8 +88,8 @@ type t_filter_params = {
 /** File.t_filter_shared */
 enum t_filter_shared {
   all = "all",
-  true = "true",
-  false = "false",
+  public = "true",
+  private = "false",
 }
 
 /** File.t_create_request */
@@ -142,7 +144,15 @@ type t_file_share = {
   changes: t_file_share_change[]
 }
 
-/** File.t_file_share_change */
+/** File.t_file_share_change
+ *
+ * A (user_id, add/remove) tuple
+ *
+ * ```ts
+ * [5, true] // share file with user 5
+ * [6, false] // unshare file with user 6
+ * ```
+ */
 type t_file_share_change = [number, boolean]
 
 /** File.t_share_request: update shares */

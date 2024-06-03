@@ -11,7 +11,7 @@ import BaseTable, {
   type SelectionState,
   usePagination,
   useSelection,
-} from "./Table.tsx"
+} from "./Table"
 
 const column = RT.createColumnHelper<Batch.t_list_item>()
 
@@ -23,15 +23,14 @@ function useTable(props?: {
 }) {
   const [pagination, setPagination] = usePagination(props?.pagination)
   const [selection, setSelection] = useSelection(props?.selection)
-
-  const filter = useFilter({ name: props?.name ?? "" })
+  const filter = useFilter(
+    R.useMemo(() => ({ name: props?.name ?? "" }), [props?.name]),
+  )
   const debouncedFilter = useDebounce(filter, props?.debounceDelay)
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: hack fixes bug above in queryParams
+  // biome-ignore lint/correctness/useExhaustiveDependencies: go to first page when query changes
   R.useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
-  }, [setPagination, pagination.pageSize, debouncedFilter.get("name")])
-
+  }, [pagination.pageSize, debouncedFilter.get("name")])
   return {
     filter,
     debouncedFilter,
