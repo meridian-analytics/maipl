@@ -13,6 +13,7 @@ enum t_maipl_folder {
   dataset = "dataset",
   model = "model",
   raw = "raw",
+  metrics = "metrics",
 }
 
 /** File.t represents files that have already been uploaded */
