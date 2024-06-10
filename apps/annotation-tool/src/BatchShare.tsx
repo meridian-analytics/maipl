@@ -66,7 +66,7 @@ export default function BatchShare(props: BatchShareProps) {
           />
         </M.Box>
         {columns.map(role => (
-          <M.Box sx={{ width: colWidth }}>
+          <M.Box key={role} sx={{ width: colWidth }}>
             <M.Typography
               children={Batch.t_role[role]}
               sx={{ transform: "rotate(-45deg)" }}
@@ -76,13 +76,13 @@ export default function BatchShare(props: BatchShareProps) {
         ))}
       </M.Stack>
       {props.users.map(user => (
-        <M.Stack direction="row">
+        <M.Stack direction="row" key={user.id}>
           <MR.UserAvatar user={user} />
           <M.Typography flexGrow={1}>
             {user.email} {user.id}
           </M.Typography>
           {columns.map(role => (
-            <M.Box sx={{ width: colWidth }}>
+            <M.Box key={role} sx={{ width: colWidth }}>
               <M.Radio name={user.email} {...radioState(user.id, role)} />
             </M.Box>
           ))}
