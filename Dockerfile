@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 # build
 COPY apps apps
 COPY modules modules
-COPY tsconfig.json tsconfig.json
+#COPY tsconfig.json tsconfig.json
 RUN pnpm --recursive install
 RUN pnpm @build
 
