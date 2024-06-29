@@ -73,6 +73,12 @@ type t_list_request = t_filter_params
 /** Task.t_list_response */
 type t_list_response = Array<t_get_response>
 
+type t_metrics = {
+  
+}
+
+type t_file_json_response = Array<any>
+
 /** Metric.create: create a new task */
 const create = async (client: Client.t, body: t_create_request): Promise<t> => {
   const response = await client
@@ -106,6 +112,20 @@ const list = async (
   }))
 }
 
+/** Metrics files: get json data by file_ids */
+const files = async (
+  client: Client.t,
+  file_ids: Array<number>
+): Promise<t_file_json_response> => {
+  const response = await client
+    .get<t_file_json_response>(
+      `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/metrics/files/`,
+      { params: { file_ids: file_ids.join(",") } }
+    )
+    .then((r) => r.data)
+  return response
+}
+
 export {
   type t,
   type t_get_response,
@@ -115,4 +135,5 @@ export {
   type t_list_response,
   create,
   list,
+  files,
 }
