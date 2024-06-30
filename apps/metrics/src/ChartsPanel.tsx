@@ -51,6 +51,12 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
   const [yAxis, setYAxis] = R.useState("F1-Score")
   const [chartsPerRow, setChartsPerRow] = R.useState(1)
   const [tip, setTip] = R.useState(false)
+  const [grid, setGrid] = R.useState(false)
+  const [mode, setMode] = R.useState("separated")
+
+  const handleModeChange = (event) => {
+    setMode(event.target.checked ? "combined" : "separated")
+  }
 
   const createMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Metrics.files>) => {
@@ -82,9 +88,23 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
     }
   }, [selectedIds])
 
+  R.useEffect(()=>{
+    if(mode === "combined"){
+      combinedData = reduceMetrics()
+    }
+  },[mode])
+
+  const reduceMetrics = () => {
+    combinedData = []
+    selectedIds.forEach((id) => {
+      const new_class = `${selection.get(id).path}-${metrics[id]["class"]}`
+      combinedData.push({ new_class, metrics })
+    })
+  }
+
   const ToolArea = () => {
     return (
-      <M.Stack direction='row' id='tool-area'>
+      <M.Stack direction='row' id='tool-area' spacing={2}>
         <M.FormControl>
           <M.InputLabel id='y-axis-select-label'>Y-Axis</M.InputLabel>
           <M.Select
@@ -102,27 +122,26 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
             ))}
           </M.Select>
         </M.FormControl>
-        {/* Number Select Menu for Charts Per Row */}
         <M.FormControl>
-          <M.InputLabel id='charts-per-row-label'>Charts Per Row</M.InputLabel>
-          <M.Select
-            labelId='charts-per-row-label'
-            id='charts-per-row'
-            label='Charts Per Row'
-            value={chartsPerRow}
-            onChange={(e) => setChartsPerRow(e.target.value)}
-            sx={{ minWidth: "120px" }}
-          >
+          <M.ButtonGroup variant='contained' aria-label='charts per row'>
             {[1, 2, 3, 4].map((number) => (
-              <M.MenuItem key={number} value={number}>
-                {number}
-              </M.MenuItem>
+              <M.IconButton
+                key={number}
+                onClick={() => setChartsPerRow(number)}
+                color={chartsPerRow === number ? "primary" : "default"}
+                aria-label={`${number} charts per row`}
+                disabled={selectedIds.length < number}
+              >
+                {number === 1 && <M.Icon>1</M.Icon>}
+                {number === 2 && <M.Icon>2</M.Icon>}
+                {number === 3 && <M.Icon>3</M.Icon>}
+                {number === 4 && <M.Icon>4</M.Icon>}
+              </M.IconButton>
             ))}
-          </M.Select>
+          </M.ButtonGroup>
         </M.FormControl>
-        {/* Switch for Tip State */}
         <M.FormControl component='fieldset'>
-          <M.FormGroup aria-label='tip' row>
+          <M.FormGroup aria-label='settings' row>
             <M.FormControlLabel
               control={
                 <M.Switch
@@ -131,7 +150,27 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
                   name='tipSwitch'
                 />
               }
-              label='Enable Tip'
+              label='Tip'
+            />
+            <M.FormControlLabel
+              control={
+                <M.Switch
+                  checked={grid}
+                  onChange={(e) => setGrid(e.target.checked)}
+                  name='gridSwitch'
+                />
+              }
+              label='Grid'
+            />
+            <M.FormControlLabel
+              control={
+                <M.Switch
+                  checked={mode === "combined"}
+                  onChange={handleModeChange}
+                  name='modeSwitch'
+                />
+              }
+              label={mode === "combined" ? "Combined" : "Separated"}
             />
           </M.FormGroup>
         </M.FormControl>
@@ -172,6 +211,7 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
                 file={selection.get(id)}
                 yAxis={yAxis}
                 tip={tip}
+                grid={grid}
                 xs={gridSize}
               />
             )

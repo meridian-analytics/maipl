@@ -4,7 +4,7 @@ import * as R from "react"
 import * as Plot from "@observablehq/plot"
 import { filesize } from "@maipl/format"
 
-const Chart = ({ data, file, yAxis, tip, ...props }) => {
+const Chart = ({ data, file, yAxis, tip, grid, ...props }) => {
   const { path, basename } = file
 
   const containerRef = R.useRef()
@@ -20,7 +20,7 @@ const Chart = ({ data, file, yAxis, tip, ...props }) => {
 
   R.useEffect(() => {
     if (containerRef.current && data) {
-      const plot = createPlot(data, file, yAxis, tip, colors)
+      const plot = createPlot(data, file, yAxis, tip, grid, colors)
       if (plot) {
         containerRef.current.appendChild(plot)
 
@@ -31,7 +31,7 @@ const Chart = ({ data, file, yAxis, tip, ...props }) => {
         }
       }
     }
-  }, [data, yAxis, tip, colors])
+  }, [data, yAxis, tip, grid, colors])
 
   return <M.Grid item ref={containerRef} xs={props.xs} />
 }
@@ -45,7 +45,7 @@ function getRandomColor() {
   return color
 }
 
-function createPlot(data, file, yAxis, tip, colors) {
+function createPlot(data, file, yAxis, tip, grid, colors) {
   const labels = data.map((item) => item["class"])
 
   return Plot.plot({
@@ -56,16 +56,17 @@ function createPlot(data, file, yAxis, tip, colors) {
     x: { label: "Threshold" },
     y: { label: yAxis },
     color: {
-      domain: labels, 
+      domain: labels,
       range: colors,
-      legend: true, 
+      legend: true,
     },
+    grid: grid,
     marks: [
       data.map((item, index) =>
         Plot.lineY(item["metrics"], {
           x: "threshold",
           y: yAxis,
-          stroke: colors[index], 
+          stroke: colors[index],
           tip: tip,
         })
       ),
