@@ -42,7 +42,7 @@ export const loader = (_maipl: MR.t_context) =>
 
 function parseParams(search: URLSearchParams) {
   const folder = File.t_maipl_folder.metrics
-  const path = search.get("path") ?? "results"
+  const path = search.get("path") ?? "metrics"
   const tag = search.get("tag") ?? ""
   const shared = search.get("shared") ?? File.t_filter_shared.all
   const page = Number.parseInt(search.get("page") ?? "1")
@@ -343,12 +343,9 @@ export default function Output(props: { sx?: M.SxProps }) {
             flexBasis: isFullWidth ? "100%" : "50%",
             transition:
               "flex-basis 0.3s ease-in-out, flex-grow 0.3s ease-in-out",
-            padding: 2,
-            paddingLeft: isFullWidth ? 2 : 0,
           }}
         >
           <ChartsPanel
-            data={{}}
             selection={selection}
             isFullWidth={isFullWidth}
             setIsFullWidth={setIsFullWidth}
