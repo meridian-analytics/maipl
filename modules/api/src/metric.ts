@@ -95,7 +95,7 @@ const create = async (client: Client.t, body: t_create_request): Promise<t> => {
 }
 
 /** Task.list: get list of tasks */
-const list = async (
+const tasks = async (
   client: Client.t,
   params?: t_list_request
 ): Promise<Array<t>> => {
@@ -134,6 +134,6 @@ export {
   type t_list_request,
   type t_list_response,
   create,
-  list,
+  tasks,
   files,
 }

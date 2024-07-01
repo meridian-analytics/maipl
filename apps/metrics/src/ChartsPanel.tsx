@@ -58,7 +58,7 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
     setMode(event.target.checked ? "combined" : "separated")
   }
 
-  const createMutation = RQ.useMutation({
+  const filesMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Metrics.files>) => {
       return Metrics.files(...vars)
     },
@@ -70,7 +70,7 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
       ))
     },
     onSettled: () => {
-      createMutation.reset()
+      filesMutation.reset()
     },
     onSuccess: (data) => {
       notify((onClose) => (
@@ -84,7 +84,7 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
 
   R.useEffect(() => {
     if (selectedIds && selectedIds.length > 0) {
-      createMutation.mutateAsync([maipl.client, selectedIds])
+      filesMutation.mutateAsync([maipl.client, selectedIds])
     }
   }, [selectedIds])
 

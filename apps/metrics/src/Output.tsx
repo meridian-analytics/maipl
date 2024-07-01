@@ -212,17 +212,17 @@ export default function Output(props: { sx?: M.SxProps }) {
         sx={{
           display: "flex",
           flexDirection: "row",
-          height: "100vh", // Adjusted to fit the viewport height
-          margin: 0, // Ensure no margin is causing overflow
-          padding: 0, // Ensure no padding is causing overflow
-          overflow: "hidden", // Prevent overflow from causing page scroll
+          height: "100vh", 
+          margin: 0, 
+          padding: 0, 
+          overflow: "hidden", 
         }}
       >
         <M.Stack
           id='files'
           sx={{
-            flexGrow: isFullWidth ? 0 : 1, // Auto-minimize when visualization is full width
-            flexBasis: isFullWidth ? "0%" : "50%", // Adjust basis based on state
+            flexGrow: isFullWidth ? 0 : 1,
+            flexBasis: isFullWidth ? "0%" : "50%", 
             transition:
               "flex-basis 0.3s ease-in-out, flex-grow 0.3s ease-in-out",
             overflow: "auto",
