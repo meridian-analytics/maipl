@@ -43,20 +43,8 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
   const queryClient = RQ.useQueryClient()
   const maipl = MR.useMaipl()
 
-  const selectedIds = R.useMemo(() => {
-    return [...selection.keys()]
-  }, [selection])
-
-  const [metrics, setMetrics] = R.useState([])
-  const [yAxis, setYAxis] = R.useState("F1-Score")
+  const [metrics, setMetrics] = R.useState({})
   const [chartsPerRow, setChartsPerRow] = R.useState(1)
-  const [tip, setTip] = R.useState(false)
-  const [grid, setGrid] = R.useState(false)
-  const [mode, setMode] = R.useState("separated")
-
-  const handleModeChange = (event) => {
-    setMode(event.target.checked ? "combined" : "separated")
-  }
 
   const filesMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Metrics.files>) => {
@@ -83,96 +71,38 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
   })
 
   R.useEffect(() => {
-    if (selectedIds && selectedIds.length > 0) {
+    if (selection.size > 0) {
+      const selectedIds = [...selection.keys()]
+      console.log(selectedIds)
       filesMutation.mutateAsync([maipl.client, selectedIds])
+    } else {
+      setMetrics({})
     }
-  }, [selectedIds])
-
-  R.useEffect(()=>{
-    if(mode === "combined"){
-      combinedData = reduceMetrics()
-    }
-  },[mode])
-
-  const reduceMetrics = () => {
-    combinedData = []
-    selectedIds.forEach((id) => {
-      const new_class = `${selection.get(id).path}-${metrics[id]["class"]}`
-      combinedData.push({ new_class, metrics })
-    })
-  }
+  }, [selection])
 
   const ToolArea = () => {
     return (
-      <M.Stack direction='row' id='tool-area' spacing={2}>
-        <M.FormControl>
-          <M.InputLabel id='y-axis-select-label'>Y-Axis</M.InputLabel>
-          <M.Select
-            labelId='y-axis-select-label'
-            id='y-axis'
-            label='Y-Axis'
-            value={yAxis}
-            onChange={(e) => setYAxis(e.target.value)}
-            sx={{ minWidth: "100px" }}
-          >
-            {yAxises.map((yAxis) => (
-              <M.MenuItem key={yAxis.value} value={yAxis.value}>
-                {yAxis.value}
-              </M.MenuItem>
-            ))}
-          </M.Select>
-        </M.FormControl>
+      <M.Stack
+        direction='row'
+        id='tool-area'
+        spacing={2}
+        sx={{ paddingTop: 1, width: "100%", justifyContent: "center" }}
+      >
         <M.FormControl>
           <M.ButtonGroup variant='contained' aria-label='charts per row'>
-            {[1, 2, 3, 4].map((number) => (
+            {[1, 2].map((number) => (
               <M.IconButton
                 key={number}
                 onClick={() => setChartsPerRow(number)}
                 color={chartsPerRow === number ? "primary" : "default"}
                 aria-label={`${number} charts per row`}
-                disabled={selectedIds.length < number}
+                disabled={selection.size === 0}
               >
                 {number === 1 && <M.Icon>1</M.Icon>}
                 {number === 2 && <M.Icon>2</M.Icon>}
-                {number === 3 && <M.Icon>3</M.Icon>}
-                {number === 4 && <M.Icon>4</M.Icon>}
               </M.IconButton>
             ))}
           </M.ButtonGroup>
-        </M.FormControl>
-        <M.FormControl component='fieldset'>
-          <M.FormGroup aria-label='settings' row>
-            <M.FormControlLabel
-              control={
-                <M.Switch
-                  checked={tip}
-                  onChange={(e) => setTip(e.target.checked)}
-                  name='tipSwitch'
-                />
-              }
-              label='Tip'
-            />
-            <M.FormControlLabel
-              control={
-                <M.Switch
-                  checked={grid}
-                  onChange={(e) => setGrid(e.target.checked)}
-                  name='gridSwitch'
-                />
-              }
-              label='Grid'
-            />
-            <M.FormControlLabel
-              control={
-                <M.Switch
-                  checked={mode === "combined"}
-                  onChange={handleModeChange}
-                  name='modeSwitch'
-                />
-              }
-              label={mode === "combined" ? "Combined" : "Separated"}
-            />
-          </M.FormGroup>
         </M.FormControl>
       </M.Stack>
     )
@@ -201,18 +131,16 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
           overflow: "auto",
         }}
       >
-        {metrics.length !== 0 &&
-          selectedIds.map((id) => {
+        {Object.keys(metrics).length !== 0 &&
+          Array.from({ length: chartsPerRow }).map((_, index) => {
             const gridSize = Math.floor(12 / chartsPerRow)
             return (
               <Chart
-                key={id}
-                data={metrics[id]}
-                file={selection.get(id)}
-                yAxis={yAxis}
-                tip={tip}
-                grid={grid}
+                key={index}
+                data={metrics}
+                files={selection}
                 xs={gridSize}
+                isFullWidth={isFullWidth}
               />
             )
           })}
