@@ -12,13 +12,13 @@ export default function AnnotationFilters(props: {
   setShowFilters: (show: boolean) => void
   sx?: M.SxProps
 }) {
-  const { schema, uiSchema } = SchemaContext.useContext()
+  const schema = SchemaContext.useContext()
   const filter = FilterContext.useContext()
   const region = Specviz.useRegion()
   const derivedUi = {
-    ...uiSchema,
+    ...schema.uiSchema,
     ...Object.fromEntries(
-      Object.entries(schema.properties).flatMap(([key, field]) => {
+      Object.entries(schema.schema.properties).flatMap(([key, field]) => {
         switch (field.type) {
           case "string":
             if ("enum" in field || "anyOf" in field || "oneOf" in field)
@@ -69,7 +69,7 @@ export default function AnnotationFilters(props: {
         <M.Box sx={{ marginTop: -6, padding: 2 }}>
           <Form
             formData={filter.filters}
-            schema={schema}
+            schema={schema.schema}
             uiSchema={derivedUi}
             validator={validator}
             widgets={{

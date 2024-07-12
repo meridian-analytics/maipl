@@ -14,7 +14,7 @@ export default function AnnotationList(props: {
     return a.x == b.x ? a.y - b.y : a.x - b.x
   }
   const filter = FilterContext.useContext()
-  const labels = SchemaContext.useLabels()
+  const schema = SchemaContext.useContext()
   const regions = Specviz.useRegion()
   return (
     <MR.Panel
@@ -56,7 +56,7 @@ export default function AnnotationList(props: {
                   onClick={() => regions.setSelection(new Set([region.id]))}
                 >
                   <M.ListItemText
-                    primary={labels.lookup(
+                    primary={schema.getLabel(
                       FilterContext.rjsfCheckboxesBugfix(region["label"]),
                     )}
                     secondary={F.duration(region.x, region.x + region.width)}

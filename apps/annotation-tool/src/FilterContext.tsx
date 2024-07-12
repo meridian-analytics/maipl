@@ -48,17 +48,17 @@ const defaultContext: Context = {
 const Context = R.createContext(defaultContext)
 
 export function Provider(props: { children: R.ReactNode }) {
-  const { schema } = SchemaContext.useContext()
+  const schema = SchemaContext.useContext()
   const [filters, dispatch] = R.useReducer(reducer, defaultContext.filters)
 
   const filterFn: Specviz.RegionContext.TransformProps["fn"] = R.useMemo(
     () =>
       Specviz.RegionContext.transformFilter((region: Specviz.Region) =>
-        Object.entries(schema.properties).every(([key, field]) =>
+        Object.entries(schema.schema.properties).every(([key, field]) =>
           filterAuxField(region, key, field, filters),
         ),
       ),
-    [schema.properties, filters],
+    [schema.schema.properties, filters],
   )
 
   const value: Context = R.useMemo(() => ({ dispatch, filters }), [filters])

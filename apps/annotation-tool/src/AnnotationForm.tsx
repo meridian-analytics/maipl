@@ -29,7 +29,7 @@ export default function AnnotationForm(props: {
 }
 
 function NullForm(props: { sx?: M.SxProps }) {
-  const { schema, uiSchema } = SchemaContext.useContext()
+  const schema = SchemaContext.useContext()
   return (
     <MR.Panel
       sx={props.sx}
@@ -40,8 +40,8 @@ function NullForm(props: { sx?: M.SxProps }) {
             children=" "
             formData={{}}
             readonly={true}
-            schema={schema}
-            uiSchema={uiSchema}
+            schema={schema.schema}
+            uiSchema={schema.uiSchema}
             validator={validator}
           />
         </M.Box>
@@ -58,7 +58,7 @@ function MonoForm(props: {
   const regions = Specviz.useRegion()
   const focus = Specviz.useFocus()
   const region = regions.regions.get(props.regionId)
-  const { schema, uiSchema } = SchemaContext.useContext()
+  const schema = SchemaContext.useContext()
   if (region == null)
     return <p>Warning: Selected region is hidden by one or more filters</p>
   return (
@@ -108,12 +108,12 @@ function MonoForm(props: {
               )
             }
             readonly={false}
-            schema={schema}
+            schema={schema.schema}
             uiSchema={{
-              ...uiSchema,
+              ...schema.uiSchema,
               score: {
                 "ui:readonly": true,
-                ...uiSchema.score,
+                ...schema.uiSchema.score,
               },
             }}
             validator={validator}
@@ -151,7 +151,7 @@ function MonoForm(props: {
 function PolyForm(props: {
   sx?: M.SxProps
 }) {
-  const { schema, uiSchema } = SchemaContext.useContext()
+  const schema = SchemaContext.useContext()
   return (
     <MR.Panel
       sx={props.sx}
@@ -162,8 +162,8 @@ function PolyForm(props: {
             children=" "
             formData={{}}
             readonly={true}
-            schema={schema}
-            uiSchema={uiSchema}
+            schema={schema.schema}
+            uiSchema={schema.uiSchema}
             validator={validator}
           />
         </M.Box>
