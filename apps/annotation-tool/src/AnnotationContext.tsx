@@ -2,8 +2,6 @@ import { Annotation, Batch, type Segment } from "@maipl/api"
 import * as MR from "@maipl/react"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
-import * as S from "./SchemaContext"
-import * as W from "./WorkspaceContext"
 
 type Active = {
   audio: Segment.t_audio
@@ -31,7 +29,7 @@ const defaultContext: Context = {
 
 const AnnotationContext = R.createContext(defaultContext)
 
-export function AnnotationContextProvider(props: {
+export function Provider(props: {
   batchId: number
   segmentId: number
   children: R.ReactNode
@@ -96,6 +94,7 @@ export function AnnotationContextProvider(props: {
   // loaded
   return (
     <AnnotationContext.Provider
+      children={props.children}
       value={{
         batch: batch.data,
         audio: audio.data,
@@ -108,14 +107,10 @@ export function AnnotationContextProvider(props: {
           segment: activeSegment,
         },
       }}
-    >
-      <S.SchemaContextProvider jsonSchema={batch.data.annotation_file_text}>
-        <W.WorkspaceContextProvider children={props.children} />
-      </S.SchemaContextProvider>
-    </AnnotationContext.Provider>
+    />
   )
 }
 
-export function useAnnotationContext() {
+export function useContext() {
   return R.useContext(AnnotationContext)
 }

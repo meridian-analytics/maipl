@@ -8,19 +8,18 @@ import * as R from "react"
 import * as RR from "react-router-dom"
 import * as Specviz from "specviz-react"
 import * as Audio from "specviz-react/audio"
-import * as Axis from "specviz-react/axis"
 import * as Format from "specviz-react/format"
 import * as Z from "zod"
-import * as A from "./AnnotationContext"
+import * as AnnotationContext from "./AnnotationContext"
 import AnnotationFilters from "./AnnotationFilters"
 import AnnotationForm from "./AnnotationForm"
 import AnnotationList from "./AnnotationList"
 import AudioControls from "./AudioControls"
-import * as AudioFocus from "./AudioFocus"
+import * as FilterContext from "./FilterContext"
 import Keybinds from "./Keybinds"
+import * as SchemaContext from "./SchemaContext"
 import SegmentList from "./SegmentList"
 import ToolPalette from "./ToolPalette"
-import * as W from "./WorkspaceContext"
 
 export function LoadFromBatchId() {
   const maipl = MR.useMaipl()
@@ -47,29 +46,29 @@ export function LoadFromBatchIdAndSegmentId() {
   const batchId = Z.coerce.number().parse(params["batchId"])
   const segmentId = Z.coerce.number().parse(params["segmentId"])
   return (
-    <A.AnnotationContextProvider batchId={batchId} segmentId={segmentId}>
+    <AnnotationContext.Provider batchId={batchId} segmentId={segmentId}>
       <AnnotationTool />
-    </A.AnnotationContextProvider>
+    </AnnotationContext.Provider>
   )
 }
 
 const panelStyle: M.SxProps = { height: "35vh", overflow: "auto" }
 
 function AnnotationTool() {
-  const ctx = A.useAnnotationContext()
+  const ctx = AnnotationContext.useContext()
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
-  const workspace = W.useWorkspace()
+  const region = Specviz.RegionContext.useContext()
   const queryClient = RQ.useQueryClient()
   const axes: Specviz.Axes = R.useMemo(() => {
     return {
-      seconds: Axis.linear(
+      seconds: Specviz.AxisContext.linear(
         ctx.active.segment.start,
         ctx.active.segment.end,
         "seconds",
         Format.timestamp,
       ),
-      hertz: Axis.linear(
+      hertz: Specviz.AxisContext.linear(
         ctx.batch.parameters.freq_max,
         ctx.batch.parameters.freq_min,
         "hertz",
@@ -117,10 +116,10 @@ function AnnotationTool() {
         maipl.client,
         ctx.batch.id,
         ctx.active.segment.id,
-        Array.from(workspace.state.regions.values(), region => ({
-          id: region.id,
+        Array.from(region.regions.values(), r => ({
+          id: r.id,
           created_at: new Date(),
-          region,
+          region: r,
         })),
       ])
     }
@@ -129,83 +128,86 @@ function AnnotationTool() {
   const [showFilters, setShowFilters] = R.useState(false)
 
   return (
-    <Audio.Provider url={ctx.active.audio.audio}>
-      <AudioFocus.Provider>
-        <Specviz.Provider
-          axes={axes}
-          regions={workspace.filteredRegions}
-          selection={workspace.state.selection}
-          setRegions={s => workspace.dispatch(W.actions.setRegions(s))}
-          setSelection={s => workspace.dispatch(W.actions.setSelection(s))}
-        >
-          <Grid
-            container
-            sx={{
-              maxHeight: "100%",
-              overflow: "hidden",
-            }}
-          >
-            <Grid xs={12}>
-              <M.Stack direction="row">
-                <M.Typography variant="h5">{ctx.batch.batch_name}</M.Typography>
-                <M.Stack flexGrow={1} />
-                <MR.ActionButton
-                  children={<I.Save />}
-                  disabled={saveMutation.isPending}
-                  onClick={() => onSave()}
-                  title="Save Batch"
-                />
-              </M.Stack>
-            </Grid>
-            <Grid xs={12}>
-              <VisualizationTool />
-            </Grid>
-            <Grid xs={4}>
-              <SegmentList sx={panelStyle} />
-            </Grid>
-            <Grid xs={4}>
-              {showFilters ? (
-                <AnnotationFilters
-                  setShowFilters={setShowFilters}
-                  sx={panelStyle}
-                />
-              ) : (
-                <AnnotationList
-                  setShowFilters={setShowFilters}
-                  sx={panelStyle}
-                />
-              )}
-            </Grid>
-            <Grid xs={4}>
-              <AnnotationForm sx={panelStyle} />
-            </Grid>
-          </Grid>
-        </Specviz.Provider>
-      </AudioFocus.Provider>
-    </Audio.Provider>
+    <SchemaContext.Provider jsonSchema={ctx.batch.annotation_file_text}>
+      <Audio.Provider url={ctx.active.audio.audio}>
+        <Specviz.InputProvider>
+          <Specviz.AxisProvider value={axes}>
+            <Specviz.RegionProvider
+              initRegions={() =>
+                new Map(ctx.annotations.map(a => [a.id, a.region]))
+              }
+            >
+              <FilterContext.Provider>
+                <Specviz.FocusProvider>
+                  <Specviz.ViewportProvider>
+                    <Specviz.ToolProvider>
+                      <Grid
+                        container
+                        sx={{
+                          maxHeight: "100%",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <Grid xs={12}>
+                          <M.Stack direction="row">
+                            <M.Typography variant="h5">
+                              {ctx.batch.batch_name}
+                            </M.Typography>
+                            <M.Stack flexGrow={1} />
+                            <MR.ActionButton
+                              children={<I.Save />}
+                              disabled={saveMutation.isPending}
+                              onClick={() => onSave()}
+                              title="Save Batch"
+                            />
+                          </M.Stack>
+                        </Grid>
+                        <Grid xs={12}>
+                          <VisualizationTool />
+                        </Grid>
+                        <Grid xs={4}>
+                          <SegmentList sx={panelStyle} />
+                        </Grid>
+                        <Grid xs={4}>
+                          {showFilters ? (
+                            <AnnotationFilters
+                              setShowFilters={setShowFilters}
+                              sx={panelStyle}
+                            />
+                          ) : (
+                            <AnnotationList
+                              setShowFilters={setShowFilters}
+                              sx={panelStyle}
+                            />
+                          )}
+                        </Grid>
+                        <Grid xs={4}>
+                          <AnnotationForm sx={panelStyle} />
+                        </Grid>
+                      </Grid>
+                    </Specviz.ToolProvider>
+                  </Specviz.ViewportProvider>
+                </Specviz.FocusProvider>
+              </FilterContext.Provider>
+            </Specviz.RegionProvider>
+          </Specviz.AxisProvider>
+        </Specviz.InputProvider>
+      </Audio.Provider>
+    </SchemaContext.Provider>
   )
 }
 
 function VisualizationTool() {
-  const ctx = A.useAnnotationContext()
-  const axis = Axis.useContext()
-  const seconds = axis["seconds"]
-  const hertz = axis["hertz"]
-  if (seconds == null) throw Error("axis not found: seconds")
-  if (hertz == null) throw Error("axis not found: hertz")
+  const ctx = AnnotationContext.useContext()
   return (
     <M.Stack>
-      <Specviz.Navigator
-        src={ctx.active.image.image}
-        xaxis={seconds}
-        yaxis={hertz}
-      />
-      <Specviz.Visualization
-        children={MyAnnotationSvg}
-        src={ctx.active.image.image}
-        xaxis={seconds}
-        yaxis={hertz}
-      />
+      <Specviz.PlaneProvider xaxis="seconds" yaxis="hertz">
+        <Specviz.Navigator src={ctx.active.image.image} />
+        <Specviz.Visualization
+          children={MyAnnotationSvg}
+          src={ctx.active.image.image}
+        />
+      </Specviz.PlaneProvider>
       <M.Stack direction="row" flexShrink={0}>
         <AudioControls direction="row" />
         <M.Stack flexGrow={1} />

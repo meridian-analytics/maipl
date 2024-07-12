@@ -2,9 +2,9 @@ import * as F from "@maipl/format"
 import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
-import type * as Specviz from "specviz-react"
-import * as S from "./SchemaContext"
-import * as W from "./WorkspaceContext"
+import * as Specviz from "specviz-react"
+import * as FilterContext from "./FilterContext"
+import * as SchemaContext from "./SchemaContext"
 
 export default function AnnotationList(props: {
   setShowFilters: (state: boolean) => void
@@ -13,15 +13,15 @@ export default function AnnotationList(props: {
   function order(a: Specviz.Region, b: Specviz.Region) {
     return a.x == b.x ? a.y - b.y : a.x - b.x
   }
-  const labels = S.useLabels()
-  const workspace = W.useWorkspace()
+  const filter = FilterContext.useContext()
+  const labels = SchemaContext.useLabels()
+  const regions = Specviz.useRegion()
   return (
     <MR.Panel
       sx={props.sx}
-      title={`Annotations (${workspace.filteredRegions.size} /
-            ${workspace.state.regions.size})`}
+      title={`Annotations (${regions.transformedRegions.size} / ${regions.regions.size})`}
       actions={
-        Object.keys(workspace.state.filters).length > 0
+        Object.keys(filter.filters).length > 0
           ? [
               <MR.ActionButton
                 key="0"
@@ -32,7 +32,7 @@ export default function AnnotationList(props: {
               <MR.ActionButton
                 key="1"
                 children={<I.FilterListOff color="warning" />}
-                onClick={() => workspace.dispatch(W.actions.resetFilters())}
+                onClick={() => filter.dispatch(FilterContext.resetFilters())}
                 title="Reset Filters"
               />,
             ]
@@ -47,21 +47,17 @@ export default function AnnotationList(props: {
       }
       contents={
         <M.List disablePadding>
-          {Array.from(workspace.filteredRegions.values())
+          {Array.from(regions.transformedRegions.values())
             .sort(order)
             .map(region => (
               <M.ListItem disablePadding key={region.id}>
                 <M.ListItemButton
-                  selected={workspace.state.selection.has(region.id)}
-                  onClick={() =>
-                    workspace.dispatch(
-                      W.actions.setSelection(new Set([region.id])),
-                    )
-                  }
+                  selected={regions.transformedSelection.has(region.id)}
+                  onClick={() => regions.setSelection(new Set([region.id]))}
                 >
                   <M.ListItemText
                     primary={labels.lookup(
-                      W.rjsfCheckboxesBugfix(region["label"]),
+                      FilterContext.rjsfCheckboxesBugfix(region["label"]),
                     )}
                     secondary={F.duration(region.x, region.x + region.width)}
                   />

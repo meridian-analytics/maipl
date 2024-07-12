@@ -116,12 +116,14 @@ const defaultContext: MaiplSchema = {
   uiSchema: {},
 }
 
-const SchemaContext = R.createContext<MaiplSchema>(defaultContext)
+const Context = R.createContext<MaiplSchema>(defaultContext)
 
-export function SchemaContextProvider(props: {
+export type ProviderProps = {
   jsonSchema: string
   children: R.ReactNode
-}) {
+}
+
+export function Provider(props: ProviderProps) {
   const schema = R.useMemo<MaiplSchema>(() => {
     try {
       return MaiplSchemaFromJson.parse(props.jsonSchema)
@@ -132,11 +134,11 @@ export function SchemaContextProvider(props: {
       return defaultContext
     }
   }, [props.jsonSchema])
-  return <SchemaContext.Provider value={schema} children={props.children} />
+  return <Context.Provider value={schema} children={props.children} />
 }
 
-export function useSchema() {
-  return R.useContext(SchemaContext)
+export function useContext() {
+  return R.useContext(Context)
 }
 
 type UseLabelsHook = {
@@ -144,7 +146,7 @@ type UseLabelsHook = {
 }
 
 export function useLabels(): UseLabelsHook {
-  const { schema } = useSchema()
+  const { schema } = useContext()
   const labels = R.useMemo(() => {
     const res: Map<string, string> = new Map()
     const label = schema.properties["label"]
