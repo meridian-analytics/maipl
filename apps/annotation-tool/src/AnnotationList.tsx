@@ -14,12 +14,11 @@ export default function AnnotationList(props: {
     return a.x == b.x ? a.y - b.y : a.x - b.x
   }
   const filter = FilterContext.useContext()
-  const schema = SchemaContext.useContext()
-  const regions = Specviz.useRegion()
+  const region = Specviz.useRegion()
   return (
     <MR.Panel
       sx={props.sx}
-      title={`Annotations (${regions.transformedRegions.size} / ${regions.regions.size})`}
+      title={`Annotations (${region.transformedRegions.size} / ${region.regions.size})`}
       actions={
         Object.keys(filter.filters).length > 0
           ? [
@@ -47,25 +46,33 @@ export default function AnnotationList(props: {
       }
       contents={
         <M.List disablePadding>
-          {Array.from(regions.transformedRegions.values())
+          {Array.from(region.transformedRegions.values())
             .sort(order)
-            .map(region => (
-              <M.ListItem disablePadding key={region.id}>
-                <M.ListItemButton
-                  selected={regions.transformedSelection.has(region.id)}
-                  onClick={() => regions.setSelection(new Set([region.id]))}
-                >
-                  <M.ListItemText
-                    primary={schema.getLabel(
-                      FilterContext.rjsfCheckboxesBugfix(region["label"]),
-                    )}
-                    secondary={F.duration(region.x, region.x + region.width)}
-                  />
-                </M.ListItemButton>
-              </M.ListItem>
+            .map(r => (
+              <AnnotationListItem key={r.id} {...r} />
             ))}
         </M.List>
       }
     />
+  )
+}
+
+export function AnnotationListItem(props: Specviz.Region) {
+  const schema = SchemaContext.useContext()
+  const region = Specviz.useRegion()
+  return (
+    <M.ListItem disablePadding key={props.id}>
+      <M.ListItemButton
+        selected={region.transformedSelection.has(props.id)}
+        onClick={() => region.setSelection(new Set([props.id]))}
+      >
+        <M.ListItemText
+          primary={schema.getLabel(
+            FilterContext.rjsfCheckboxesBugfix(props["label"]),
+          )}
+          secondary={F.duration(props.x, props.x + props.width)}
+        />
+      </M.ListItemButton>
+    </M.ListItem>
   )
 }
