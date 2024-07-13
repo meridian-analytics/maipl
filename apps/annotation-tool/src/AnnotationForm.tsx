@@ -102,10 +102,7 @@ function MonoForm(props: {
             children=" "
             formData={region}
             onChange={e =>
-              // todo: add Speviz.Region.update command
-              regions.setRegions(prev =>
-                new Map(prev).set(region.id, { ...region, ...e.formData }),
-              )
+              regions.updateRegion(region.id, { ...region, ...e.formData })
             }
             readonly={false}
             schema={schema.schema}

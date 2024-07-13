@@ -52,6 +52,118 @@ export function LoadFromBatchIdAndSegmentId() {
   )
 }
 
+function BaseToolProvider(props: { children: R.ReactNode }) {
+  const audio = Audio.useContext()
+  const actions: Specviz.ToolContext.Actions = R.useMemo(
+    () => ({
+      onContextMenu: (unit, rel, abs, xaxis, yaxis) => {
+        console.log("onContextMenu", unit, rel, abs, xaxis, yaxis)
+        audio.transport.seek(unit.x)
+      },
+    }),
+    [audio.transport.seek],
+  )
+  return <Specviz.ToolProvider actions={actions} children={props.children} />
+}
+
+function NavigatorToolProvider(props: { children: R.ReactNode }) {
+  const viewport = Specviz.useViewport()
+  const fn: Specviz.ToolContext.TransformProps["fn"] = R.useCallback(
+    tool => ({
+      onClick: (unit, rel, abs, xaxis, yaxis) => {
+        switch (tool) {
+          case "annotate":
+          case "select":
+          case "pan":
+            viewport.scrollTo({
+              x: rel.x * viewport.state.zoom.x - 0.5,
+              y: rel.y * viewport.state.zoom.y - 0.5,
+            })
+            break
+          case "zoom":
+            viewport.resetView()
+            break
+        }
+      },
+      onMove: (dx, dy) => {
+        viewport.scroll(dx * viewport.state.zoom.x, dy * viewport.state.zoom.y)
+      },
+    }),
+    [
+      viewport.resetView,
+      viewport.scroll,
+      viewport.scrollTo,
+      viewport.state.zoom.x,
+      viewport.state.zoom.y,
+    ],
+  )
+  return <Specviz.ToolContext.Transform children={props.children} fn={fn} />
+}
+
+function VisualizationToolProvider(props: { children: R.ReactNode }) {
+  const region = Specviz.useRegion()
+  const viewport = Specviz.useViewport()
+  const fn: Specviz.ToolContext.TransformProps["fn"] = R.useCallback(
+    tool => {
+      switch (tool) {
+        case "annotate":
+          return {
+            onClick: (unit, rel, abs, xaxis, yaxis) => {
+              region.selectPoint(abs)
+            },
+            onRect: (unit, rel, abs, xaxis, yaxis) => {
+              region.annotate(unit, xaxis, yaxis)
+            },
+          }
+        case "select":
+          return {
+            onClick: (unit, rel, abs, xaxis, yaxis) => {
+              region.selectPoint(abs)
+            },
+            onRect: (unit, rel, abs, xaxis, yaxis) => {
+              region.selectArea(abs)
+            },
+          }
+        case "zoom":
+          return {
+            onClick: (unit, rel, abs, xaxis, yaxis) => {
+              viewport.zoomPoint(abs)
+            },
+            onRect: (unit, rel, abs, xaxis, yaxis) => {
+              viewport.zoomArea(abs)
+            },
+          }
+        case "pan":
+          return {
+            onMove: (dx, dy) => {
+              if (region.selection.size == 0) {
+                viewport.scroll(-dx, -dy)
+              } else {
+                region.moveSelection(
+                  dx / viewport.state.zoom.x,
+                  dy / viewport.state.zoom.y,
+                )
+              }
+            },
+          }
+      }
+    },
+    [
+      region.annotate,
+      region.moveSelection,
+      region.selectArea,
+      region.selectPoint,
+      region.selection,
+      viewport.scroll,
+      viewport.state.zoom.x,
+      viewport.state.zoom.y,
+      viewport.zoomArea,
+      viewport.zoomPoint,
+    ],
+  )
+  return <Specviz.ToolContext.Transform children={props.children} fn={fn} />
+}
+
 const panelStyle: M.SxProps = { height: "35vh", overflow: "auto" }
 
 function AnnotationTool() {
@@ -93,7 +205,7 @@ function AnnotationTool() {
               <FilterContext.Provider>
                 <Specviz.FocusProvider>
                   <Specviz.ViewportProvider>
-                    <Specviz.ToolProvider>
+                    <BaseToolProvider>
                       <Grid
                         container
                         sx={{
@@ -133,7 +245,7 @@ function AnnotationTool() {
                           <AnnotationForm sx={panelStyle} />
                         </Grid>
                       </Grid>
-                    </Specviz.ToolProvider>
+                    </BaseToolProvider>
                   </Specviz.ViewportProvider>
                 </Specviz.FocusProvider>
               </FilterContext.Provider>
@@ -150,11 +262,15 @@ function VisualizationTool() {
   return (
     <M.Stack>
       <Specviz.PlaneProvider xaxis="seconds" yaxis="hertz">
-        <Specviz.Navigator src={ctx.active.image.image} />
-        <Specviz.Visualization
-          children={MyAnnotationSvg}
-          src={ctx.active.image.image}
-        />
+        <NavigatorToolProvider>
+          <Specviz.Navigator src={ctx.active.image.image} />
+        </NavigatorToolProvider>
+        <VisualizationToolProvider>
+          <Specviz.Visualization
+            children={MyAnnotationSvg}
+            src={ctx.active.image.image}
+          />
+        </VisualizationToolProvider>
       </Specviz.PlaneProvider>
       <M.Stack direction="row" flexShrink={0}>
         <AudioControls direction="row" />
