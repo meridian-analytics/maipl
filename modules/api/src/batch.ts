@@ -34,12 +34,14 @@ type t = {
   parameters: t_parameters
   /** Batch progress */
   progress: number
+  /** Batch role */
+  role: null | t_role
   /** Segment parameters */
   segment_parameters: t_segment_parameters
   /** List of segment identifiers */
   segments: Array<number>
   /** Batch share */
-  shared_to: [User.t, t_role][]
+  shared_to: [User.t, t_role_code][]
   /** Batch owner */
   user_id: number
   /** celery task, for processing */
@@ -101,14 +103,14 @@ enum t_celery_status {
   success = "SUCCESS",
 }
 
-/**
- * Batch.t_role:
- *
- * The backend uses a unique numeric id for each role.
- *
- * The labels are cosmetic, for front-end use only
- */
-enum t_role {
+/** Batch.t_role */
+type t_role = {
+  name: string
+  code: t_role_code
+}
+
+/** Batch.t_role_code */
+enum t_role_code {
   unassigned = 0,
   viewer = 1,
   contributor = 2,
@@ -421,6 +423,7 @@ export {
   type t_list_response,
   type t_parameters,
   type t_process_response,
+  type t_role,
   type t_segment_parameters,
   type t_update_request,
   audios,
@@ -435,7 +438,7 @@ export {
   segments,
   status,
   t_filter_shared, // enum
-  t_role, // enum
+  t_role_code, // enum
   t_status, // enum
   update,
 }
