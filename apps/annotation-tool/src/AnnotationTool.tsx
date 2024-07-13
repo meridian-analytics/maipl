@@ -56,10 +56,6 @@ const panelStyle: M.SxProps = { height: "35vh", overflow: "auto" }
 
 function AnnotationTool() {
   const ctx = AnnotationContext.useContext()
-  const maipl = MR.useMaipl()
-  const notify = MR.useNotify()
-  const region = Specviz.RegionContext.useContext()
-  const queryClient = RQ.useQueryClient()
   const axes: Specviz.Axes = R.useMemo(() => {
     return {
       seconds: Specviz.AxisContext.linear(
@@ -81,49 +77,6 @@ function AnnotationTool() {
     ctx.batch.parameters.freq_max,
     ctx.batch.parameters.freq_min,
   ])
-
-  const saveMutation = RQ.useMutation({
-    mutationFn: (vars: Parameters<typeof Annotation.updateSegment>) =>
-      Annotation.updateSegment(...vars),
-    onError: (err, vars) => {
-      notify(onClose => (
-        <M.Alert onClose={onClose} severity="error">
-          Error: Could not save annotations
-        </M.Alert>
-      ))
-      if (import.meta.env["DEV"]) {
-        console.error("AnnotationTool saveMutation error", err, vars)
-      }
-    },
-    onSettled: () => {
-      saveMutation.reset()
-    },
-    onSuccess: segments => {
-      notify(onClose => (
-        <M.Alert onClose={onClose} severity="success">
-          Success: Saved {segments.length} annotations
-        </M.Alert>
-      ))
-      queryClient.refetchQueries({
-        queryKey: ["annotations", ctx.active.segment.id],
-      })
-    },
-  })
-
-  const onSave = () => {
-    if (saveMutation.isIdle && ctx.active.segment != null) {
-      return saveMutation.mutateAsync([
-        maipl.client,
-        ctx.batch.id,
-        ctx.active.segment.id,
-        Array.from(region.regions.values(), r => ({
-          id: r.id,
-          created_at: new Date(),
-          region: r,
-        })),
-      ])
-    }
-  }
 
   const [showFilters, setShowFilters] = R.useState(false)
 
@@ -154,12 +107,7 @@ function AnnotationTool() {
                               {ctx.batch.batch_name}
                             </M.Typography>
                             <M.Stack flexGrow={1} />
-                            <MR.ActionButton
-                              children={<I.Save />}
-                              disabled={saveMutation.isPending}
-                              onClick={() => onSave()}
-                              title="Save Batch"
-                            />
+                            <SaveButton />
                           </M.Stack>
                         </Grid>
                         <Grid xs={12}>
@@ -243,5 +191,62 @@ function MyAnnotationSvg(props: Specviz.AnnotationProps) {
         />
       ))}
     </R.Fragment>
+  )
+}
+
+function SaveButton() {
+  const ctx = AnnotationContext.useContext()
+  const maipl = MR.useMaipl()
+  const notify = MR.useNotify()
+  const region = Specviz.RegionContext.useContext()
+  const queryClient = RQ.useQueryClient()
+  const saveMutation = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof Annotation.updateSegment>) =>
+      Annotation.updateSegment(...vars),
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not save annotations
+        </M.Alert>
+      ))
+      if (import.meta.env["DEV"]) {
+        console.error("AnnotationTool saveMutation error", err, vars)
+      }
+    },
+    onSettled: () => {
+      saveMutation.reset()
+    },
+    onSuccess: segments => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: Saved {segments.length} annotations
+        </M.Alert>
+      ))
+      queryClient.refetchQueries({
+        queryKey: ["annotations", ctx.active.segment.id],
+      })
+    },
+  })
+  const onSave = () => {
+    if (saveMutation.isIdle && ctx.active.segment != null) {
+      return saveMutation.mutateAsync([
+        maipl.client,
+        ctx.batch.id,
+        ctx.active.segment.id,
+        Array.from(region.regions.values(), r => ({
+          id: r.id,
+          created_at: new Date(),
+          region: r,
+        })),
+      ])
+    }
+  }
+  return (
+    <MR.ActionButton
+      children={<I.Save />}
+      disabled={saveMutation.isPending}
+      onClick={() => onSave()}
+      title="Save Batch"
+    />
   )
 }
