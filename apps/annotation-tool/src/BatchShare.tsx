@@ -78,9 +78,7 @@ export default function BatchShare(props: BatchShareProps) {
       {props.users.map(user => (
         <M.Stack direction="row" key={user.id}>
           <MR.UserAvatar user={user} />
-          <M.Typography flexGrow={1}>
-            {user.email} {user.id}
-          </M.Typography>
+          <M.Typography flexGrow={1}>{user.email}</M.Typography>
           {columns.map(role => (
             <M.Box key={role} sx={{ width: colWidth }}>
               <M.Radio name={user.email} {...radioState(user.id, role)} />
