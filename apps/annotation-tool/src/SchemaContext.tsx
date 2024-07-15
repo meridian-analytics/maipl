@@ -121,6 +121,13 @@ const defaultContext: Context = {
         ],
         type: "string",
       },
+      score: {
+        default: 0,
+        maximum: 1,
+        minimum: 0,
+        title: "Score",
+        type: "number",
+      },
     },
     type: "object",
   },
