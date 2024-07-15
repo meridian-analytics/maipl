@@ -16,15 +16,17 @@ type Context = {
   segments: Segment.t[]
   annotations: Annotation.t[]
   active: Active
+  role: Batch.t_role_code
 }
 
 const defaultContext: Context = {
-  batch: undefined as unknown as Batch.t,
+  batch: null as unknown as Batch.t,
   audio: new Map(),
   image: new Map(),
   segments: [],
   annotations: [],
   active: null as unknown as Active,
+  role: Batch.t_role_code.unassigned,
 }
 
 const AnnotationContext = R.createContext(defaultContext)
@@ -83,6 +85,14 @@ export function Provider(props: {
   if (audio.data.size == 0) return <p>Audios not found</p>
   if (image.data.size == 0) return <p>Images not found</p>
   if (segments.data.length == 0) return <p>Segments not found</p>
+  // role
+  const role =
+    batch.data.role == null
+      ? batch.data.user_id == maipl.user?.id
+        ? Batch.t_role_code.owner
+        : Batch.t_role_code.unassigned
+      : batch.data.role.code
+  if (role == Batch.t_role_code.unassigned) return <p>Not assigned to batch</p>
   // dereference active objects
   const activeAudio = audio.data.get(props.segmentId)
   const activeImage = image.data.get(props.segmentId)
@@ -106,6 +116,7 @@ export function Provider(props: {
           image: activeImage,
           segment: activeSegment,
         },
+        role,
       }}
     />
   )

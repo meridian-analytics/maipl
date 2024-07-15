@@ -140,6 +140,7 @@ type t_create_request = {
   import_file: null | number
   parameters: t_parameters
   segment_parameters: t_segment_parameters
+  shared_to?: t_share_change[]
 }
 
 /** Batch.t_create_response */
@@ -324,6 +325,10 @@ const list = async (
     data: response.data.map(item => ({
       ...item,
       created_at: new Date(item.created_at),
+      role: item.role && {
+        ...item.role,
+        code: Number.parseInt(String(item.role.code)), // bug: backend sending string
+      },
     })),
   }
 }
@@ -338,6 +343,10 @@ const get = async (client: Client.t, id: number): Promise<t> => {
   return {
     ...response,
     created_at: new Date(response.created_at),
+    role: response.role && {
+      ...response.role,
+      code: Number.parseInt(String(response.role.code)), // bug: backend sending string
+    },
   }
 }
 

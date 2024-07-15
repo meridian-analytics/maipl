@@ -92,6 +92,7 @@ function MonoForm(props: {
         <MR.ActionButton
           key="1"
           children={<I.DeleteForever />}
+          disabled={!regions.canDelete(region)}
           onClick={regions.delete}
           title="Delete Annotation"
         />,
@@ -104,7 +105,7 @@ function MonoForm(props: {
             onChange={e =>
               regions.updateRegion(region.id, { ...region, ...e.formData })
             }
-            readonly={false}
+            readonly={!regions.canUpdate(region)}
             schema={schema.schema}
             uiSchema={{
               ...schema.uiSchema,

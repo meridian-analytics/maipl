@@ -164,6 +164,85 @@ function VisualizationToolProvider(props: { children: R.ReactNode }) {
   return <Specviz.ToolContext.Transform children={props.children} fn={fn} />
 }
 
+type MaiplRegionProviderProps = {
+  children: R.ReactNode
+}
+
+function MaiplRegionProvider(props: MaiplRegionProviderProps) {
+  const ctx = AnnotationContext.useContext()
+  const maipl = MR.useMaipl()
+  const canCreate: Specviz.RegionContext.Context["canCreate"] =
+    R.useMemo(() => {
+      switch (ctx.role) {
+        case Batch.t_role_code.unassigned:
+        case Batch.t_role_code.viewer:
+          return false
+        case Batch.t_role_code.contributor:
+        case Batch.t_role_code.collaborator:
+        case Batch.t_role_code.owner:
+          return true
+      }
+    }, [ctx.role])
+  const canDelete: Specviz.RegionContext.Context["canDelete"] = R.useCallback(
+    region => {
+      switch (ctx.role) {
+        case Batch.t_role_code.unassigned:
+        case Batch.t_role_code.viewer:
+          return false
+        case Batch.t_role_code.contributor:
+          return region["user_id"] == maipl.user?.id
+        case Batch.t_role_code.collaborator:
+        case Batch.t_role_code.owner:
+          return true
+      }
+    },
+    [ctx.role, maipl.user?.id],
+  )
+  const canRead: Specviz.RegionContext.Context["canRead"] = R.useCallback(
+    region => {
+      switch (ctx.role) {
+        case Batch.t_role_code.unassigned:
+          return false
+        case Batch.t_role_code.contributor:
+          return (
+            region["user_id"] == ctx.batch.user_id ||
+            region["user_id"] == maipl.user?.id
+          )
+        case Batch.t_role_code.viewer:
+        case Batch.t_role_code.collaborator:
+        case Batch.t_role_code.owner:
+          return true
+      }
+    },
+    [ctx.role, ctx.batch.user_id, maipl.user?.id],
+  )
+  const canUpdate: Specviz.RegionContext.Context["canUpdate"] = R.useCallback(
+    region => {
+      switch (ctx.role) {
+        case Batch.t_role_code.unassigned:
+        case Batch.t_role_code.viewer:
+          return false
+        case Batch.t_role_code.contributor:
+          return region["user_id"] == maipl.user?.id
+        case Batch.t_role_code.collaborator:
+        case Batch.t_role_code.owner:
+          return true
+      }
+    },
+    [ctx.role, maipl.user?.id],
+  )
+  return (
+    <Specviz.RegionProvider
+      canCreate={canCreate}
+      canDelete={canDelete}
+      canRead={canRead}
+      canUpdate={canUpdate}
+      children={props.children}
+      initRegions={() => new Map(ctx.annotations.map(a => [a.id, a.region]))}
+    />
+  )
+}
+
 const panelStyle: M.SxProps = { height: "35vh", overflow: "auto" }
 
 function AnnotationTool() {
@@ -197,11 +276,7 @@ function AnnotationTool() {
       <Audio.Provider url={ctx.active.audio.audio}>
         <Specviz.InputProvider>
           <Specviz.AxisProvider value={axes}>
-            <Specviz.RegionProvider
-              initRegions={() =>
-                new Map(ctx.annotations.map(a => [a.id, a.region]))
-              }
-            >
+            <MaiplRegionProvider>
               <FilterContext.Provider>
                 <Specviz.FocusProvider>
                   <Specviz.ViewportProvider>
@@ -249,7 +324,7 @@ function AnnotationTool() {
                   </Specviz.ViewportProvider>
                 </Specviz.FocusProvider>
               </FilterContext.Provider>
-            </Specviz.RegionProvider>
+            </MaiplRegionProvider>
           </Specviz.AxisProvider>
         </Specviz.InputProvider>
       </Audio.Provider>
@@ -344,23 +419,25 @@ function SaveButton() {
     },
   })
   const onSave = () => {
-    if (saveMutation.isIdle && ctx.active.segment != null) {
-      return saveMutation.mutateAsync([
-        maipl.client,
-        ctx.batch.id,
-        ctx.active.segment.id,
-        Array.from(region.regions.values(), r => ({
-          id: r.id,
-          created_at: new Date(),
-          region: r,
-        })),
-      ])
-    }
+    if (ctx.active.segment == null) return
+    if (!region.canCreate) return
+    if (saveMutation.isPending) return
+    // acl: todo: batch patch action to save only own annotations
+    return saveMutation.mutateAsync([
+      maipl.client,
+      ctx.batch.id,
+      ctx.active.segment.id,
+      Array.from(region.regions.values(), r => ({
+        id: r.id,
+        created_at: new Date(),
+        region: r,
+      })),
+    ])
   }
   return (
     <MR.ActionButton
       children={<I.Save />}
-      disabled={saveMutation.isPending}
+      disabled={saveMutation.isPending || !region.canCreate}
       onClick={() => onSave()}
       title="Save Batch"
     />
