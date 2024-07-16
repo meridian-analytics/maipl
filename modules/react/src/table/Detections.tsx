@@ -63,15 +63,14 @@ function useQuery(filter?: Detection.t_list_request) {
   return RQ.useQuery({
     queryKey: ["detections", "list", filter],
     queryFn: () => Detection.list(client, filter),
-    initialData: () =>
-      ({
-        data: [],
-        page: 1,
-        size: filter?.size ?? 100,
-        count: 0,
-        prev: null,
-        next: null,
-      }) as t_page<Detection.t>,
+    initialData: (): t_page<Detection.t> => ({
+      data: [],
+      page: 1,
+      size: filter?.size ?? 100,
+      count: 0,
+      prev: null,
+      next: null,
+    }),
   })
 }
 
