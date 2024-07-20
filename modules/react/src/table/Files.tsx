@@ -67,15 +67,14 @@ function useQuery(props: File.t_list_request) {
     enabled: user != null,
     queryKey: ["files", "list", props],
     queryFn: () => File.list(client, props),
-    initialData: () =>
-      ({
-        data: [],
-        page: 1,
-        size: props.size,
-        count: 0,
-        prev: null,
-        next: null,
-      }) as t_page<File.t>,
+    initialData: (): t_page<File.t> => ({
+      data: [],
+      page: 1,
+      size: props.size ?? 100,
+      count: 0,
+      prev: null,
+      next: null,
+    }),
   })
 }
 

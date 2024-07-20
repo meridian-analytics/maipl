@@ -1,13 +1,13 @@
 import * as F from "@maipl/format"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import * as A from "./AnnotationContext"
+import * as AnnotationContext from "./AnnotationContext"
 import Panel from "./Panel"
 
 export default function SegmentList(props: {
   sx?: M.SxProps
 }) {
-  const ctx = A.useAnnotationContext()
+  const ctx = AnnotationContext.useContext()
   return (
     <Panel
       title={`Segments (${ctx.segments.length})`}

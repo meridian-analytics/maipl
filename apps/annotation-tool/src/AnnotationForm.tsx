@@ -6,15 +6,13 @@ import validator from "@rjsf/validator-ajv8"
 import { ErrorBoundary } from "react-error-boundary"
 import * as Specviz from "specviz-react"
 import * as Audio from "specviz-react/audio"
-import * as AudioFocus from "./AudioFocus"
-import * as S from "./SchemaContext"
-import * as W from "./WorkspaceContext"
+import * as SchemaContext from "./SchemaContext"
 
 export default function AnnotationForm(props: {
   sx?: M.SxProps
 }) {
-  const workspace = W.useWorkspace()
-  const ids = Array.from(workspace.state.selection)
+  const region = Specviz.useRegion()
+  const ids = Array.from(region.selection)
   return (
     <ErrorBoundary
       fallbackRender={({ error }) => <p>Error: {error.message}</p>}
@@ -31,7 +29,7 @@ export default function AnnotationForm(props: {
 }
 
 function NullForm(props: { sx?: M.SxProps }) {
-  const { schema, uiSchema } = S.useSchema()
+  const schema = SchemaContext.useContext()
   return (
     <MR.Panel
       sx={props.sx}
@@ -42,8 +40,8 @@ function NullForm(props: { sx?: M.SxProps }) {
             children=" "
             formData={{}}
             readonly={true}
-            schema={schema}
-            uiSchema={uiSchema}
+            schema={schema.schema}
+            uiSchema={schema.uiSchema}
             validator={validator}
           />
         </M.Box>
@@ -56,12 +54,11 @@ function MonoForm(props: {
   regionId: string
   sx?: M.SxProps
 }) {
-  const workspace = W.useWorkspace()
   const audio = Audio.useContext()
-  const regions = Specviz.useRegions()
-  const focus = AudioFocus.useContext()
-  const region = workspace.state.regions.get(props.regionId)
-  const { schema, uiSchema } = S.useSchema()
+  const regions = Specviz.useRegion()
+  const focus = Specviz.useFocus()
+  const region = regions.regions.get(props.regionId)
+  const schema = SchemaContext.useContext()
   if (region == null)
     return <p>Warning: Selected region is hidden by one or more filters</p>
   return (
@@ -77,7 +74,7 @@ function MonoForm(props: {
             children={<I.Stop />}
             onClick={() => {
               audio.transport.stop()
-              focus.setFocusRegion(null)
+              focus.setFocus(null)
             }}
             title="Stop Annotation"
           />
@@ -86,7 +83,7 @@ function MonoForm(props: {
             key="0"
             children={<I.PlayArrow />}
             onClick={() => {
-              focus.setFocusRegion(region.id)
+              focus.setFocus(region.id)
               audio.transport.play()
             }}
             title="Play Annotation"
@@ -95,6 +92,7 @@ function MonoForm(props: {
         <MR.ActionButton
           key="1"
           children={<I.DeleteForever />}
+          disabled={!regions.canDelete(region)}
           onClick={regions.delete}
           title="Delete Annotation"
         />,
@@ -105,20 +103,15 @@ function MonoForm(props: {
             children=" "
             formData={region}
             onChange={e =>
-              workspace.dispatch(
-                // todo: add Speviz.Region.update command
-                W.actions.setRegions(prev =>
-                  new Map(prev).set(region.id, { ...region, ...e.formData }),
-                ),
-              )
+              regions.updateRegion(region.id, { ...region, ...e.formData })
             }
-            readonly={false}
-            schema={schema}
+            readonly={!regions.canUpdate(region)}
+            schema={schema.schema}
             uiSchema={{
-              ...uiSchema,
+              ...schema.uiSchema,
               score: {
                 "ui:readonly": true,
-                ...uiSchema.score,
+                ...schema.uiSchema.score,
               },
             }}
             validator={validator}
@@ -156,7 +149,7 @@ function MonoForm(props: {
 function PolyForm(props: {
   sx?: M.SxProps
 }) {
-  const { schema, uiSchema } = S.useSchema()
+  const schema = SchemaContext.useContext()
   return (
     <MR.Panel
       sx={props.sx}
@@ -167,8 +160,8 @@ function PolyForm(props: {
             children=" "
             formData={{}}
             readonly={true}
-            schema={schema}
-            uiSchema={uiSchema}
+            schema={schema.schema}
+            uiSchema={schema.uiSchema}
             validator={validator}
           />
         </M.Box>

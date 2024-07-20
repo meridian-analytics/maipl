@@ -47,15 +47,14 @@ function useQuery(props: Batch.t_list_request) {
     enabled: user != null,
     queryKey: ["batches", "list", props],
     queryFn: () => Batch.list(client, props),
-    initialData: () =>
-      ({
-        data: [],
-        page: 1,
-        size: props.size,
-        count: 0,
-        prev: null,
-        next: null,
-      }) as t_page<Batch.t_list_item>,
+    initialData: (): t_page<Batch.t_list_item> => ({
+      data: [],
+      page: 1,
+      size: props.size ?? 100,
+      count: 0,
+      prev: null,
+      next: null,
+    }),
   })
 }
 

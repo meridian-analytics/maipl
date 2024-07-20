@@ -100,7 +100,18 @@ export type JsonSchema = Z.infer<typeof JsonSchema>
 export type UiSchema = Z.infer<typeof UiSchema>
 export type MaiplSchema = Z.infer<typeof MaiplSchema>
 
-const defaultContext: MaiplSchema = {
+export type Context = {
+  getLabel: (key: unknown | unknown[]) => string
+  labels: Map<string, string>
+  schema: JsonSchema
+  uiSchema: UiSchema
+}
+
+const defaultContext: Context = {
+  getLabel: () => {
+    throw Error("lookup called outside ot context provider")
+  },
+  labels: new Map(),
   schema: {
     properties: {
       label: {
@@ -110,43 +121,42 @@ const defaultContext: MaiplSchema = {
         ],
         type: "string",
       },
+      score: {
+        default: 0,
+        maximum: 1,
+        minimum: 0,
+        title: "Score",
+        type: "number",
+      },
     },
     type: "object",
   },
   uiSchema: {},
 }
 
-const SchemaContext = R.createContext<MaiplSchema>(defaultContext)
+const Context = R.createContext(defaultContext)
 
-export function SchemaContextProvider(props: {
+export type ProviderProps = {
   jsonSchema: string
   children: R.ReactNode
-}) {
-  const schema = R.useMemo<MaiplSchema>(() => {
+}
+
+export function Provider(props: ProviderProps) {
+  const { schema, uiSchema } = R.useMemo<MaiplSchema>(() => {
     try {
       return MaiplSchemaFromJson.parse(props.jsonSchema)
     } catch (err) {
       if (import.meta.env["DEV"]) {
         console.warn("SchemaContext parse error. Using default schema", err)
       }
-      return defaultContext
+      return {
+        schema: defaultContext.schema,
+        uiSchema: defaultContext.uiSchema,
+      }
     }
   }, [props.jsonSchema])
-  return <SchemaContext.Provider value={schema} children={props.children} />
-}
-
-export function useSchema() {
-  return R.useContext(SchemaContext)
-}
-
-type UseLabelsHook = {
-  lookup: (key: unknown | unknown[]) => string
-}
-
-export function useLabels(): UseLabelsHook {
-  const { schema } = useSchema()
-  const labels = R.useMemo(() => {
-    const res: Map<string, string> = new Map()
+  const labels = R.useMemo<Context["labels"]>(() => {
+    const res: Context["labels"] = new Map()
     const label = schema.properties["label"]
     if (label) {
       if ("oneOf" in label) {
@@ -164,14 +174,22 @@ export function useLabels(): UseLabelsHook {
     }
     return res
   }, [schema])
-  const lookup: UseLabelsHook["lookup"] = R.useCallback(
+  const getLabel = R.useCallback<Context["getLabel"]>(
     key =>
       Array.isArray(key)
         ? key.length == 0
           ? "(Unlabeled)"
-          : key.map(k => labels.get(k) ?? `(NoLabel ${k})`).join(", ")
+          : key.map(k => labels.get(k as string) ?? `(NoLabel ${k})`).join(", ")
         : labels.get(key as string) ?? `(NoLabel ${key})`,
     [labels],
   )
-  return { lookup }
+  const value = R.useMemo<Context>(
+    () => ({ getLabel, labels, schema, uiSchema }),
+    [getLabel, labels, schema, uiSchema],
+  )
+  return <Context.Provider value={value} children={props.children} />
+}
+
+export function useContext() {
+  return R.useContext(Context)
 }
