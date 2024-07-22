@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { Line } from "react-chartjs-2"
 import {
   Chart as ChartJS,
@@ -23,13 +23,16 @@ ChartJS.register(
   Legend
 )
 
-const MetricsChart = ({ data, xs, files }) => {
+const MetricsChart = ({ metricsData, xs }) => {
+  const { data, files } = metricsData
+
+  const fileIds = Object.keys(data)
+  const metrics = ["Precision", "Recall", "F1-Score"]
+
   const [selectedMetrics, setSelectedMetrics] = useState(["F1-Score"])
   const [selectedFileIds, setSelectedFileIds] = useState([Object.keys(data)[0]])
   const [selectedClasses, setSelectedClasses] = useState([])
 
-  const metrics = ["Precision", "Recall", "F1-Score"]
-  const fileIds = Object.keys(data)
   const classes = [
     ...new Set(
       Object.values(data).flatMap((fileData) => fileData.map((d) => d.class))

@@ -19,7 +19,6 @@ const SideBySideChartIcon = (props) => (
   </M.SvgIcon>
 )
 
-
 const buttonStyle = {
   position: "absolute",
   top: "50%",
@@ -46,12 +45,6 @@ const buttonStyle = {
   fontWeight: "bold",
 }
 
-const yAxises = [
-  { value: "Precision", label: "Precision" },
-  { value: "Recall", label: "Recall" },
-  { value: "F1-Score", label: "F1-Score" },
-]
-
 const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
   const notify = MR.useNotify()
   const queryClient = RQ.useQueryClient()
@@ -59,6 +52,7 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
 
   const [metrics, setMetrics] = R.useState({})
   const [chartsPerRow, setChartsPerRow] = R.useState(1)
+  const [isLoading, setIsLoading] = R.useState(false)
 
   const filesMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Metrics.files>) => {
@@ -73,6 +67,7 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
     },
     onSettled: () => {
       filesMutation.reset()
+      setIsLoading(false)
     },
     onSuccess: (data) => {
       notify((onClose) => (
@@ -80,19 +75,21 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
           Success: Processed metrics
         </M.Alert>
       ))
-      setMetrics(data)
+      setMetrics({ data: data, files: selection })
     },
   })
 
   R.useEffect(() => {
     if (selection.size > 0) {
+      setIsLoading(true)
       const selectedIds = [...selection.keys()]
-      console.log(selectedIds)
       filesMutation.mutateAsync([maipl.client, selectedIds])
     } else {
       setMetrics({})
+      setChartsPerRow(1)
     }
   }, [selection])
+
 
   const ToolArea = () => {
     return (
@@ -112,16 +109,8 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
                 aria-label={`${number} charts per row`}
                 disabled={selection.size === 0}
               >
-                {number === 1 && (
-                  <M.Tooltip title='Single Chart View'>
-                    <SingleChartIcon fontSize='medium' />
-                  </M.Tooltip>
-                )}
-                {number === 2 && (
-                  <M.Tooltip title='Side-by-Side Charts View'>
-                    <SideBySideChartIcon fontSize='medium' />
-                  </M.Tooltip>
-                )}
+                {number === 1 && <SingleChartIcon />}
+                {number === 2 && <SideBySideChartIcon />}
               </M.IconButton>
             ))}
           </M.ButtonGroup>
@@ -153,19 +142,40 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
           overflow: "auto",
         }}
       >
-        {Object.keys(metrics).length !== 0 &&
-          Array.from({ length: chartsPerRow }).map((_, index) => {
-            const gridSize = Math.floor(12 / chartsPerRow)
-            return (
-              <Chart
-                key={index}
-                data={metrics}
-                files={selection}
-                xs={gridSize}
-                isFullWidth={isFullWidth}
-              />
-            )
-          })}
+        {isLoading ? (
+          <M.Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              width: "100%",
+              height: "100%",
+            }}
+          >
+            <M.CircularProgress />
+          </M.Box>
+        ) : Object.keys(metrics).length > 0 ? (
+          <M.Fade in={!isLoading} timeout={500}>
+            <M.Grid container spacing={2}>
+              {Array.from({ length: chartsPerRow }).map((_, index) => {
+                const gridSize = Math.floor(12 / chartsPerRow)
+                return (
+                  <M.Grid item xs={gridSize} key={index}>
+                    <Chart metricsData={metrics} />
+                  </M.Grid>
+                )
+              })}
+            </M.Grid>
+          </M.Fade>
+        ) : (
+          <M.Typography
+            variant='h6'
+            align='center'
+            sx={{ padding: 2, width: "100%" }}
+          >
+            No files selected. Please select a file to display the chart.
+          </M.Typography>
+        )}
       </M.Grid>
       <M.Button onClick={() => setIsFullWidth(!isFullWidth)} sx={buttonStyle}>
         {isFullWidth ? ">" : "<"}
