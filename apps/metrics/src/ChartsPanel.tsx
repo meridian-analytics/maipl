@@ -70,11 +70,6 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
       setIsLoading(false)
     },
     onSuccess: (data) => {
-      notify((onClose) => (
-        <M.Alert onClose={onClose} severity='success'>
-          Success: Processed metrics
-        </M.Alert>
-      ))
       setMetrics({ data: data, files: selection })
     },
   })
