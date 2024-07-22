@@ -39,7 +39,7 @@ export function useTable<T, TID = number>(props?: {
 }
 
 export default function BaseTable<T extends { id: TID }, TID = number>(
-  columns?: Array<RT.ColumnDef<T>>,
+  columns?: Array<RT.ColumnDef<T>>
 ): R.FC<{
   columns?: Array<RT.ColumnDef<T>>
   count?: number
@@ -52,8 +52,11 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
   setSelection: R.Dispatch<R.SetStateAction<SelectionState<T, TID>>>
   sx?: M.SxProps
   visibility?: RT.VisibilityState
+  meta?: {
+    onTagUpdate: (fileId: TID, newTag: string) => void
+  }
 }> {
-  return props => {
+  return (props) => {
     const columnHelper = RT.createColumnHelper<T>()
     const memoColumns = R.useMemo(
       () => [
@@ -61,8 +64,8 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
           id: "select",
           header: ({ table }) => {
             const rows = table.getPaginationRowModel().rows
-            const count = rows.filter(row =>
-              props.selection.has(row.original.id),
+            const count = rows.filter((row) =>
+              props.selection.has(row.original.id)
             ).length
             const checked = count == rows.length
             const indeterminate = count > 0 && count < rows.length
@@ -71,7 +74,7 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
                 checked={checked}
                 indeterminate={indeterminate}
                 onChange={() =>
-                  props.setSelection(prev => {
+                  props.setSelection((prev) => {
                     if (indeterminate) return new Map()
                     const next = new Map(prev)
                     for (const row of table.getPaginationRowModel().rows) {
@@ -92,7 +95,7 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
               checked={props.selection.has(row.original.id)}
               indeterminate={false}
               onChange={() =>
-                props.setSelection(prev => {
+                props.setSelection((prev) => {
                   const next = new Map(prev)
                   if (next.has(row.original.id)) next.delete(row.original.id)
                   else next.set(row.original.id, row.original)
@@ -112,7 +115,7 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
         props.rowCanSelect,
         props.selection,
         props.setSelection,
-      ],
+      ]
     )
 
     // hack: react-table should be paginating preloaded arrays
@@ -121,10 +124,10 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
         props.rows.length > props.pagination.pageSize
           ? props.rows.slice(
               props.pagination.pageIndex * props.pagination.pageSize,
-              (props.pagination.pageIndex + 1) * props.pagination.pageSize,
+              (props.pagination.pageIndex + 1) * props.pagination.pageSize
             )
           : props.rows,
-      [props.rows, props.pagination.pageIndex, props.pagination.pageSize],
+      [props.rows, props.pagination.pageIndex, props.pagination.pageSize]
     )
 
     const table = RT.useReactTable<T>({
@@ -135,7 +138,8 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
       },
       getCoreRowModel: RT.getCoreRowModel(),
       getFilteredRowModel: RT.getFilteredRowModel(),
-      getRowId: row => String(row.id),
+      getRowId: (row) => String(row.id),
+      meta: props.meta,
     })
 
     return (
@@ -157,15 +161,15 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
             }}
           >
             <M.TableHead>
-              {table.getHeaderGroups().map(headerGroup => (
+              {table.getHeaderGroups().map((headerGroup) => (
                 <M.TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map(header => (
+                  {headerGroup.headers.map((header) => (
                     <M.TableCell key={header.id} colSpan={header.colSpan}>
                       {header.isPlaceholder ? null : (
                         <M.Typography>
                           {RT.flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                         </M.Typography>
                       )}
@@ -175,16 +179,16 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
               ))}
             </M.TableHead>
             <M.TableBody>
-              {table.getRowModel().rows.map(row => (
+              {table.getRowModel().rows.map((row) => (
                 <M.TableRow key={row.id}>
-                  {row.getVisibleCells().map(cell => (
+                  {row.getVisibleCells().map((cell) => (
                     <M.TableCell
                       key={cell.id}
-                      align="left"
+                      align='left'
                       sx={{ overflow: "hidden" }}
                       children={RT.flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext(),
+                        cell.getContext()
                       )}
                     />
                   ))}
@@ -210,7 +214,7 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
               pageSize: props.pagination.pageSize,
             })
           }}
-          onRowsPerPageChange={e => {
+          onRowsPerPageChange={(e) => {
             props.setPagination({
               pageIndex: 0,
               pageSize: Number(e.target.value),
