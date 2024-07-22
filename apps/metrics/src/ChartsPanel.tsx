@@ -6,6 +6,20 @@ import * as MR from "@maipl/react"
 import { Metrics } from "@maipl/api"
 import Chart from "./Chart"
 
+const SingleChartIcon = (props) => (
+  <M.SvgIcon {...props}>
+    <rect width='20' height='20' x='2' y='2' rx='2' ry='2' />
+  </M.SvgIcon>
+)
+
+const SideBySideChartIcon = (props) => (
+  <M.SvgIcon {...props}>
+    <rect x='1' y='2' width='9' height='20' rx='2' ry='2' />
+    <rect x='14' y='2' width='9' height='20' rx='2' ry='2' />
+  </M.SvgIcon>
+)
+
+
 const buttonStyle = {
   position: "absolute",
   top: "50%",
@@ -98,8 +112,16 @@ const ChartsPanel = ({ selection, isFullWidth, setIsFullWidth }) => {
                 aria-label={`${number} charts per row`}
                 disabled={selection.size === 0}
               >
-                {number === 1 && <M.Icon>1</M.Icon>}
-                {number === 2 && <M.Icon>2</M.Icon>}
+                {number === 1 && (
+                  <M.Tooltip title='Single Chart View'>
+                    <SingleChartIcon fontSize='medium' />
+                  </M.Tooltip>
+                )}
+                {number === 2 && (
+                  <M.Tooltip title='Side-by-Side Charts View'>
+                    <SideBySideChartIcon fontSize='medium' />
+                  </M.Tooltip>
+                )}
               </M.IconButton>
             ))}
           </M.ButtonGroup>
