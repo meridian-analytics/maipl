@@ -163,8 +163,27 @@ function ShareAvatars(props: { file: File.t }) {
 export default function Output(props: { sx?: M.SxProps }) {
   const qs = RRT.useLoaderData<UseLoaderData>()
   const setSearch = RR.useSearchParams()[1]
-  const { selection, setSelection } = MR.Files.useTable()
+  const {
+    selection,
+    setSelection,
+    updateTag: originalUpdateTag,
+  } = MR.Files.useTable()
   const [isFullWidth, setIsFullWidth] = R.useState(false)
+
+const updateTag = R.useCallback(
+  async (...args) => {
+    await originalUpdateTag(...args)
+    const [file_id, new_tag] = args
+    const updatedSelection = new Map(selection)
+    const updatedFile = { ...updatedSelection.get(file_id), tag: new_tag }
+    updatedSelection.set(file_id, updatedFile)
+
+    // Force a re-render by creating a new Map
+    setSelection(new Map(updatedSelection))
+  },
+  [originalUpdateTag, selection, setSelection]
+)
+
 
   function setState(value: LoaderData, options?: RR.NavigateOptions) {
     setSearch(
@@ -212,17 +231,17 @@ export default function Output(props: { sx?: M.SxProps }) {
         sx={{
           display: "flex",
           flexDirection: "row",
-          height: "100vh", 
-          margin: 0, 
-          padding: 0, 
-          overflow: "hidden", 
+          height: "100vh",
+          margin: 0,
+          padding: 0,
+          overflow: "hidden",
         }}
       >
         <M.Stack
           id='files'
           sx={{
             flexGrow: isFullWidth ? 0 : 1,
-            flexBasis: isFullWidth ? "0%" : "50%", 
+            flexBasis: isFullWidth ? "0%" : "50%",
             transition:
               "flex-basis 0.3s ease-in-out, flex-grow 0.3s ease-in-out",
             overflow: "auto",
@@ -332,6 +351,9 @@ export default function Output(props: { sx?: M.SxProps }) {
                 channels: false,
                 sample_rate: false,
                 user_id: false,
+              }}
+              meta={{
+                onTagUpdate: updateTag,
               }}
             />
           </M.Stack>
