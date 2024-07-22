@@ -170,20 +170,24 @@ export default function Output(props: { sx?: M.SxProps }) {
   } = MR.Files.useTable()
   const [isFullWidth, setIsFullWidth] = R.useState(false)
 
-const updateTag = R.useCallback(
-  async (...args) => {
-    await originalUpdateTag(...args)
-    const [file_id, new_tag] = args
-    const updatedSelection = new Map(selection)
-    const updatedFile = { ...updatedSelection.get(file_id), tag: new_tag }
-    updatedSelection.set(file_id, updatedFile)
+  const updateTag = R.useCallback(
+    async (...args) => {
+      await originalUpdateTag(...args)
+      const [file_id, new_tag] = args
 
-    // Force a re-render by creating a new Map
-    setSelection(new Map(updatedSelection))
-  },
-  [originalUpdateTag, selection, setSelection]
-)
+      // Check if the updated file is in the current selection
+      if (selection.has(file_id)) {
+        const updatedSelection = new Map(selection)
+        const updatedFile = { ...updatedSelection.get(file_id), tag: new_tag }
+        updatedSelection.set(file_id, updatedFile)
 
+        // Force a re-render only if the updated file was in the selection
+        setSelection(new Map(updatedSelection))
+      }
+      // If the file is not in the selection, do nothing (no re-render)
+    },
+    [originalUpdateTag, selection, setSelection]
+  )
 
   function setState(value: LoaderData, options?: RR.NavigateOptions) {
     setSearch(
