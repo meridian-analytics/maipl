@@ -22,13 +22,8 @@ ChartJS.register(
   Legend
 )
 
-const MetricsChart = ({ data, xs }) => {
-  console.log(data)
-  const [selectedMetrics, setSelectedMetrics] = useState([
-    "Precision",
-    "Recall",
-    "F1-Score",
-  ])
+const MetricsChart = ({ data, xs, files }) => {
+  const [selectedMetrics, setSelectedMetrics] = useState(["F1-Score"])
   const [selectedFileIds, setSelectedFileIds] = useState([Object.keys(data)[0]])
   const [selectedClasses, setSelectedClasses] = useState([])
 
@@ -55,7 +50,9 @@ const MetricsChart = ({ data, xs }) => {
         )
         .flatMap((d) =>
           selectedMetrics.map((metric) => ({
-            label: `${metric} - Class ${d.class} - File ${fileId}`,
+            label: `${metric} - Class ${d.class} - ${
+              files.get(parseInt(fileId)).tag
+            }`,
             data: d.metrics.map((m) => m[metric]),
             borderColor: colorMap[d.class],
             borderDash:
@@ -98,60 +95,10 @@ const MetricsChart = ({ data, xs }) => {
       }}
       xs={xs}
     >
-      <div>
-        {fileIds.map((id) => (
-          <label key={id}>
-            <input
-              type='checkbox'
-              checked={selectedFileIds.includes(id)}
-              onChange={() => {
-                setSelectedFileIds((prev) =>
-                  prev.includes(id)
-                    ? prev.filter((f) => f !== id)
-                    : [...prev, id]
-                )
-              }}
-            />
-            File {id}
-          </label>
-        ))}
-        {metrics.map((metric) => (
-          <label key={metric}>
-            <input
-              type='checkbox'
-              checked={selectedMetrics.includes(metric)}
-              onChange={() => {
-                setSelectedMetrics((prev) =>
-                  prev.includes(metric)
-                    ? prev.filter((m) => m !== metric)
-                    : [...prev, metric]
-                )
-              }}
-            />
-            {metric}
-          </label>
-        ))}
-        {classes.map((cls) => (
-          <label key={cls} style={{ color: colorMap[cls] }}>
-            <input
-              type='checkbox'
-              checked={selectedClasses.includes(cls)}
-              onChange={() => {
-                setSelectedClasses((prev) =>
-                  prev.includes(cls)
-                    ? prev.filter((c) => c !== cls)
-                    : [...prev, cls]
-                )
-              }}
-            />
-            Class {cls}
-          </label>
-        ))}
-      </div>
       <div
         style={{
           width: "100%",
-          height: "calc(100% - 50px)",
+          height: "calc(100% - 100px)",
           position: "relative",
         }}
       >
@@ -167,6 +114,67 @@ const MetricsChart = ({ data, xs }) => {
           }}
         />
       </div>
+      <M.Grid container spacing={2} sx={{ mt: 2 }}>
+        <M.Grid item xs={4}>
+          <M.FormControl fullWidth>
+            <M.InputLabel>Files</M.InputLabel>
+            <M.Select
+              label='Model'
+              multiple
+              value={selectedFileIds}
+              onChange={(e) => setSelectedFileIds(e.target.value)}
+              renderValue={(selected) =>
+                selected.map((id) => files.get(parseInt(id)).tag).join(", ")
+              }
+            >
+              {fileIds.map((id) => (
+                <M.MenuItem key={id} value={id}>
+                  <M.Checkbox checked={selectedFileIds.includes(id)} />
+                  <M.ListItemText primary={files.get(parseInt(id)).tag} />
+                </M.MenuItem>
+              ))}
+            </M.Select>
+          </M.FormControl>
+        </M.Grid>
+        <M.Grid item xs={4}>
+          <M.FormControl fullWidth>
+            <M.InputLabel>Metrics</M.InputLabel>
+            <M.Select
+              label='Model'
+              multiple
+              value={selectedMetrics}
+              onChange={(e) => setSelectedMetrics(e.target.value)}
+              renderValue={(selected) => selected.join(", ")}
+            >
+              {metrics.map((metric) => (
+                <M.MenuItem key={metric} value={metric}>
+                  <M.Checkbox checked={selectedMetrics.includes(metric)} />
+                  <M.ListItemText primary={metric} />
+                </M.MenuItem>
+              ))}
+            </M.Select>
+          </M.FormControl>
+        </M.Grid>
+        <M.Grid item xs={4}>
+          <M.FormControl fullWidth>
+            <M.InputLabel>Classes</M.InputLabel>
+            <M.Select
+              label='Model'
+              multiple
+              value={selectedClasses}
+              onChange={(e) => setSelectedClasses(e.target.value)}
+              renderValue={(selected) => selected.join(", ")}
+            >
+              {classes.map((cls) => (
+                <M.MenuItem key={cls} value={cls}>
+                  <M.Checkbox checked={selectedClasses.includes(cls)} />
+                  <M.ListItemText primary={`Class ${cls}`} />
+                </M.MenuItem>
+              ))}
+            </M.Select>
+          </M.FormControl>
+        </M.Grid>
+      </M.Grid>
     </M.Grid>
   )
 }
