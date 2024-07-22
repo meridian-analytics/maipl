@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import { Line } from "react-chartjs-2"
 import {
   Chart as ChartJS,
@@ -11,6 +11,7 @@ import {
   Legend,
 } from "chart.js"
 import * as M from "@mui/material"
+import DownloadIcon from "@mui/icons-material/Download"
 
 ChartJS.register(
   CategoryScale,
@@ -39,6 +40,18 @@ const MetricsChart = ({ data, xs, files }) => {
   classes.forEach((cls, index) => {
     colorMap[cls] = `hsl(${(index * 360) / classes.length}, 70%, 50%)`
   })
+
+  const chartRef = useRef(null)
+
+  const handleDownload = () => {
+    if (chartRef && chartRef.current) {
+      const base64Image = chartRef.current.toBase64Image("image/png", 1)
+      const link = document.createElement("a")
+      link.download = "metrics_chart.png"
+      link.href = base64Image
+      link.click()
+    }
+  }
 
   const chartData = {
     labels: data[fileIds[0]][0].metrics.map((m) => m.threshold),
@@ -73,13 +86,27 @@ const MetricsChart = ({ data, xs, files }) => {
     plugins: {
       legend: { position: "top" },
       title: { display: true, text: "Metrics vs Threshold (Multiple Files)" },
+      backgroundColor: {
+        color: "white",
+      },
     },
     scales: {
-      x: { title: { display: true, text: "Threshold" } },
+      x: {
+        title: { display: true, text: "Threshold" },
+        grid: {
+          color: "rgba(0, 0, 0, 0.1)",
+        },
+      },
       y: {
         title: { display: true, text: "Metric Value" },
-        min: 0,
-        max: 1,
+        min: -0.05,
+        max: 1.05,
+        ticks: {
+          stepSize: 0.05,
+        },
+        grid: {
+          color: "rgba(0, 0, 0, 0.1)",
+        },
       },
     },
   }
@@ -102,7 +129,19 @@ const MetricsChart = ({ data, xs, files }) => {
           position: "relative",
         }}
       >
+        <M.IconButton
+          onClick={handleDownload}
+          sx={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            zIndex: 1,
+          }}
+        >
+          <DownloadIcon />
+        </M.IconButton>
         <Line
+          ref={chartRef}
           data={chartData}
           options={options}
           style={{
