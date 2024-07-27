@@ -84,7 +84,10 @@ export const MaiplSchemaFromJson = Z.preprocess(json => {
     if (import.meta.env["DEV"]) {
       console.warn("Json parse error. Using default schema", err)
     }
-    return defaultContext
+    return {
+      schema: defaultContext.schema,
+      uiSchema: defaultContext.uiSchema,
+    }
   }
 }, MaiplSchema)
 
