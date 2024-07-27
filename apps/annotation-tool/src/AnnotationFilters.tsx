@@ -3,10 +3,18 @@ import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import { Form } from "@rjsf/mui"
 import validator from "@rjsf/validator-ajv8"
+import * as React from "react"
 import * as Specviz from "specviz-react"
 import * as FilterContext from "./FilterContext"
 import NumberMinMaxWidget from "./NumberMinMaxWidget"
 import * as SchemaContext from "./SchemaContext"
+
+function objectFlatMap<A, B>(
+  object: Record<string, A>,
+  fn: (entry: [string, A]) => Array<[string, B]>,
+): Record<string, B> {
+  return Object.fromEntries(Object.entries(object).flatMap(entry => fn(entry)))
+}
 
 export default function AnnotationFilters(props: {
   setShowFilters: (show: boolean) => void
@@ -15,10 +23,10 @@ export default function AnnotationFilters(props: {
   const schema = SchemaContext.useContext()
   const filter = FilterContext.useContext()
   const region = Specviz.useRegion()
-  const derivedUi = {
-    ...schema.uiSchema,
-    ...Object.fromEntries(
-      Object.entries(schema.schema.properties).flatMap(([key, field]) => {
+  const derivedUi: SchemaContext.UiSchema = React.useMemo(
+    () => ({
+      ...schema.uiSchema,
+      ...objectFlatMap(schema.schema.properties, ([key, field]) => {
         switch (field.type) {
           case "string":
             if ("enum" in field || "anyOf" in field || "oneOf" in field)
@@ -30,8 +38,9 @@ export default function AnnotationFilters(props: {
             return []
         }
       }),
-    ),
-  }
+    }),
+    [schema.schema, schema.uiSchema],
+  )
   return (
     <MR.Panel
       sx={props.sx}
