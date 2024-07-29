@@ -14,7 +14,7 @@ type Action =
   | { kind: "resetFilters" }
 
 type FilterValueString = string | string[]
-type FilterValueNumber = [null | number, null | number]
+type FilterValueNumber = number | [null | number, null | number]
 type FilterValueBoolean = boolean
 type FilterValue = FilterValueString | FilterValueNumber | FilterValueBoolean
 type FilterState = Record<string, FilterValue>
@@ -119,7 +119,12 @@ function filterAuxString(value: unknown, filter: FilterValueString): boolean {
 }
 
 function filterAuxNumber(value: unknown, filter: FilterValueNumber): boolean {
-  if (typeof value != "number" || !Array.isArray(filter)) {
+  // when schema contains a default value, the initial filter is the default value
+  // this means the filter has not been set by the user, so value should not be filtered
+  if (!Array.isArray(filter)) {
+    return true
+  }
+  if (typeof value != "number") {
     return false
   }
   if (filter[0] != null && value < filter[0]) {
