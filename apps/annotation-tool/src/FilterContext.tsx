@@ -15,7 +15,7 @@ type Action =
 
 type FilterValueString = string | string[]
 type FilterValueNumber = number | [null | number, null | number]
-type FilterValueBoolean = boolean
+type FilterValueBoolean = boolean | boolean[]
 type FilterValue = FilterValueString | FilterValueNumber | FilterValueBoolean
 type FilterState = Record<string, FilterValue>
 
@@ -137,7 +137,10 @@ function filterAuxNumber(value: unknown, filter: FilterValueNumber): boolean {
 }
 
 function filterAuxBoolean(value: unknown, filter: FilterValueBoolean): boolean {
-  return value == filter
+  if (!Array.isArray(filter)) {
+    return true
+  }
+  return filter.length == 0 || filter.includes(value as boolean)
 }
 
 export function rjsfCheckboxesBugfix(a: unknown) {

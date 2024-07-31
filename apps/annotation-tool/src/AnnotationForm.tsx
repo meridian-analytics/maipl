@@ -3,6 +3,7 @@ import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import { Form } from "@rjsf/mui"
 import validator from "@rjsf/validator-ajv8"
+import React from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import * as Specviz from "specviz-react"
 import * as Audio from "specviz-react/audio"
@@ -12,7 +13,7 @@ export default function AnnotationForm(props: {
   sx?: M.SxProps
 }) {
   const region = Specviz.useRegion()
-  const ids = Array.from(region.selection)
+  const ids = Array.from(region.transformedSelection)
   return (
     <ErrorBoundary
       fallbackRender={({ error }) => <p>Error: {error.message}</p>}
@@ -59,6 +60,10 @@ function MonoForm(props: {
   const focus = Specviz.useFocus()
   const region = regions.regions.get(props.regionId)
   const schema = SchemaContext.useContext()
+  const derivedUiSchema = React.useMemo(
+    () => SchemaContext.deriveMonoFormUiSchema(schema.schema, schema.uiSchema),
+    [schema.schema, schema.uiSchema],
+  )
   if (region == null)
     return <p>Warning: Selected region is hidden by one or more filters</p>
   return (
@@ -107,13 +112,7 @@ function MonoForm(props: {
             }
             readonly={!regions.canUpdate(region)}
             schema={schema.schema}
-            uiSchema={{
-              ...schema.uiSchema,
-              score: {
-                "ui:readonly": true,
-                ...schema.uiSchema.score,
-              },
-            }}
+            uiSchema={derivedUiSchema}
             validator={validator}
           />
         </M.Box>

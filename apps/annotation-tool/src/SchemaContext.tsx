@@ -4,6 +4,7 @@
  * Supported features are described by simple zod parsers
  */
 
+import type * as JSF from "@rjsf/utils"
 import * as R from "react"
 import * as Z from "zod"
 
@@ -195,4 +196,67 @@ export function Provider(props: ProviderProps) {
 
 export function useContext() {
   return R.useContext(Context)
+}
+
+export function deriveFilterUiSchema(
+  schema: JsonSchema,
+  uiSchema: UiSchema,
+): UiSchema {
+  return {
+    ...uiSchema,
+    ...objectFlatMap(schema.properties, ([key, field]) => {
+      switch (field.type) {
+        case "boolean":
+          return [[key, { "ui:widget": "CheckboxesWidget" }]]
+        case "string":
+          if ("enum" in field || "anyOf" in field || "oneOf" in field)
+            return [[key, { "ui:widget": "CheckboxesWidget" }]]
+          return []
+        case "number":
+          return [[key, { "ui:widget": "NumberMinMaxWidget" }]]
+        default:
+          return []
+      }
+    }),
+  }
+}
+
+export function deriveMonoFormUiSchema(
+  schema: JsonSchema,
+  uiSchema: UiSchema,
+): UiSchema {
+  return {
+    ...uiSchema,
+    score: {
+      "ui:readonly": true,
+      ...uiSchema.score,
+    },
+  }
+}
+
+export function deriveSchemaWithoutDefaults({
+  default: _,
+  ...schema
+}: JSF.RJSFSchema): JSF.RJSFSchema {
+  switch (typeof schema.properties) {
+    case "object":
+      return {
+        ...schema,
+        properties: Object.fromEntries(
+          Object.entries(schema.properties).map(([key, field]) => [
+            key,
+            deriveSchemaWithoutDefaults(field as JSF.RJSFSchema),
+          ]),
+        ),
+      }
+    default:
+      return schema
+  }
+}
+
+function objectFlatMap<A, B>(
+  object: Record<string, A>,
+  fn: (entry: [string, A]) => Array<[string, B]>,
+): Record<string, B> {
+  return Object.fromEntries(Object.entries(object).flatMap(entry => fn(entry)))
 }

@@ -9,13 +9,6 @@ import * as FilterContext from "./FilterContext"
 import NumberMinMaxWidget from "./NumberMinMaxWidget"
 import * as SchemaContext from "./SchemaContext"
 
-function objectFlatMap<A, B>(
-  object: Record<string, A>,
-  fn: (entry: [string, A]) => Array<[string, B]>,
-): Record<string, B> {
-  return Object.fromEntries(Object.entries(object).flatMap(entry => fn(entry)))
-}
-
 export default function AnnotationFilters(props: {
   setShowFilters: (show: boolean) => void
   sx?: M.SxProps
@@ -23,22 +16,12 @@ export default function AnnotationFilters(props: {
   const schema = SchemaContext.useContext()
   const filter = FilterContext.useContext()
   const region = Specviz.useRegion()
-  const derivedUi: SchemaContext.UiSchema = React.useMemo(
-    () => ({
-      ...schema.uiSchema,
-      ...objectFlatMap(schema.schema.properties, ([key, field]) => {
-        switch (field.type) {
-          case "string":
-            if ("enum" in field || "anyOf" in field || "oneOf" in field)
-              return [[key, { "ui:widget": "CheckboxesWidget" }]]
-            return []
-          case "number":
-            return [[key, { "ui:widget": "NumberMinMaxWidget" }]]
-          default:
-            return []
-        }
-      }),
-    }),
+  const derivedSchema = React.useMemo(
+    () => SchemaContext.deriveSchemaWithoutDefaults(schema.schema),
+    [schema.schema],
+  )
+  const derivedUi = React.useMemo(
+    () => SchemaContext.deriveFilterUiSchema(schema.schema, schema.uiSchema),
     [schema.schema, schema.uiSchema],
   )
   return (
@@ -78,7 +61,7 @@ export default function AnnotationFilters(props: {
         <M.Box sx={{ marginTop: -6, padding: 2 }}>
           <Form
             formData={filter.filters}
-            schema={schema.schema}
+            schema={derivedSchema}
             uiSchema={derivedUi}
             validator={validator}
             widgets={{
