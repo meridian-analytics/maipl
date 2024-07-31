@@ -148,7 +148,25 @@ function MonoForm(props: {
 function PolyForm(props: {
   sx?: M.SxProps
 }) {
+  const region = Specviz.useRegion()
   const schema = SchemaContext.useContext()
+  const derivedSchema = React.useMemo(
+    () => SchemaContext.deriveSchemaWithoutDefaults(schema.schema),
+    [schema.schema],
+  )
+  const derivedUi = React.useMemo(
+    () => SchemaContext.derivePolyFormUiSchema(schema.schema, schema.uiSchema),
+    [schema.schema, schema.uiSchema],
+  )
+  const formData = React.useMemo(
+    () =>
+      SchemaContext.derivePolyFormData(
+        schema.schema,
+        region.transformedRegions,
+        region.transformedSelection,
+      ),
+    [region.transformedRegions, region.transformedSelection, schema.schema],
+  )
   return (
     <MR.Panel
       sx={props.sx}
@@ -157,10 +175,12 @@ function PolyForm(props: {
         <M.Box sx={{ marginTop: -4, padding: 2 }}>
           <Form
             children=" "
-            formData={{}}
-            readonly={true}
-            schema={schema.schema}
-            uiSchema={schema.uiSchema}
+            formData={formData}
+            onChange={e => {
+              region.updateSelectedRegions(r => ({ ...r, ...e.formData }))
+            }}
+            schema={derivedSchema}
+            uiSchema={derivedUi}
             validator={validator}
           />
         </M.Box>
