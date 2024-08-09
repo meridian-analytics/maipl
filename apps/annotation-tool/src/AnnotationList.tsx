@@ -64,7 +64,14 @@ export function AnnotationListItem(props: Specviz.Region) {
     <M.ListItem disablePadding key={props.id}>
       <M.ListItemButton
         selected={region.transformedSelection.has(props.id)}
-        onClick={() => region.setSelection(new Set([props.id]))}
+        onClick={e => {
+          region.selectId(
+            props.id,
+            e.metaKey || e.ctrlKey
+              ? Specviz.SelectionMode.invert
+              : Specviz.SelectionMode.replace,
+          )
+        }}
       >
         <M.ListItemText
           primary={schema.getLabel(

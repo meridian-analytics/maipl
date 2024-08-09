@@ -3,6 +3,7 @@ import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import { Form } from "@rjsf/mui"
 import validator from "@rjsf/validator-ajv8"
+import * as React from "react"
 import * as Specviz from "specviz-react"
 import * as FilterContext from "./FilterContext"
 import NumberMinMaxWidget from "./NumberMinMaxWidget"
@@ -15,23 +16,14 @@ export default function AnnotationFilters(props: {
   const schema = SchemaContext.useContext()
   const filter = FilterContext.useContext()
   const region = Specviz.useRegion()
-  const derivedUi = {
-    ...schema.uiSchema,
-    ...Object.fromEntries(
-      Object.entries(schema.schema.properties).flatMap(([key, field]) => {
-        switch (field.type) {
-          case "string":
-            if ("enum" in field || "anyOf" in field || "oneOf" in field)
-              return [[key, { "ui:widget": "CheckboxesWidget" }]]
-            return []
-          case "number":
-            return [[key, { "ui:widget": "NumberMinMaxWidget" }]]
-          default:
-            return []
-        }
-      }),
-    ),
-  }
+  const derivedSchema = React.useMemo(
+    () => SchemaContext.deriveSchemaWithoutDefaults(schema.schema),
+    [schema.schema],
+  )
+  const derivedUi = React.useMemo(
+    () => SchemaContext.deriveFilterUiSchema(schema.schema, schema.uiSchema),
+    [schema.schema, schema.uiSchema],
+  )
   return (
     <MR.Panel
       sx={props.sx}
@@ -69,7 +61,7 @@ export default function AnnotationFilters(props: {
         <M.Box sx={{ marginTop: -6, padding: 2 }}>
           <Form
             formData={filter.filters}
-            schema={schema.schema}
+            schema={derivedSchema}
             uiSchema={derivedUi}
             validator={validator}
             widgets={{

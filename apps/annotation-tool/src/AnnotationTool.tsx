@@ -56,7 +56,7 @@ function BaseToolProvider(props: { children: R.ReactNode }) {
   const audio = Audio.useContext()
   const actions: Specviz.ToolContext.Actions = R.useMemo(
     () => ({
-      onContextMenu: (unit, rel, abs, xaxis, yaxis) => {
+      onContextMenu: ({ unit, rel, abs, xaxis, yaxis, event }) => {
         console.log("onContextMenu", unit, rel, abs, xaxis, yaxis)
         audio.transport.seek(unit.x)
       },
@@ -70,7 +70,7 @@ function NavigatorToolProvider(props: { children: R.ReactNode }) {
   const viewport = Specviz.useViewport()
   const fn: Specviz.ToolContext.TransformProps["fn"] = R.useCallback(
     tool => ({
-      onClick: (unit, rel, abs, xaxis, yaxis) => {
+      onClick: ({ unit, rel, abs, xaxis, yaxis, event }) => {
         switch (tool) {
           case "annotate":
           case "select":
@@ -85,7 +85,7 @@ function NavigatorToolProvider(props: { children: R.ReactNode }) {
             break
         }
       },
-      onMove: (dx, dy) => {
+      onMove: ({ dx, dy, event }) => {
         viewport.scroll(dx * viewport.state.zoom.x, dy * viewport.state.zoom.y)
       },
     }),
@@ -100,7 +100,21 @@ function NavigatorToolProvider(props: { children: R.ReactNode }) {
   return <Specviz.ToolContext.Transform children={props.children} fn={fn} />
 }
 
+function eventSelectionMode(event: R.MouseEvent): Specviz.SelectionMode {
+  switch (true) {
+    case event.ctrlKey || event.metaKey:
+      return Specviz.SelectionMode.invert
+    case event.shiftKey:
+      return Specviz.SelectionMode.add
+    case event.altKey:
+      return Specviz.SelectionMode.subtract
+    default:
+      return Specviz.SelectionMode.replace
+  }
+}
+
 function VisualizationToolProvider(props: { children: R.ReactNode }) {
+  const maipl = MR.useMaipl()
   const region = Specviz.useRegion()
   const viewport = Specviz.useViewport()
   const fn: Specviz.ToolContext.TransformProps["fn"] = R.useCallback(
@@ -108,34 +122,41 @@ function VisualizationToolProvider(props: { children: R.ReactNode }) {
       switch (tool) {
         case "annotate":
           return {
-            onClick: (unit, rel, abs, xaxis, yaxis) => {
-              region.selectPoint(abs)
+            onClick: ({ unit, rel, abs, xaxis, yaxis, event }) => {
+              region.selectPoint(abs, eventSelectionMode(event))
             },
-            onRect: (unit, rel, abs, xaxis, yaxis) => {
-              region.annotate(unit, xaxis, yaxis)
+            onRect: ({ unit, rel, abs, xaxis, yaxis, event }) => {
+              const userData: Specviz.RegionContext.UserData = {}
+              if (maipl.user != null) userData["user_id"] = maipl.user.id
+              region.annotate(unit, xaxis, yaxis, userData)
             },
           }
         case "select":
           return {
-            onClick: (unit, rel, abs, xaxis, yaxis) => {
-              region.selectPoint(abs)
+            onClick: ({ unit, rel, abs, xaxis, yaxis, event }) => {
+              region.selectPoint(abs, eventSelectionMode(event))
             },
-            onRect: (unit, rel, abs, xaxis, yaxis) => {
-              region.selectArea(abs)
+            onRect: ({ unit, rel, abs, xaxis, yaxis, event }) => {
+              region.selectArea(abs, eventSelectionMode(event))
             },
           }
         case "zoom":
           return {
-            onClick: (unit, rel, abs, xaxis, yaxis) => {
-              viewport.zoomPoint(abs)
+            onClick: ({ unit, rel, abs, xaxis, yaxis, event }) => {
+              viewport.zoomPoint(
+                abs,
+                event.ctrlKey || event.metaKey
+                  ? Specviz.ZoomDirection.out
+                  : Specviz.ZoomDirection.in,
+              )
             },
-            onRect: (unit, rel, abs, xaxis, yaxis) => {
+            onRect: ({ unit, rel, abs, xaxis, yaxis, event }) => {
               viewport.zoomArea(abs)
             },
           }
         case "pan":
           return {
-            onMove: (dx, dy) => {
+            onMove: ({ dx, dy }) => {
               if (region.selection.size == 0) {
                 viewport.scroll(-dx, -dy)
               } else {
@@ -149,6 +170,7 @@ function VisualizationToolProvider(props: { children: R.ReactNode }) {
       }
     },
     [
+      maipl.user,
       region.annotate,
       region.moveSelection,
       region.selectArea,
