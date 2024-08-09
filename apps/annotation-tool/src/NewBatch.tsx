@@ -38,6 +38,7 @@ enum Tab {
   files = "files",
   parameters = "parameters",
   segments = "segments",
+  preview = "preview",
 }
 
 enum SelectionType {
@@ -49,21 +50,19 @@ function optionsForFiles(files: Map<number, File.t>): Record<string, string> {
   return Object.fromEntries(
     Array.from(
       files.values(),
-      f => [`${f.maipl_folder}/${f.path}`, String(f.id)] as const,
-    ).sort((a, b) => a[0].localeCompare(b[0])),
+      (f) => [`${f.maipl_folder}/${f.path}`, String(f.id)] as const
+    ).sort((a, b) => a[0].localeCompare(b[0]))
   )
 }
 
-function NewBatch(props: {
-  onClose: () => void
-}) {
+function NewBatch(props: { onClose: () => void }) {
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
   const queryClient = RQ.useQueryClient()
 
   const [tab, setTab] = R.useState<Tab>(Tab.files)
   const [selectionType, setSelectionType] = R.useState<SelectionType>(
-    SelectionType.initial,
+    SelectionType.initial
   )
 
   // field: name
@@ -78,6 +77,8 @@ function NewBatch(props: {
   // field: annotation_file
   const [annotationFile, setAnnotationFile] = R.useState<null | number>(null)
 
+  const [previewImage, setPreviewImage] = R.useState<string | null>(null)
+
   const { data: annotationFiles } = RQ.useQuery({
     queryKey: ["files", File.t_maipl_folder.config],
     queryFn: () =>
@@ -85,7 +86,7 @@ function NewBatch(props: {
         maipl_folder: File.t_maipl_folder.config,
         page: 1,
         size: 100,
-      }).then(page => new Map(page.data.map(f => [f.id, f]))),
+      }).then((page) => new Map(page.data.map((f) => [f.id, f]))),
     initialData: new Map<number, File.t>(),
   })
 
@@ -99,7 +100,7 @@ function NewBatch(props: {
         maipl_folder: File.t_maipl_folder.annotation,
         page: 1,
         size: 100,
-      }).then(page => new Map(page.data.map(f => [f.id, f]))),
+      }).then((page) => new Map(page.data.map((f) => [f.id, f]))),
     initialData: new Map<number, File.t>(),
   })
 
@@ -125,8 +126,8 @@ function NewBatch(props: {
     mutationFn: (vars: Parameters<typeof Batch.create>) =>
       Batch.create(...vars),
     onError: (err, vars) => {
-      notify(onClose => (
-        <M.Alert onClose={onClose} severity="error">
+      notify((onClose) => (
+        <M.Alert onClose={onClose} severity='error'>
           Error: Could not create batch
         </M.Alert>
       ))
@@ -137,9 +138,9 @@ function NewBatch(props: {
     onSettled: () => {
       createMutation.reset()
     },
-    onSuccess: batch => {
-      notify(onClose => (
-        <M.Alert onClose={onClose} severity="success">
+    onSuccess: (batch) => {
+      notify((onClose) => (
+        <M.Alert onClose={onClose} severity='success'>
           Success: Created batch{" "}
           {
             <M.Link
@@ -154,6 +155,59 @@ function NewBatch(props: {
       props.onClose()
     },
   })
+
+  const previewMutation = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof Batch.preview>) =>
+      Batch.preview(...vars),
+    onError: (err, vars) => {
+      notify((onClose) => (
+        <M.Alert onClose={onClose} severity='error'>
+          Error: Could not preview batch
+        </M.Alert>
+      ))
+    },
+    onSettled: () => {
+      previewMutation.reset()
+    },
+    onSuccess: (result: Blob) => {
+      const imageUrl = URL.createObjectURL(result)
+      setPreviewImage(imageUrl)
+      setTab(Tab.preview)
+      notify((onClose) => (
+        <M.Alert onClose={onClose} severity='success'>
+          Success: Previewed batch
+        </M.Alert>
+      ))
+    },
+  })
+
+  R.useEffect(() => {
+    return () => {
+      if (previewImage) {
+        URL.revokeObjectURL(previewImage)
+      }
+    }
+  }, [previewImage])
+
+  const onPreview = () => {
+    if (previewMutation.isIdle) {
+      setTab(Tab.preview) 
+      setPreviewImage(null) 
+      previewMutation.mutate([
+        maipl.client,
+        {
+          allow_change_settings: false,
+          annotation_file: annotationFile ?? 0,
+          batch_name: name,
+          description,
+          import_file: importFile ?? null,
+          filelist: importFile ? [] : Array.from(table.selection.keys()),
+          parameters: parameters as Batch.t_parameters,
+          segment_parameters: segmentParameters,
+        },
+      ])
+    }
+  }
 
   const onCreate = () => {
     if (createMutation.isIdle) {
@@ -176,41 +230,44 @@ function NewBatch(props: {
   return (
     <MR.Modal onClose={props.onClose} sx={{ minWidth: 600 }}>
       <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
-        <M.Typography variant="h6">Create new batch ...</M.Typography>
+        <M.Typography variant='h6'>Create new batch ...</M.Typography>
         <M.Stack component={M.Paper} padding={2}>
           <M.TextField
-            label="Batch Name"
+            label='Batch Name'
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
           />
           <M.TextField
-            label="Description"
+            label='Description'
             value={description}
-            onChange={e => setDescription(e.target.value)}
+            onChange={(e) => setDescription(e.target.value)}
           />
           <MR.Picker
-            label="Annotation Configuration"
-            setValue={value => setAnnotationFile(Number(value))}
+            label='Annotation Configuration'
+            setValue={(value) => setAnnotationFile(Number(value))}
             value={annotationFile ? String(annotationFile) : ""}
             values={optionsForFiles(annotationFiles)}
             fullWidth
           />
         </M.Stack>
-        <M.Stack direction="row" flexGrow={1} justifyContent="center">
+        <M.Stack direction='row' flexGrow={1} justifyContent='center'>
           <M.Tabs
-            indicatorColor="primary"
+            indicatorColor='primary'
             onChange={(_e, value) => setTab(value as Tab)}
             value={tab}
           >
-            <M.Tab label="Files" value={Tab.files} />
-            <M.Tab label="Segments" value={Tab.segments} />
-            <M.Tab label="Spectrogram" value={Tab.parameters} />
+            <M.Tab label='Files' value={Tab.files} />
+            <M.Tab label='Segments' value={Tab.segments} />
+            <M.Tab label='Spectrogram' value={Tab.parameters} />
+            {(previewMutation.isPending || previewImage) && (
+              <M.Tab label='Preview' value={Tab.preview} />
+            )}
           </M.Tabs>
         </M.Stack>
         {tab == Tab.files &&
           selectionType == SelectionType.initial &&
           importFile == null && (
-            <M.Stack direction="row">
+            <M.Stack direction='row'>
               <M.Stack
                 component={M.Button}
                 flexGrow={1}
@@ -221,12 +278,12 @@ function NewBatch(props: {
                 <M.Typography>Select Files</M.Typography>
               </M.Stack>
 
-              <M.Stack sx={style.base} alignItems="center" flexGrow={1}>
+              <M.Stack sx={style.base} alignItems='center' flexGrow={1}>
                 <I.InsertDriveFileOutlined sx={{ fontSize: 50 }} />
                 <MR.Picker
-                  label="IMPORT .CSV"
-                  setValue={value => setImportFile(Number(value))}
-                  value=""
+                  label='IMPORT .CSV'
+                  setValue={(value) => setImportFile(Number(value))}
+                  value=''
                   values={optionsForFiles(importFiles)}
                   fullWidth
                 />
@@ -237,23 +294,23 @@ function NewBatch(props: {
           selectionType == SelectionType.manual &&
           importFile == null && (
             <>
-              <M.Stack direction="row" alignItems="center">
+              <M.Stack direction='row' alignItems='center'>
                 <M.TextField
-                  label="Path"
-                  onChange={e => table.filter.set("path", e.target.value)}
-                  placeholder="path/to/folder"
+                  label='Path'
+                  onChange={(e) => table.filter.set("path", e.target.value)}
+                  placeholder='path/to/folder'
                   value={table.filter.get("path")}
                 />
                 <M.TextField
-                  label="Tag"
-                  onChange={e => table.filter.set("tag", e.target.value)}
-                  placeholder="my-tag"
+                  label='Tag'
+                  onChange={(e) => table.filter.set("tag", e.target.value)}
+                  placeholder='my-tag'
                   value={table.filter.get("tag")}
                 />
                 <M.Stack flexGrow={1} />
                 <M.Button
-                  size="medium"
-                  children="Go Back"
+                  size='medium'
+                  children='Go Back'
                   onClick={() => setSelectionType(SelectionType.initial)}
                 />
               </M.Stack>
@@ -276,8 +333,8 @@ function NewBatch(props: {
             </>
           )}
         {tab == Tab.files && importFile && (
-          <M.Stack sx={style.base} direction="row" spacing={4}>
-            <M.Stack alignItems="center">
+          <M.Stack sx={style.base} direction='row' spacing={4}>
+            <M.Stack alignItems='center'>
               <I.InsertDriveFileOutlined sx={{ fontSize: 50 }} />
               <M.Typography>
                 {importFiles.get(importFile)!.basename}
@@ -291,7 +348,7 @@ function NewBatch(props: {
                 Files and annotations will be imported from this file.
               </M.Typography>
               <M.Button
-                children="Cancel import"
+                children='Cancel import'
                 onClick={() => setImportFile(null)}
               />
             </M.Stack>
@@ -300,20 +357,20 @@ function NewBatch(props: {
         {tab == Tab.segments && (
           <M.Stack>
             <M.TextField
-              label="Length (seconds)"
-              onChange={e =>
-                setSegmentParameters(prev => ({
+              label='Length (seconds)'
+              onChange={(e) =>
+                setSegmentParameters((prev) => ({
                   ...prev,
                   length: Math.max(1, Number(e.target.value) || 60),
                 }))
               }
-              type="number"
+              type='number'
               value={segmentParameters.length}
             />
             <M.TextField
-              label="Step (seconds)"
-              onChange={e =>
-                setSegmentParameters(prev => ({
+              label='Step (seconds)'
+              onChange={(e) =>
+                setSegmentParameters((prev) => ({
                   ...prev,
                   step:
                     e.target.value == ""
@@ -321,21 +378,72 @@ function NewBatch(props: {
                       : Math.max(1, Number(e.target.value) || 60),
                 }))
               }
-              type="number"
+              type='number'
               value={segmentParameters.step ?? segmentParameters.length}
             />
             <MR.Switch
               value={segmentParameters.pad}
-              setValue={v =>
-                setSegmentParameters(prev => ({
+              setValue={(v) =>
+                setSegmentParameters((prev) => ({
                   ...prev,
                   pad: typeof v == "function" ? v(prev.pad) : v,
                 }))
               }
-              label="Pad"
+              label='Pad'
             />
           </M.Stack>
         )}
+        {tab === Tab.preview && (
+          <M.Box
+            sx={{
+              flexGrow: 1,
+              overflowY: "hidden",
+              overflowX: "auto",
+              height: "100%",
+              width: "100%",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            {previewMutation.isPending ? (
+              <M.Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "100%",
+                }}
+              >
+                <M.CircularProgress />
+                <M.Typography variant='body2' sx={{ mt: 2 }}>
+                  Generating preview...
+                </M.Typography>
+              </M.Box>
+            ) : previewImage ? (
+              <M.Box
+                component='img'
+                src={previewImage}
+                onError={(e) => {
+                  console.error("Image load error:", e)
+                  console.log("Image src:", e.target.src)
+                }}
+                sx={{
+                  height: "100%",
+                  width: "auto",
+                  objectFit: "contain",
+                  objectPosition: "left top",
+                }}
+              />
+            ) : (
+              <M.Typography variant='body1'>
+                No preview available. Click the Preview button to generate one.
+              </M.Typography>
+            )}
+          </M.Box>
+        )}
+
         <M.Stack
           component={M.Paper}
           sx={{
@@ -348,34 +456,39 @@ function NewBatch(props: {
           }}
         >
           <Form
-            children=" "
+            children=' '
             formData={parameters}
-            onChange={e => setParameters(e.formData)}
+            onChange={(e) => setParameters(e.formData)}
             schema={BatchParameters.schema}
             uiSchema={BatchParameters.uiSchema}
             validator={validator}
           />
         </M.Stack>
-        <M.Stack direction="row">
+        <M.Stack direction='row'>
           {selectionType == SelectionType.manual && (
             <M.Typography>
               Selection: {table.selection.size} files (
               {F.filesize(
                 files.data.reduce(
                   (r, f) => r + (table.selection.has(f.id) ? f.size : 0),
-                  0,
-                ),
+                  0
+                )
               )}
               )
             </M.Typography>
           )}
           <M.Stack flexGrow={1} />
-          <M.Button children="Close" onClick={props.onClose} />
           <M.Button
-            children="Create"
+            children='Preview'
+            onClick={onPreview}
+            disabled={table.selection.size === 0 || previewMutation.isPending}
+          />
+          <M.Button children='Close' onClick={props.onClose} />
+          <M.Button
+            children='Create'
             disabled={createMutation.isPending}
             onClick={onCreate}
-            variant="contained"
+            variant='contained'
           />
         </M.Stack>
       </M.Stack>
