@@ -4,7 +4,9 @@
  * Supported features are described by simple zod parsers
  */
 
+import type * as JSF from "@rjsf/utils"
 import * as R from "react"
+import type * as Specviz from "specviz-react"
 import * as Z from "zod"
 
 export const OptionsSchema = Z.array(
@@ -84,7 +86,10 @@ export const MaiplSchemaFromJson = Z.preprocess(json => {
     if (import.meta.env["DEV"]) {
       console.warn("Json parse error. Using default schema", err)
     }
-    return defaultContext
+    return {
+      schema: defaultContext.schema,
+      uiSchema: defaultContext.uiSchema,
+    }
   }
 }, MaiplSchema)
 
@@ -100,7 +105,18 @@ export type JsonSchema = Z.infer<typeof JsonSchema>
 export type UiSchema = Z.infer<typeof UiSchema>
 export type MaiplSchema = Z.infer<typeof MaiplSchema>
 
-const defaultContext: MaiplSchema = {
+export type Context = {
+  getLabel: (key: unknown | unknown[]) => string
+  labels: Map<string, string>
+  schema: JsonSchema
+  uiSchema: UiSchema
+}
+
+const defaultContext: Context = {
+  getLabel: () => {
+    throw Error("lookup called outside ot context provider")
+  },
+  labels: new Map(),
   schema: {
     properties: {
       label: {
@@ -110,43 +126,42 @@ const defaultContext: MaiplSchema = {
         ],
         type: "string",
       },
+      score: {
+        default: 0,
+        maximum: 1,
+        minimum: 0,
+        title: "Score",
+        type: "number",
+      },
     },
     type: "object",
   },
   uiSchema: {},
 }
 
-const SchemaContext = R.createContext<MaiplSchema>(defaultContext)
+const Context = R.createContext(defaultContext)
 
-export function SchemaContextProvider(props: {
+export type ProviderProps = {
   jsonSchema: string
   children: R.ReactNode
-}) {
-  const schema = R.useMemo<MaiplSchema>(() => {
+}
+
+export function Provider(props: ProviderProps) {
+  const { schema, uiSchema } = R.useMemo<MaiplSchema>(() => {
     try {
       return MaiplSchemaFromJson.parse(props.jsonSchema)
     } catch (err) {
       if (import.meta.env["DEV"]) {
         console.warn("SchemaContext parse error. Using default schema", err)
       }
-      return defaultContext
+      return {
+        schema: defaultContext.schema,
+        uiSchema: defaultContext.uiSchema,
+      }
     }
   }, [props.jsonSchema])
-  return <SchemaContext.Provider value={schema} children={props.children} />
-}
-
-export function useSchema() {
-  return R.useContext(SchemaContext)
-}
-
-type UseLabelsHook = {
-  lookup: (key: unknown | unknown[]) => string
-}
-
-export function useLabels(): UseLabelsHook {
-  const { schema } = useSchema()
-  const labels = R.useMemo(() => {
-    const res: Map<string, string> = new Map()
+  const labels = R.useMemo<Context["labels"]>(() => {
+    const res: Context["labels"] = new Map()
     const label = schema.properties["label"]
     if (label) {
       if ("oneOf" in label) {
@@ -164,14 +179,133 @@ export function useLabels(): UseLabelsHook {
     }
     return res
   }, [schema])
-  const lookup: UseLabelsHook["lookup"] = R.useCallback(
+  const getLabel = R.useCallback<Context["getLabel"]>(
     key =>
       Array.isArray(key)
         ? key.length == 0
           ? "(Unlabeled)"
-          : key.map(k => labels.get(k) ?? `(NoLabel ${k})`).join(", ")
+          : key.map(k => labels.get(k as string) ?? `(NoLabel ${k})`).join(", ")
         : labels.get(key as string) ?? `(NoLabel ${key})`,
     [labels],
   )
-  return { lookup }
+  const value = R.useMemo<Context>(
+    () => ({ getLabel, labels, schema, uiSchema }),
+    [getLabel, labels, schema, uiSchema],
+  )
+  return <Context.Provider value={value} children={props.children} />
+}
+
+export function useContext() {
+  return R.useContext(Context)
+}
+
+export function deriveFilterUiSchema(
+  schema: JsonSchema,
+  uiSchema: UiSchema,
+): UiSchema {
+  return {
+    ...uiSchema,
+    ...objectFlatMap(schema.properties, ([key, field]) => {
+      switch (field.type) {
+        case "boolean":
+          return [[key, { "ui:widget": "CheckboxesWidget" }]]
+        case "string":
+          if ("enum" in field || "anyOf" in field || "oneOf" in field)
+            return [[key, { "ui:widget": "CheckboxesWidget" }]]
+          return []
+        case "number":
+          return [[key, { "ui:widget": "NumberMinMaxWidget" }]]
+        default:
+          return []
+      }
+    }),
+  }
+}
+
+export function deriveMonoFormUiSchema(
+  schema: JsonSchema,
+  uiSchema: UiSchema,
+): UiSchema {
+  return {
+    ...uiSchema,
+    score: {
+      "ui:readonly": true,
+      ...uiSchema.score,
+    },
+  }
+}
+
+export function derivePolyFormUiSchema(
+  schema: JsonSchema,
+  uiSchema: UiSchema,
+): UiSchema {
+  return {
+    ...uiSchema,
+    ...objectFlatMap(schema.properties, ([key, field]) => {
+      switch (field.type) {
+        case "boolean":
+          return [[key, { "ui:widget": "SelectWidget" }]]
+        default:
+          return []
+      }
+    }),
+  }
+}
+
+export function derivePolyFormData(
+  schema: JsonSchema,
+  regions: Specviz.RegionState,
+  selection: Specviz.SelectionState,
+): Record<string, Specviz.RegionValue> {
+  const m: Map<string, Specviz.RegionValue> = new Map()
+  for (const r of regions.values()) {
+    if (selection.has(r.id)) {
+      for (const k of Object.keys(schema.properties)) {
+        const v1 = r[k]
+        if (v1 == null) continue
+        const v2 = m.get(k)
+        if (v2 == null) {
+          m.set(k, v1)
+        } else if (Array.isArray(v1) && Array.isArray(v2)) {
+          m.set(k, Array.from(new Set(v1).intersection(new Set(v2))))
+        } else if (v1 !== v2) {
+          m.set(k, "")
+        }
+        // else v == v2, do nothing
+      }
+    }
+  }
+  for (const [k, v] of m) {
+    if ((Array.isArray(v) && v.length == 0) || v == "") {
+      m.delete(k)
+    }
+  }
+  return Object.fromEntries(m)
+}
+
+export function deriveSchemaWithoutDefaults({
+  default: _,
+  ...schema
+}: JSF.RJSFSchema): JSF.RJSFSchema {
+  switch (typeof schema.properties) {
+    case "object":
+      return {
+        ...schema,
+        properties: Object.fromEntries(
+          Object.entries(schema.properties).map(([key, field]) => [
+            key,
+            deriveSchemaWithoutDefaults(field as JSF.RJSFSchema),
+          ]),
+        ),
+      }
+    default:
+      return schema
+  }
+}
+
+function objectFlatMap<A, B>(
+  object: Record<string, A>,
+  fn: (entry: [string, A]) => Array<[string, B]>,
+): Record<string, B> {
+  return Object.fromEntries(Object.entries(object).flatMap(entry => fn(entry)))
 }

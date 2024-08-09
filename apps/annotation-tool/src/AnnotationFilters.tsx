@@ -3,40 +3,34 @@ import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import { Form } from "@rjsf/mui"
 import validator from "@rjsf/validator-ajv8"
+import * as React from "react"
+import * as Specviz from "specviz-react"
+import * as FilterContext from "./FilterContext"
 import NumberMinMaxWidget from "./NumberMinMaxWidget"
-import * as S from "./SchemaContext"
-import * as W from "./WorkspaceContext"
+import * as SchemaContext from "./SchemaContext"
 
 export default function AnnotationFilters(props: {
   setShowFilters: (show: boolean) => void
   sx?: M.SxProps
 }) {
-  const workspace = W.useWorkspace()
-  const { schema, uiSchema } = S.useSchema()
-  const derivedUi = {
-    ...uiSchema,
-    ...Object.fromEntries(
-      Object.entries(schema.properties).flatMap(([key, field]) => {
-        switch (field.type) {
-          case "string":
-            if ("enum" in field || "anyOf" in field || "oneOf" in field)
-              return [[key, { "ui:widget": "CheckboxesWidget" }]]
-            return []
-          case "number":
-            return [[key, { "ui:widget": "NumberMinMaxWidget" }]]
-          default:
-            return []
-        }
-      }),
-    ),
-  }
+  const schema = SchemaContext.useContext()
+  const filter = FilterContext.useContext()
+  const region = Specviz.useRegion()
+  const derivedSchema = React.useMemo(
+    () => SchemaContext.deriveSchemaWithoutDefaults(schema.schema),
+    [schema.schema],
+  )
+  const derivedUi = React.useMemo(
+    () => SchemaContext.deriveFilterUiSchema(schema.schema, schema.uiSchema),
+    [schema.schema, schema.uiSchema],
+  )
   return (
     <MR.Panel
       sx={props.sx}
-      title={`Filter Annotations (${workspace.filteredRegions.size} /
-            ${workspace.state.regions.size})`}
+      title={`Filter Annotations (${region.transformedRegions.size} /
+            ${region.regions.size})`}
       actions={
-        Object.keys(workspace.state.filters).length > 0
+        Object.keys(filter.filters).length > 0
           ? [
               <MR.ActionButton
                 key="0"
@@ -48,7 +42,7 @@ export default function AnnotationFilters(props: {
                 key="1"
                 children={<I.FilterListOff color="warning" />}
                 onClick={() => {
-                  workspace.dispatch(W.actions.resetFilters())
+                  filter.dispatch(FilterContext.resetFilters())
                   props.setShowFilters(false)
                 }}
                 title="Reset Filters"
@@ -66,14 +60,16 @@ export default function AnnotationFilters(props: {
       contents={
         <M.Box sx={{ marginTop: -6, padding: 2 }}>
           <Form
-            formData={workspace.state.filters}
-            schema={schema}
+            formData={filter.filters}
+            schema={derivedSchema}
             uiSchema={derivedUi}
             validator={validator}
             widgets={{
               NumberMinMaxWidget,
             }}
-            onChange={e => workspace.dispatch(W.actions.setFilters(e.formData))}
+            onChange={e =>
+              filter.dispatch(FilterContext.setFilters(e.formData))
+            }
           />
         </M.Box>
       }
