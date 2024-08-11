@@ -1,0 +1,6 @@
+[new_instances]
+maipl-file-cache ansible_host=192.168.239.27 
+
+[all:vars]
+ansible_user=ubuntu
+python_interpreter=/usr/bin/python3

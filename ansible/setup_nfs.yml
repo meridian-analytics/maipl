@@ -1,0 +1,70 @@
+---
+- hosts: maipl-file-cache
+  vars:
+    nfs_server: 192.168.239.27
+  tasks:
+    - name: Install NFS server
+      apt:
+        name: nfs-kernel-server
+        state: present
+    - name: Create directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /mnt/dev_storage
+        - /mnt/prod_storage
+    - name: Configure NFS exports
+      lineinfile:
+        path: /etc/exports
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - "/mnt/dev_storage *(rw,sync,no_subtree_check)"
+        - "/mnt/prod_storage *(rw,sync,no_subtree_check)"
+    - name: Apply NFS exports
+      command: exportfs -a
+    - name: Start and enable NFS server
+      systemd:
+        name: nfs-kernel-server
+        state: started
+        enabled: true
+
+- hosts: maipl-backend-1,maipl-backend-2,maipl-worker-a,maipl-worker-b,maipl-worker-c
+  vars:
+    nfs_server: 192.168.239.27
+    nfs_server_hostname: maipl-file-cache  # Replace with the actual hostname if different
+  tasks:
+    - name: Install NFS client
+      apt:
+        name: nfs-common
+        state: present
+    - name: Create mount points
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /mnt/dev_storage
+        - /mnt/prod_storage
+    - name: Add entries to fstab with IP address
+      lineinfile:
+        path: /etc/fstab
+        line: "{{ nfs_server }}:{{ item }} /mnt/{{ item | basename }} nfs defaults 0 0"
+      loop:
+        - /mnt/dev_storage
+        - /mnt/prod_storage
+    - name: Wait for a few seconds before mounting
+      pause:
+        seconds: 3
+    - name: Mount NFS share /mnt/dev_storage
+      command: mount -t nfs {{ nfs_server }}:/mnt/dev_storage /mnt/dev_storage
+    - name: Mount NFS share /mnt/prod_storage
+      command: mount -t nfs {{ nfs_server }}:/mnt/prod_storage /mnt/prod_storage
+    - name: Verify NFS mounts
+      shell: df -h | grep /mnt
