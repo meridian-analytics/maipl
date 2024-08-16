@@ -34,12 +34,14 @@ type t = {
   parameters: t_parameters
   /** Batch progress */
   progress: number
+  /** Batch role */
+  role: null | t_role
   /** Segment parameters */
   segment_parameters: t_segment_parameters
   /** List of segment identifiers */
   segments: Array<number>
   /** Batch share */
-  shared_to: [User.t, t_role][]
+  shared_to: [User.t, t_role_code][]
   /** Batch owner */
   user_id: number
   /** celery task, for processing */
@@ -101,14 +103,14 @@ enum t_celery_status {
   success = "SUCCESS",
 }
 
-/**
- * Batch.t_role:
- *
- * The backend uses a unique numeric id for each role.
- *
- * The labels are cosmetic, for front-end use only
- */
-enum t_role {
+/** Batch.t_role */
+type t_role = {
+  name: string
+  code: t_role_code
+}
+
+/** Batch.t_role_code */
+enum t_role_code {
   unassigned = 0,
   viewer = 1,
   contributor = 2,
@@ -138,6 +140,7 @@ type t_create_request = {
   import_file: null | number
   parameters: t_parameters
   segment_parameters: t_segment_parameters
+  shared_to?: t_share_change[]
 }
 
 /** Batch.t_create_response */
@@ -145,6 +148,7 @@ type t_create_response = Omit<t, "created_at"> & { created_at: string }
 
 /** Batch.t_get_response */
 type t_get_response = Omit<t, "created_at"> & { created_at: string }
+
 
 /** Batch.t_filter_params */
 type t_filter_params = {
@@ -205,7 +209,7 @@ type t_update_request = Omit<t, "created_at" | "shared_to"> & {
 /** Batch.audios: get list of batch audios */
 const audios = async (
   client: Client.t,
-  id: number,
+  id: number
 ): Promise<Array<Segment.t_audio>> => {
   return client
     .get<Array<Segment.t_audio>>(
@@ -214,9 +218,9 @@ const audios = async (
         params: {
           batch_id: id,
         },
-      },
+      }
     )
-    .then(r => r.data)
+    .then((r) => r.data)
 }
 
 /** Batch.create: create a new batch */
@@ -224,14 +228,29 @@ const create = async (client: Client.t, body: t_create_request): Promise<t> => {
   const response = await client
     .post<t_create_response>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/`,
-      body,
+      body
     )
-    .then(r => r.data)
+    .then((r) => r.data)
   return {
     ...response,
     created_at: new Date(response.created_at),
   }
 }
+
+const preview = async (
+  client: Client.t,
+  body: t_create_request
+): Promise<Blob> => {
+  const response = await client.post(
+    `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/preview/`,
+    body,
+    {
+      responseType: "blob",
+    }
+  )
+  return response.data
+}
+
 
 /** Batch.export: export an existing batch */
 const export_ = async (client: Client.t, id: number): Promise<File.t> => {
@@ -247,7 +266,7 @@ const export_ = async (client: Client.t, id: number): Promise<File.t> => {
     user_id: "Owner",
     created_at: "Date",
     ...Object.fromEntries(
-      annotations.flatMap(a => Object.keys(a.region)).map(k => [k, k]),
+      annotations.flatMap((a) => Object.keys(a.region)).map((k) => [k, k])
     ),
   }
   const filename = `batch-${id}-${Date.now()}.csv`
@@ -256,15 +275,15 @@ const export_ = async (client: Client.t, id: number): Promise<File.t> => {
       [
         CSV.encode(
           columns,
-          annotations.map(a => ({
+          annotations.map((a) => ({
             ...a.region,
             ...a,
             created_at: F.iso8601(a.created_at),
-          })),
+          }))
         ),
       ],
       filename,
-      { type: "text/csv" },
+      { type: "text/csv" }
     ),
     maipl_folder: File.t_maipl_folder.annotation,
     meta: {
@@ -279,14 +298,14 @@ const export_ = async (client: Client.t, id: number): Promise<File.t> => {
 /** Batch.delete: delete an existing batch */
 const delete_ = (client: Client.t, id: number): Promise<void> => {
   return client.delete(
-    `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/`,
+    `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/`
   )
 }
 
 /** Batch.images: get list of batch images */
 const images = (
   client: Client.t,
-  id: number,
+  id: number
 ): Promise<Array<Segment.t_image>> => {
   return client
     .get<Array<Segment.t_image>>(
@@ -295,15 +314,15 @@ const images = (
         params: {
           batch_id: id,
         },
-      },
+      }
     )
-    .then(r => r.data)
+    .then((r) => r.data)
 }
 
 /** Batch.list: get paginated list of batches */
 const list = async (
   client: Client.t,
-  params: t_list_request,
+  params: t_list_request
 ): Promise<t_page<t_list_item>> => {
   const response = await client
     .get<t_list_response>(
@@ -314,14 +333,18 @@ const list = async (
           batch_name__contains: params.name, // todo: backend remap
           user_id: params.user, // todo: backend remap
         },
-      },
+      }
     )
-    .then(r => r.data)
+    .then((r) => r.data)
   return {
     ...response,
-    data: response.data.map(item => ({
+    data: response.data.map((item) => ({
       ...item,
       created_at: new Date(item.created_at),
+      role: item.role && {
+        ...item.role,
+        code: Number.parseInt(String(item.role.code)), // bug: backend sending string
+      },
     })),
   }
 }
@@ -330,12 +353,16 @@ const list = async (
 const get = async (client: Client.t, id: number): Promise<t> => {
   const response = await client
     .get<t_get_response>(
-      `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/`,
+      `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/`
     )
-    .then(r => r.data)
+    .then((r) => r.data)
   return {
     ...response,
     created_at: new Date(response.created_at),
+    role: response.role && {
+      ...response.role,
+      code: Number.parseInt(String(response.role.code)), // bug: backend sending string
+    },
   }
 }
 
@@ -344,11 +371,11 @@ type Patch<T extends { id: number }> = Pick<T, "id"> & Partial<Omit<T, "id">>
 /** Batch.patch: partial update existing batch */
 const patch = (
   client: Client.t,
-  body: Patch<t_update_request>,
+  body: Patch<t_update_request>
 ): Promise<void> => {
   return client.patch(
     `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${body.id}/`,
-    body,
+    body
   )
 }
 
@@ -359,23 +386,23 @@ const process = async (client: Client.t, id: number): Promise<number> => {
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/process/`,
       {
         batch_id: id,
-      },
+      }
     )
-    .then(r => r.data)
+    .then((r) => r.data)
   return response.task_id
 }
 
 /** Batch.segments: get unpaginated list of batch segments */
 const segments = async (
   client: Client.t,
-  id: number,
+  id: number
 ): Promise<Array<Segment.t>> => {
   const response = await client
     .get<t_read_segments_response>(
-      `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/segments/`,
+      `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/segments/`
     )
-    .then(r => r.data)
-  return response.map(s => ({
+    .then((r) => r.data)
+  return response.map((s) => ({
     ...s,
     created_at: new Date(s.created_at),
     end: Number(s.end),
@@ -406,7 +433,7 @@ const status = (batch: t_list_item): t_status => {
 const update = (client: Client.t, body: t_update_request): Promise<void> => {
   return client.put(
     `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${body.id}/`,
-    body,
+    body
   )
 }
 
@@ -421,10 +448,12 @@ export {
   type t_list_response,
   type t_parameters,
   type t_process_response,
+  type t_role,
   type t_segment_parameters,
   type t_update_request,
   audios,
   create,
+  preview,
   delete_ as delete,
   export_ as export,
   get,
@@ -435,7 +464,7 @@ export {
   segments,
   status,
   t_filter_shared, // enum
-  t_role, // enum
+  t_role_code, // enum
   t_status, // enum
   update,
 }

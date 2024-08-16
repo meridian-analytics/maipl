@@ -13,6 +13,7 @@ enum t_maipl_folder {
   dataset = "dataset",
   model = "model",
   raw = "raw",
+  metrics = "metrics",
 }
 
 /** File.t represents files that have already been uploaded */
@@ -118,6 +119,14 @@ type t_delete_request = Array<number>
 
 /** File.t_get_request */
 type t_get_request = number
+
+/** File.t_patch_request */
+type t_patch_request = Partial<{
+  tag: string;
+  path: string;
+  maipl_folder: t_maipl_folder;
+  meta: Meta.t_meta | null;
+}>;
 
 /** File.t_get_response */
 type t_get_response = Omit<t, "created_at" | "updated_at" | "meta"> & {
@@ -305,6 +314,30 @@ const update = async (
   }
 }
 
+/** File.patch: update specific fields of an existing file */
+const patch = async (
+  client: Client.t,
+  id: number,
+  body: t_patch_request
+): Promise<t> => {
+  const response = await client
+    .patch<t_get_response>(
+      `${K.MAIPL_FILE_BACKEND}/api/file/${id}/`,
+      body,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    )
+    .then(r => r.data);
+
+  return {
+    ...response,
+    created_at: new Date(response.created_at),
+    updated_at: new Date(response.updated_at),
+    meta: Meta.safeParse(response.meta),
+  };
+};
+
 /** File.usage: get usage report */
 const usage = (client: Client.t): Promise<t_usage> => {
   return client
@@ -330,6 +363,7 @@ export {
   type t_update_request,
   type t_update_response,
   type t_usage,
+  type t_patch_request,
   create,
   delete_ as delete,
   discoverMeta,
@@ -339,6 +373,7 @@ export {
   safeMeta,
   update,
   usage,
+  patch,
 }
 
 export { type t_meta } from "./meta.ts"

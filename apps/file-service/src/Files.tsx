@@ -166,9 +166,10 @@ function ShareAvatars(props: { file: File.t }) {
 }
 
 export default function Files(props: { sx?: M.SxProps }) {
+  
   const qs = RRT.useLoaderData<UseLoaderData>()
   const setSearch = RR.useSearchParams()[1]
-  const { selection, setSelection } = MR.Files.useTable()
+  const { selection, setSelection, updateTag } = MR.Files.useTable()
 
   function setState(value: LoaderData, options?: RR.NavigateOptions) {
     setSearch(
@@ -251,19 +252,19 @@ export default function Files(props: { sx?: M.SxProps }) {
         }}
       >
         <RR.Outlet />
-        <M.Stack direction="row">
+        <M.Stack direction='row'>
           <MR.Picker
-            label="Folder"
-            setValue={folder => {
+            label='Folder'
+            setValue={(folder) => {
               if (folder) {
                 JS.invariantEnum(
                   folder,
                   File.t_maipl_folder,
-                  "File.t_maipl_folder",
+                  "File.t_maipl_folder"
                 )
                 setState(
                   { ...qs, folder, page: 1, size: qs.size },
-                  { replace: true },
+                  { replace: true }
                 )
               }
             }}
@@ -274,11 +275,12 @@ export default function Files(props: { sx?: M.SxProps }) {
               File.t_maipl_folder.dataset,
               File.t_maipl_folder.model,
               File.t_maipl_folder.raw,
+              File.t_maipl_folder.metrics,
             ]}
           />
           <M.TextField
-            label="Path"
-            onChange={e =>
+            label='Path'
+            onChange={(e) =>
               setState(
                 {
                   ...qs,
@@ -286,15 +288,15 @@ export default function Files(props: { sx?: M.SxProps }) {
                   page: 1,
                   size: qs.size,
                 },
-                { replace: true },
+                { replace: true }
               )
             }
-            placeholder="path/to/folder"
+            placeholder='path/to/folder'
             value={qs.path}
           />
           <M.TextField
-            label="Tag"
-            onChange={e =>
+            label='Tag'
+            onChange={(e) =>
               setState(
                 {
                   ...qs,
@@ -302,24 +304,24 @@ export default function Files(props: { sx?: M.SxProps }) {
                   page: 1,
                   size: qs.size,
                 },
-                { replace: true },
+                { replace: true }
               )
             }
-            placeholder="my-tag"
+            placeholder='my-tag'
             value={qs.tag}
           />
           <MR.Picker
-            label="Shared"
-            setValue={shared => {
+            label='Shared'
+            setValue={(shared) => {
               if (shared) {
                 JS.invariantEnum(
                   shared,
                   File.t_filter_shared,
-                  "File.t_filter_shared",
+                  "File.t_filter_shared"
                 )
                 setState(
                   { ...qs, shared, page: 1, size: qs.size },
-                  { replace: true },
+                  { replace: true }
                 )
               }
             }}
@@ -342,7 +344,7 @@ export default function Files(props: { sx?: M.SxProps }) {
             pageSize: qs.size,
           }}
           selection={selection}
-          setPagination={value => {
+          setPagination={(value) => {
             if (typeof value == "function") {
               const m = value({ pageIndex: qs.page - 1, pageSize: qs.size })
               setState({
@@ -366,6 +368,9 @@ export default function Files(props: { sx?: M.SxProps }) {
             channels: false,
             sample_rate: false,
             user_id: false,
+          }}
+          meta={{
+            onTagUpdate: updateTag,
           }}
         />
       </M.Stack>

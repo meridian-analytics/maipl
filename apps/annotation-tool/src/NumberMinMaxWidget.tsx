@@ -18,6 +18,12 @@ export default function NumberMinMaxWidget(props: JSF.WidgetProps) {
             value[1],
           ])
         }
+        inputProps={{
+          min: props.schema.minimum,
+          max: props.schema.maximum,
+          step: props.schema.multipleOf,
+        }}
+        sx={{ flexGrow: 1 }}
       />
       <M.TextField
         label={`${props.label ?? props.name} Max`}
@@ -29,6 +35,12 @@ export default function NumberMinMaxWidget(props: JSF.WidgetProps) {
             e.target.value == "" ? null : Number(e.target.value),
           ])
         }
+        inputProps={{
+          min: props.schema.minimum,
+          max: props.schema.maximum,
+          step: props.schema.multipleOf,
+        }}
+        sx={{ flexGrow: 1 }}
       />
     </M.Stack>
   )

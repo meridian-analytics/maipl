@@ -3,8 +3,8 @@ import * as Audio from "specviz-react/audio"
 
 export default function Keybinds() {
   const audio = Audio.useContext()
-  const region = Specviz.useRegions()
-  const input = Specviz.useInput()
+  const region = Specviz.useRegion()
+  const tool = Specviz.useTool()
   return (
     <Specviz.Bindings>
       <Specviz.Keypress bind="Escape" onKeyDown={region.deselect} />
@@ -36,16 +36,10 @@ export default function Keybinds() {
           region.moveSelection(0, 0.03)
         }}
       />
-      <Specviz.Keypress
-        bind="a"
-        onKeyDown={() => input.setToolState("annotate")}
-      />
-      <Specviz.Keypress
-        bind="s"
-        onKeyDown={() => input.setToolState("select")}
-      />
-      <Specviz.Keypress bind="d" onKeyDown={() => input.setToolState("zoom")} />
-      <Specviz.Keypress bind="f" onKeyDown={() => input.setToolState("pan")} />
+      <Specviz.Keypress bind="a" onKeyDown={() => tool.setTool("annotate")} />
+      <Specviz.Keypress bind="s" onKeyDown={() => tool.setTool("select")} />
+      <Specviz.Keypress bind="d" onKeyDown={() => tool.setTool("zoom")} />
+      <Specviz.Keypress bind="f" onKeyDown={() => tool.setTool("pan")} />
       <Specviz.Keypress bind="z" onKeyDown={() => audio.transport.seek(0)} />
       <Specviz.Keypress bind="x" onKeyDown={() => audio.transport.play()} />
       <Specviz.Keypress bind="c" onKeyDown={() => audio.transport.stop()} />

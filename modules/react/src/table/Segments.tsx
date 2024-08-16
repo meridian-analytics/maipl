@@ -56,15 +56,14 @@ function useQuery(props: Segment.t_list_request) {
   return RQ.useQuery({
     queryKey: ["segments", "list", props],
     queryFn: () => Segment.list(client, props),
-    initialData: () =>
-      ({
-        data: [],
-        page: 1,
-        size: props.size,
-        count: 0,
-        prev: null,
-        next: null,
-      }) as t_page<Segment.t>,
+    initialData: (): t_page<Segment.t> => ({
+      data: [],
+      page: 1,
+      size: props.size ?? 100,
+      count: 0,
+      prev: null,
+      next: null,
+    }),
   })
 }
 

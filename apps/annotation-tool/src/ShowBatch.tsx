@@ -101,7 +101,7 @@ export default function ShowBatch(props: ShowBatchProps) {
   )
 
   // field: share_to
-  const [shareTo, setShareTo] = R.useState<Map<number, Batch.t_role>>(
+  const [shareTo, setShareTo] = R.useState<Map<number, Batch.t_role_code>>(
     () => new Map(),
   )
 
