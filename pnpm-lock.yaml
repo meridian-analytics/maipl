@@ -72,8 +72,8 @@ importers:
         specifier: ^1.4.4
         version: 1.5.0(react-router-dom@6.24.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(typescript@5.5.3)
       specviz-react:
-        specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react#0.10.1
-        version: git+https://git-dev.cs.dal.ca/meridian/specviz-react#331146f88a6db1b591a39f6fac0484f4dd89f2ad(typescript@5.5.3)
+        specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react#0.11.0
+        version: git+https://git-dev.cs.dal.ca/meridian/specviz-react#f808744a0470589c6d12926d858ce54030e4f2d9(typescript@5.5.3)
       zod:
         specifier: ^3.22.4
         version: 3.23.8
@@ -362,6 +362,79 @@ importers:
         specifier: ^5.2.7
         version: 5.3.3
 
+  apps/model-trainer:
+    dependencies:
+      '@emotion/react':
+        specifier: ^11.11.4
+        version: 11.11.4(@types/react@18.3.3)(react@18.3.1)
+      '@emotion/styled':
+        specifier: ^11.11.5
+        version: 11.11.5(@emotion/react@11.11.4(@types/react@18.3.3)(react@18.3.1))(@types/react@18.3.3)(react@18.3.1)
+      '@maipl/api':
+        specifier: workspace:^
+        version: link:../../modules/api
+      '@maipl/format':
+        specifier: workspace:^
+        version: link:../../modules/format
+      '@maipl/js':
+        specifier: workspace:^
+        version: link:../../modules/js
+      '@maipl/react':
+        specifier: workspace:^
+        version: link:../../modules/react
+      '@maipl/tree':
+        specifier: workspace:^
+        version: link:../../modules/tree
+      '@mui/icons-material':
+        specifier: ^5.15.14
+        version: 5.16.1(@mui/material@5.16.1(@emotion/react@11.11.4(@types/react@18.3.3)(react@18.3.1))(@emotion/styled@11.11.5(@emotion/react@11.11.4(@types/react@18.3.3)(react@18.3.1))(@types/react@18.3.3)(react@18.3.1))(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.3)(react@18.3.1)
+      '@mui/material':
+        specifier: ^5.15.14
+        version: 5.16.1(@emotion/react@11.11.4(@types/react@18.3.3)(react@18.3.1))(@emotion/styled@11.11.5(@emotion/react@11.11.4(@types/react@18.3.3)(react@18.3.1))(@types/react@18.3.3)(react@18.3.1))(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rjsf/core':
+        specifier: ^5.19.3
+        version: 5.19.3(@rjsf/utils@5.19.3(react@18.3.1))(react@18.3.1)
+      '@rjsf/utils':
+        specifier: ^5.18.1
+        version: 5.19.3(react@18.3.1)
+      '@rjsf/validator-ajv8':
+        specifier: ^5.18.1
+        version: 5.19.3(@rjsf/utils@5.19.3(react@18.3.1))
+      '@tanstack/react-query':
+        specifier: ^5.28.9
+        version: 5.51.1(react@18.3.1)
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.22.3
+        version: 6.24.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-router-typesafe:
+        specifier: ^1.4.4
+        version: 1.5.0(react-router-dom@6.24.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(typescript@5.5.3)
+    devDependencies:
+      '@tanstack/react-query-devtools':
+        specifier: ^5.28.10
+        version: 5.51.1(@tanstack/react-query@5.51.1(react@18.3.1))(react@18.3.1)
+      '@types/react':
+        specifier: ^18.2.73
+        version: 18.3.3
+      '@types/react-dom':
+        specifier: ^18.2.23
+        version: 18.3.0
+      '@vitejs/plugin-react':
+        specifier: ^4.2.1
+        version: 4.3.1(vite@5.3.3)
+      typescript:
+        specifier: ^5.5.3
+        version: 5.5.3
+      vite:
+        specifier: ^5.2.7
+        version: 5.3.3
+
   modules/api:
     dependencies:
       '@maipl/buffer':
@@ -380,8 +453,8 @@ importers:
         specifier: ^1.6.8
         version: 1.7.2
       specviz-react:
-        specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react#0.10.1
-        version: git+https://git-dev.cs.dal.ca/meridian/specviz-react#331146f88a6db1b591a39f6fac0484f4dd89f2ad(typescript@5.5.3)
+        specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react#0.11.0
+        version: git+https://git-dev.cs.dal.ca/meridian/specviz-react#f808744a0470589c6d12926d858ce54030e4f2d9(typescript@5.5.3)
 
   modules/async: {}
 
@@ -1559,9 +1632,9 @@ packages:
     resolution: {integrity: sha512-LbrmJOMUSdEVxIKvdcJzQC+nQhe8FUZQTXQy6+I75skNgn3OoQ0DZA8YnFa7gp8tqtL3KPf1kmo0R5DoApeSGQ==}
     engines: {node: '>=0.10.0'}
 
-  specviz-react@git+https://git-dev.cs.dal.ca/meridian/specviz-react#331146f88a6db1b591a39f6fac0484f4dd89f2ad:
-    resolution: {commit: 331146f88a6db1b591a39f6fac0484f4dd89f2ad, repo: https://git-dev.cs.dal.ca/meridian/specviz-react, type: git}
-    version: 0.10.1
+  specviz-react@git+https://git-dev.cs.dal.ca/meridian/specviz-react#f808744a0470589c6d12926d858ce54030e4f2d9:
+    resolution: {commit: f808744a0470589c6d12926d858ce54030e4f2d9, repo: https://git-dev.cs.dal.ca/meridian/specviz-react, type: git}
+    version: 0.11.0
     peerDependencies:
       typescript: ^5.5.3
 
@@ -2697,7 +2770,7 @@ snapshots:
 
   source-map@0.5.7: {}
 
-  specviz-react@git+https://git-dev.cs.dal.ca/meridian/specviz-react#331146f88a6db1b591a39f6fac0484f4dd89f2ad(typescript@5.5.3):
+  specviz-react@git+https://git-dev.cs.dal.ca/meridian/specviz-react#f808744a0470589c6d12926d858ce54030e4f2d9(typescript@5.5.3):
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)

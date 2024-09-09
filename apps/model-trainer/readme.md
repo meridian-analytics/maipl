@@ -1,0 +1,60 @@
+# MAIPL Model Trainer Frontend
+
+## Setup
+
+Copy environment defaults.
+
+```sh
+$ cp .env.defaults .env
+```
+
+Configure environment.
+
+```sh
+# maipl-common
+MAIPL_ANNOTATION_BACKEND=http://localhost:8200
+MAIPL_ANNOTATION_FRONTEND=http://localhost:3200
+MAIPL_AUTH_BACKEND=http://localhost:8000
+MAIPL_AUTH_FRONTEND=http://localhost:3000
+MAIPL_FILE_BACKEND=http://localhost:8100
+MAIPL_FILE_FRONTEND=http://localhost:3100
+MAIPL_METRICS_BACKEND=http://localhost:8400
+MAIPL_METRICS_FRONTEND=http://localhost:3400
+MAIPL_MODEL_RUNNER_BACKEND=http://localhost:8300
+MAIPL_MODEL_RUNNER_FRONTEND=http://localhost:3300
+MAIPL_REACT_QUERY_DEVTOOLS=true
+
+# vite
+VITE_BASE_URL=/
+VITE_PORT=3400
+```
+
+Install packages and start dev server.
+
+```sh
+$ pnpm i
+$ pnpm start
+```
+
+## Development
+
+Lint and format all source code before commits.
+
+```sh
+$ pnpm format
+$ pnpm check
+```
+
+## Production
+
+Build the project and serve the `dist` directory.
+
+```sh
+$ pnpm build
+```
+
+You can preview the production build using `preview`.
+
+```sh
+$ pnpm preview
+```

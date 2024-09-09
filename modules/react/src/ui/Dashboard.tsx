@@ -42,7 +42,7 @@ export default function Dashboard() {
           to={K.MAIPL_ANNOTATION_FRONTEND}
         />
         <NavButton
-          icon={I.ModelTraining}
+          icon={I.PlayCircle}
           label="Model Runner"
           to={K.MAIPL_MODEL_RUNNER_FRONTEND}
         />
@@ -50,6 +50,11 @@ export default function Dashboard() {
           icon={I.QueryStats}
           label="Metrics"
           to={K.MAIPL_METRICS_FRONTEND}
+        />
+        <NavButton
+          icon={I.ModelTraining}
+          label="Model Trainer"
+          to={K.MAIPL_MODEL_TRAINER_FRONTEND}
         />
       </M.Stack>
     </M.Stack>
