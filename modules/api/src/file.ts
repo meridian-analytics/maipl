@@ -14,6 +14,7 @@ enum t_maipl_folder {
   model = "model",
   raw = "raw",
   metrics = "metrics",
+  recipe = "recipe"
 }
 
 /** File.t represents files that have already been uploaded */

@@ -16,3 +16,6 @@ dist
 
 # typescript
 *.tsbuildinfo
+
+# mock data
+apps/model-trainer/src/data/

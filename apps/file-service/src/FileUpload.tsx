@@ -85,7 +85,9 @@ function Element() {
         />
       )
     case File.t_maipl_folder.dataset:
-      return <FileUpload folder={folder} onClose={onClose} disabled={true} />
+      return <FileUpload folder={folder} onClose={onClose} accept={{
+        "application/hdf5": [".h5"]
+      }} />
     case File.t_maipl_folder.model:
       return (
         <FileUpload
@@ -104,6 +106,26 @@ function Element() {
           accept={{
             "audio/flac": [".flac"],
             "audio/x-wav": [".wav"],
+          }}
+        />
+      )
+    case File.t_maipl_folder.metrics:
+      return (
+        <FileUpload
+          folder={folder}
+          onClose={onClose}
+          accept={{
+            "text/csv": [".csv"],
+          }}
+        />
+      )
+    case File.t_maipl_folder.recipe:
+      return (
+        <FileUpload
+          folder={folder}
+          onClose={onClose}
+          accept={{
+            "application/json": [".json"],
           }}
         />
       )

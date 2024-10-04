@@ -50,6 +50,16 @@ export const MAIPL_MODEL_RUNNER_FRONTEND = safeParseString(
   "http://localhost:3000",
 )
 
+export const MAIPL_MODEL_TRAINER_BACKEND = safeParseString(
+  import.meta.env["MAIPL_MODEL_TRAINER_BACKEND"],
+  "http://localhost:8000",
+)
+
+export const MAIPL_MODEL_TRAINER_FRONTEND = safeParseString(
+  import.meta.env["MAIPL_MODEL_TRAINER_FRONTEND"],
+  "http://localhost:3000",
+)
+
 export const MAIPL_REACT_QUERY_DEVTOOLS: boolean = safeParseBoolean(
   import.meta.env["MAIPL_REACT_QUERY_DEVTOOLS"],
   false,

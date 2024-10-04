@@ -29,6 +29,7 @@ export {
   Segments,
   Table,
   Tasks,
+  TrainerTasks,
   usePagination,
   useSelection,
   useTable,

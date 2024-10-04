@@ -2,7 +2,7 @@ import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
 import Tasks from "./Tasks"
-
+import EditTaskLoader from "./EditTask"
 export default function App() {
   return <MR.MaiplProvider router={router} />
 }
@@ -28,15 +28,23 @@ function Layout() {
 }
 
 function LocalNavigation() {
+  const taskId = RR.useMatch("/edit-task/:taskId/*")?.params?.taskId
   const tab = RR.useMatch("/:tab/*")?.params?.tab
+
   return (
-    <M.Stack direction='row' flexGrow={1} justifyContent='center'>
-      <M.Tabs value={tab ?? "Tasks"} indicatorColor='primary'>
+    <M.Stack direction="row" flexGrow={1} justifyContent="center">
+      <M.Tabs value={tab ?? "new-tasks"} indicatorColor="primary">
         <M.Tab
           component={RR.Link}
-          label='Tasks'
-          to='/tasks'
-          value='tasks'
+          label="New Tasks"
+          to="/new-tasks"
+          value="new-tasks"
+        />
+        <M.Tab
+          component={RR.Link}
+          label="Continue Tasks"
+          to="/continue-tasks"
+          value="continue-tasks"
         />
       </M.Tabs>
     </M.Stack>
@@ -49,11 +57,27 @@ const router: MR.t_router = (context) => [
     children: [
       {
         index: true,
-        element: <RR.Navigate to='/tasks' replace />,
+        element: <RR.Navigate to="/new-tasks" replace />,
       },
       {
-        path: "tasks",
+        path: "new-tasks",
         element: <Tasks />,
+        children: [
+          {
+            path: "edit-task",
+            element: <EditTaskLoader />,
+          },
+        ],
+      },
+      {
+        path: "continue-tasks",
+        element: <Tasks />,
+        children: [
+          {
+            path: "edit-task",
+            element: <EditTaskLoader />,
+          },
+        ],
       },
     ],
   },

@@ -276,6 +276,7 @@ export default function Files(props: { sx?: M.SxProps }) {
               File.t_maipl_folder.model,
               File.t_maipl_folder.raw,
               File.t_maipl_folder.metrics,
+              File.t_maipl_folder.recipe,
             ]}
           />
           <M.TextField
