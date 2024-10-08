@@ -9,6 +9,7 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline"
 import EditRecipe from "./EditRecipe"
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView"
 import { TreeItem } from "@mui/x-tree-view/TreeItem"
+import { useTreeViewApiRef } from "@mui/x-tree-view/hooks"
 
 export default function EditTaskLoader() {
   const maipl = MR.useMaipl()
@@ -53,6 +54,9 @@ function EditTask(props: {
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
 
+  const apiRef = useTreeViewApiRef()
+  const toggledItemRef = R.useRef<{ [itemId: string]: boolean }>({})
+
   const [tab, setTab] = R.useState<Tab>(Tab.dataset_files)
   const [name, setName] = R.useState("")
   const [description, setDescription] = R.useState("")
@@ -60,7 +64,7 @@ function EditTask(props: {
   const [recipeFile, setRecipeFile] = R.useState<File.t>()
   const [modelFile, setModelFile] = R.useState<File.t>()
   const [options, setOptions] = R.useState<TrainerTask.t_options>({})
-  const [groups, setGroups] = R.useState<Array<string>>({})
+  const [groups, setGroups] = R.useState<Array<string>>([])
   const [isModalOpen, setIsModalOpen] = R.useState(false)
   const [error, setError] = R.useState<string | null>(null)
   const openModal = () => setIsModalOpen(true)
@@ -165,12 +169,14 @@ function EditTask(props: {
     const task = {
       name,
       description,
-      celery_task_id: "",
+      options,
       dataset_file: selectedDataset.id,
       recipe_file: selectedRecipe.id,
       model_file: selectedModel?.id,
-      options,
-      status: "CREATED",
+      train_datasets: selectedTrainDatasets.filter((dataset) => dataset.includes("/")),
+      val_datasets: selectedValDatasets.filter((dataset) => dataset.includes("/")),
+      train_dataset_options: trainDatasetOptions,
+      val_dataset_options: valDatasetOptions,
     }
 
     console.log(task)
@@ -188,9 +194,10 @@ function EditTask(props: {
   R.useEffect(() => {
     if (selectedTrainDatasetFiles.length == 1) {
       const hdf5_groups = selectedTrainDatasetFiles[0].meta["hdf5_structure"]
-      setGroups(hdf5_groups)
+      const transformedGroups = transformHDF5Groups(hdf5_groups)
+      setGroups(transformedGroups)
     } else if (selectedTrainDatasetFiles.length == 0) {
-      setGroups({})
+      setGroups([])
     } else {
       setError("Only one dataset file can be selected.")
     }
@@ -207,58 +214,121 @@ function EditTask(props: {
     }
   }, [selection])
 
-  const renderTree = (nodes: Record<string, any>, path: string[] = []) =>
-    Object.entries(nodes).map(([key, value]) => (
-      <TreeItem
-        key={key}
-        itemId={[...path, key].join("/")}
-        label={key}
-        children={
-          value && typeof value === "object" && Object.keys(value).length > 0
-            ? renderTree(value, [...path, key])
-            : null
-        }
-      />
+  const transformHDF5Groups = (
+    hdf5_groups: Record<string, any>
+  ): Array<any> => {
+    return Object.entries(hdf5_groups).map(([groupName, groupContent]) => {
+      return {
+        id: groupName,
+        name: groupName,
+        children: Object.entries(groupContent).map(
+          ([datasetName, datasetType]) => ({
+            id: `${groupName}/${datasetName}`,
+            name: `${datasetName}`,
+          })
+        ),
+      }
+    })
+  }
+
+  const renderTree = (nodes: Array<any>): React.ReactNode =>
+    nodes.map((node) => (
+      <TreeItem key={node.id} itemId={node.id} label={node.name}>
+        {node.children && node.children.length > 0
+          ? renderTree(node.children)
+          : null}
+      </TreeItem>
     ))
 
-  const handleSelectionChange = (
-    event: React.SyntheticEvent,
-    itemIds: string[]
-  ) => {
-    setSelectedTrainDatasets(itemIds)
-
-    const newOptions: Record<
-      string,
-      { annotation: string; batchSize: number }
-    > = {}
-    itemIds.forEach((itemId) => {
-      newOptions[itemId] = trainDatasetOptions[itemId] || {
-        annotation: "",
-        batchSize: 32,
-      }
+  const getItemDescendantsIds = (item: TreeViewBaseItem) => {
+    const ids: string[] = []
+    item.children?.forEach((child) => {
+      ids.push(child.id)
+      ids.push(...getItemDescendantsIds(child))
     })
-    setTrainDatasetOptions(newOptions)
+    return ids
   }
 
-  const handleValSelectionChange = (
+  const handleItemSelectionToggle = (
     event: React.SyntheticEvent,
-    itemIds: string[]
+    itemId: string,
+    isSelected: boolean
   ) => {
-    setSelectedValDatasets(itemIds)
-
-    const newOptions: Record<
-      string,
-      { annotation: string; batchSize: number }
-    > = {}
-    itemIds.forEach((itemId) => {
-      newOptions[itemId] = valDatasetOptions[itemId] || {
-        annotation: "",
-        batchSize: 32,
-      }
-    })
-    setValDatasetOptions(newOptions)
+    toggledItemRef.current[itemId] = isSelected
   }
 
+  const createSelectionChangeHandler = (
+    setSelectedDatasets: React.Dispatch<React.SetStateAction<string[]>>,
+    setDatasetOptions: React.Dispatch<
+      React.SetStateAction<
+        Record<string, { annotation: string; batchSize: number }>
+      >
+    >,
+    currentOptions: Record<string, { annotation: string; batchSize: number }>
+  ) => {
+    return (event: React.SyntheticEvent, newSelectedItems: string[]) => {
+      const itemsToSelect: string[] = []
+      const itemsToUnSelect: { [itemId: string]: boolean } = {}
+
+      Object.entries(toggledItemRef.current).forEach(([itemId, isSelected]) => {
+        const item =
+          groups.find((group) => group.id === itemId) ||
+          groups
+            .flatMap((group) => group.children)
+            .find((child) => child.id === itemId)
+
+        if (item) {
+          const descendants = getItemDescendantsIds(item)
+          if (isSelected) {
+            itemsToSelect.push(itemId, ...descendants)
+          } else {
+            itemsToUnSelect[itemId] = true
+            descendants.forEach((descendantId) => {
+              itemsToUnSelect[descendantId] = true
+            })
+          }
+        }
+      })
+
+      const finalSelectedItems = Array.from(
+        new Set(
+          [...newSelectedItems, ...itemsToSelect].filter(
+            (itemId) => !itemsToUnSelect[itemId]
+          )
+        )
+      )
+
+      setSelectedDatasets(finalSelectedItems)
+
+      const newOptions: Record<
+        string,
+        { annotation: string; batchSize: number }
+      > = {}
+      console.log(finalSelectedItems)
+      finalSelectedItems.forEach((itemId) => {
+        newOptions[itemId] = currentOptions[itemId] || {
+          annotation: "",
+          batchSize: 32,
+        }
+      })
+      setDatasetOptions(newOptions)
+      console.log(newOptions)
+
+      toggledItemRef.current = {}
+    }
+  }
+
+  const handleTrainSelectionChange = createSelectionChangeHandler(
+    setSelectedTrainDatasets,
+    setTrainDatasetOptions,
+    trainDatasetOptions
+  )
+
+  const handleValSelectionChange = createSelectionChangeHandler(
+    setSelectedValDatasets,
+    setValDatasetOptions,
+    valDatasetOptions
+  )
   return (
     <MR.Modal onClose={props.onClose} sx={{ minWidth: 800 }}>
       <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
@@ -364,7 +434,7 @@ function EditTask(props: {
                     overflow: "auto",
                   }}
                 >
-                  <EditRecipe />
+                  <EditRecipe onClose={closeModal} />
                 </M.Box>
               </M.Modal>
             </M.Stack>
@@ -425,59 +495,62 @@ function EditTask(props: {
             <SimpleTreeView
               multiSelect
               checkboxSelection
+              apiRef={apiRef}
               selectedItems={selectedTrainDatasets}
-              onSelectedItemsChange={handleSelectionChange}
+              onSelectedItemsChange={handleTrainSelectionChange}
+              onItemSelectionToggle={handleItemSelectionToggle}
+              
             >
               {renderTree(groups)}
             </SimpleTreeView>
-            {selectedTrainDatasets.map((dataset) => (
-              <M.Box key={dataset} sx={{ mt: 2 }}>
-                <M.Stack direction="row" spacing={2} alignItems="center">
-                  <M.Typography variant="subtitle1">{dataset}</M.Typography>
-                  <M.FormControl sx={{ flexGrow: 1 }}>
-                    <M.InputLabel>Annotation Dataset</M.InputLabel>
-                    <M.Select
-                      value={trainDatasetOptions[dataset]?.annotation || ""}
+            {selectedTrainDatasets
+              .filter((dataset) => dataset.includes("/"))
+              .map((dataset) => (
+                <M.Box key={dataset} sx={{ mt: 2 }}>
+                  <M.Stack direction="row" spacing={2} alignItems="center">
+                    <M.Typography variant="subtitle1">{dataset}</M.Typography>
+                    <M.FormControl sx={{ flexGrow: 1 }}>
+                      <M.InputLabel>Annotation Dataset</M.InputLabel>
+                      <M.Select
+                        label="Annotation Dataset"
+                        value={trainDatasetOptions[dataset]?.annotation || ""}
+                        onChange={(e) =>
+                          setTrainDatasetOptions((prev) => ({
+                            ...prev,
+                            [dataset]: {
+                              ...prev[dataset],
+                              annotation: e.target.value as string,
+                            },
+                          }))
+                        }
+                      >
+                        {groups.flatMap((group) =>
+                          group.children.map((child) => (
+                            <M.MenuItem key={child.id} value={child.id}>
+                              {`${group.name}/${child.name}`}
+                            </M.MenuItem>
+                          ))
+                        )}
+                      </M.Select>
+                    </M.FormControl>
+                    <M.TextField
+                      type="number"
+                      label="Batch Size"
+                      value={trainDatasetOptions[dataset]?.batchSize || ""}
                       onChange={(e) =>
                         setTrainDatasetOptions((prev) => ({
                           ...prev,
                           [dataset]: {
                             ...prev[dataset],
-                            annotation: e.target.value as string,
+                            batchSize: parseInt(e.target.value) || 0,
                           },
                         }))
                       }
-                    >
-                      {Object.entries(groups).flatMap(([group, datasets]) =>
-                        Object.keys(datasets).map((ds) => (
-                          <M.MenuItem
-                            key={`${group}.${ds}`}
-                            value={`${group}.${ds}`}
-                          >
-                            {`${group}.${ds}`}
-                          </M.MenuItem>
-                        ))
-                      )}
-                    </M.Select>
-                  </M.FormControl>
-                  <M.TextField
-                    type="number"
-                    label="Batch Size"
-                    value={trainDatasetOptions[dataset]?.batchSize || ""}
-                    onChange={(e) =>
-                      setTrainDatasetOptions((prev) => ({
-                        ...prev,
-                        [dataset]: {
-                          ...prev[dataset],
-                          batchSize: parseInt(e.target.value) || 0,
-                        },
-                      }))
-                    }
-                    sx={{ width: "150px" }}
-                  />
-                </M.Stack>
-              </M.Box>
-            ))}
+                      sx={{ width: "150px" }}
+                    />
+                  </M.Stack>
+                </M.Box>
+              ))}
           </M.Stack>
         )}
         {tab == Tab.val_table && (
@@ -485,18 +558,23 @@ function EditTask(props: {
             <SimpleTreeView
               multiSelect
               checkboxSelection
+              apiRef={apiRef}
               selectedItems={selectedValDatasets}
               onSelectedItemsChange={handleValSelectionChange}
+              onItemSelectionToggle={handleItemSelectionToggle}
             >
               {renderTree(groups)}
             </SimpleTreeView>
-            {selectedValDatasets.map((dataset) => (
-              <M.Box key={dataset} sx={{ mt: 2 }}>
-                <M.Stack direction="row" spacing={2} alignItems="center">
+            {selectedValDatasets
+              .filter((dataset) => dataset.includes("/"))
+              .map((dataset) => (
+                <M.Box key={dataset} sx={{ mt: 2 }}>
+                  <M.Stack direction="row" spacing={2} alignItems="center">
                   <M.Typography variant="subtitle1">{dataset}</M.Typography>
                   <M.FormControl sx={{ flexGrow: 1 }}>
                     <M.InputLabel>Annotation Dataset</M.InputLabel>
                     <M.Select
+                      label="Annotation Dataset"
                       value={valDatasetOptions[dataset]?.annotation || ""}
                       onChange={(e) =>
                         setValDatasetOptions((prev) => ({
@@ -508,13 +586,10 @@ function EditTask(props: {
                         }))
                       }
                     >
-                      {Object.entries(groups).flatMap(([group, datasets]) =>
-                        Object.keys(datasets).map((ds) => (
-                          <M.MenuItem
-                            key={`${group}.${ds}`}
-                            value={`${group}.${ds}`}
-                          >
-                            {`${group}.${ds}`}
+                      {groups.flatMap((group) =>
+                        group.children.map((child) => (
+                          <M.MenuItem key={child.id} value={child.id}>
+                            {`${group.name}/${child.name}`}
                           </M.MenuItem>
                         ))
                       )}
@@ -592,27 +667,6 @@ function EditTask(props: {
                   sx={{ flexGrow: 1 }}
                 />
                 <M.Tooltip title="Seed for random number generator for reproducibility.">
-                  <HelpOutlineIcon fontSize="small" />
-                </M.Tooltip>
-              </M.Stack>
-            </M.FormControl>
-
-            {/* Checkpoints Field */}
-            <M.FormControl fullWidth>
-              <M.Stack direction="row" alignItems="center" spacing={1}>
-                <M.TextField
-                  type="number"
-                  label="Checkpoints"
-                  value={options.checkpoints || ""}
-                  onChange={(e) =>
-                    setOptions({
-                      ...options,
-                      checkpoints: parseInt(e.target.value),
-                    })
-                  }
-                  sx={{ flexGrow: 1 }}
-                />
-                <M.Tooltip title="Frequency (in epochs) to save checkpoints during training.">
                   <HelpOutlineIcon fontSize="small" />
                 </M.Tooltip>
               </M.Stack>
