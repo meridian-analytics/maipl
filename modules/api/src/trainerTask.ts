@@ -1,6 +1,6 @@
 import * as K from "@maipl/constants"
 import type * as Client from "./client"
-
+import type { t_page, t_page_params } from "./types"
 /** TrainerTask.t */
 type t = {
   /** Trainer task identifier */
@@ -17,8 +17,12 @@ type t = {
   recipe_file: number
   /** model file id */
   model_file: number
+  /** dataset config */
+  dataset_config: Record<string, unknown>
   /** model training options object */
-  options: Record<string, string>
+  options: Record<string, unknown>
+  /** local path */
+  local_path: string
   /** Date created */
   created_at: Date
   /** Date updated */
@@ -45,7 +49,16 @@ type t_get_response = Omit<t, "created_at" | "updated_at"> & {
 /** TrainerTask.t_create_request */
 type t_create_request = Omit<
   t,
-  "id" | "celery_task_id" | "created_at" | "updated_at" | "user"
+  | "id"
+  | "celery_task_id"
+  | "created_at"
+  | "updated_at"
+  | "user"
+  | "status"
+  | "local_path"
+  | "model_file"
+  | "options"
+  | "dataset_config"
 >
 
 /** TrainerTask.t_create_response */
@@ -57,46 +70,18 @@ type t_filter_params = {
   user_id?: number
 }
 
+/** TrainerTask.t_list_item */
+type t_list_item = Omit<t, "dataset_config" | "options" | "model_file">
+
 /** TrainerTask.t_list_request */
-type t_list_request = t_filter_params
+type t_list_request = t_page_params & t_filter_params
 
 /** TrainerTask.t_list_response */
-type t_list_response = Array<t_get_response>
-
-let tasks_db = [
-  {
-    id: 1,
-    name: "Task 1",
-    description: "Description 1",
-    celery_task_id: "1234567890",
-    dataset_file: 1,
-    recipe_file: 1,
-    model_file: 1,
-    options: {},
-    created_at: new Date(),
-    updated_at: new Date(),
-    user: 1,
-    status: "CREATED",
-  },
-  {
-    id: 2,
-    name: "Task 2",
-    description: "Description 2",
-    celery_task_id: "1234567890",
-    dataset_file: 1,
-    recipe_file: 1,
-    model_file: 1,
-    options: {},
-    created_at: new Date(),
-    updated_at: new Date(),
-    user: 1,
-    status: "STARTED",
-  },
-]
+type t_list_response = t_page<t_list_item>
 
 /** TrainerTask.create: create a new trainer task */
 const create = async (client: Client.t, body: t_create_request): Promise<t> => {
-  /*   const response = await client
+  const response = await client
     .post<t_create_response>(
       `${K.MAIPL_MODEL_TRAINER_BACKEND}/api/ketos/train/tasks/`,
       body
@@ -106,21 +91,11 @@ const create = async (client: Client.t, body: t_create_request): Promise<t> => {
     ...response,
     created_at: new Date(response.created_at),
     updated_at: new Date(response.updated_at),
-  } */
-
-  const newTask = {
-    ...body,
-    id: tasks_db.length + 1,
-    user: 1,
-    created_at: new Date(),
-    updated_at: new Date(),
   }
-  tasks_db = [...tasks_db, newTask]
-  return newTask
 }
 
-/** TrainerTask.delete: delete an existing trainer task */
-const delete_ = (client: Client.t, id: number): Promise<void> => {
+/** TrainerTask.remove: delete an existing trainer task */
+const remove = (client: Client.t, id: number): Promise<void> => {
   return client.delete(
     `${K.MAIPL_MODEL_TRAINER_BACKEND}/api/ketos/train/tasks/${id}/`
   )
@@ -144,19 +119,21 @@ const get = async (client: Client.t, id: number): Promise<t> => {
 const list = async (
   client: Client.t,
   params?: t_list_request
-): Promise<Array<t>> => {
-  /*   const response = await client
+): Promise<t_page<t_list_item>> => {
+  const response = await client
     .get<t_list_response>(
       `${K.MAIPL_MODEL_TRAINER_BACKEND}/api/ketos/train/tasks/`,
-      { params },
+      { params }
     )
-    .then(r => r.data)
-  return response.map(item => ({
-    ...item,
-    created_at: new Date(item.created_at),
-    updated_at: new Date(item.updated_at),
-  })) */
-  return tasks_db
+    .then((r) => r.data)
+  return {
+    ...response,
+    data: response.data.map((item) => ({
+      ...item,
+      created_at: new Date(item.created_at),
+      updated_at: new Date(item.updated_at),
+    })),
+  }
 }
 
 /** TrainerTask.start: start a trainer task; enqueue with task runner */
@@ -173,6 +150,26 @@ const start = async (client: Client.t, id: number): Promise<t> => {
   }
 }
 
+/** TrainerTask.get_console: get console output of a trainer task */
+const get_console = async (client: Client.t, id: number): Promise<string> => {
+  const response = await client
+    .get<string>(
+      `${K.MAIPL_MODEL_TRAINER_BACKEND}/api/ketos/train/tasks/${id}/console/`
+    )
+    .then((r) => r.data)
+  return response
+}
+
+/** TrainerTask.get_log: get log output of a trainer task */
+const get_log = async (client: Client.t, id: number): Promise<string> => {
+  const response = await client
+    .get<string>(
+      `${K.MAIPL_MODEL_TRAINER_BACKEND}/api/ketos/train/tasks/${id}/log/`
+    )
+    .then((r) => r.data)
+  return response
+}
+
 export {
   type t,
   type t_create_request,
@@ -181,9 +178,12 @@ export {
   type t_get_response,
   type t_list_request,
   type t_list_response,
+  type t_list_item,
   create,
-  delete_,
+  remove,
   get,
+  get_console,
+  get_log,
   list,
   start,
 }

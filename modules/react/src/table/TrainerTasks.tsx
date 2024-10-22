@@ -1,4 +1,4 @@
-import { TrainerTask } from "@maipl/api"
+import { TrainerTask, type t_page } from "@maipl/api"
 import * as F from "@maipl/format"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
@@ -14,13 +14,13 @@ import BaseTable, {
   useSelection,
 } from "./Table"
 
-const column = RT.createColumnHelper<TrainerTask.t>()
+const column = RT.createColumnHelper<TrainerTask.t_list_item>()
 
 function useTable(props?: {
   debounceDelay?: number
   name?: string
   pagination?: PaginationState
-  selection?: SelectionState<Task.t>
+  selection?: SelectionState<TrainerTask.t_list_item>
 }) {
   const [pagination, setPagination] = usePagination(props?.pagination)
   const [selection, setSelection] = useSelection(props?.selection)
@@ -30,23 +30,23 @@ function useTable(props?: {
   const debouncedFilter = useDebounce(filter, props?.debounceDelay)
   R.useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
-  }, [pagination.pageSize])
+  }, [pagination.pageSize, debouncedFilter.get("name")])
   return {
+    filter,
+    debouncedFilter,
     pagination,
     selection,
     setPagination,
     setSelection,
-    filter,
-    debouncedFilter,
   }
 }
 
-function useQuery(props?: Task.t_list_request) {
+function useQuery(props?: TrainerTask.t_list_request) {
   const { client } = useMaipl()
   return RQ.useQuery({
     queryKey: ["trainer_tasks", "list", props],
     queryFn: () => TrainerTask.list(client, props),
-    initialData: (): t_page<Task.t_list_item> => ({
+    initialData: (): t_page<TrainerTask.t_list_item> => ({
       data: [],
       page: 1,
       size: props.size ?? 100,
@@ -76,9 +76,9 @@ const Table = BaseTable([
       </M.Stack>
     ),
   }),
-] as Array<ColumnDef<Task.t>>)
+] as Array<ColumnDef<TrainerTask.t_list_item>>)
 
-function TaskStatus(props: { status: Task.t["status"] }) {
+function TaskStatus(props: { status: TrainerTask.t_list_item["status"] }) {
   switch (props.status) {
     case "CREATED":
       return <M.Chip color="default" label="Created" />

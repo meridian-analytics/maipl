@@ -3,6 +3,8 @@ import * as M from "@mui/material"
 import * as RR from "react-router-dom"
 import Tasks from "./Tasks"
 import EditTaskLoader from "./EditTask"
+import ConsoleLoader from "./Console"
+import LogLoader from "./Log"
 export default function App() {
   return <MR.MaiplProvider router={router} />
 }
@@ -66,6 +68,14 @@ const router: MR.t_router = (context) => [
           {
             path: "edit-task",
             element: <EditTaskLoader />,
+          },
+          {
+            path: "console/:taskId",
+            element: <ConsoleLoader />,
+          },
+          {
+            path: "log/:taskId",
+            element: <LogLoader />,
           },
         ],
       },

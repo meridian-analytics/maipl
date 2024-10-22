@@ -6,7 +6,7 @@ import * as RQ from "@tanstack/react-query"
 import * as RR from "react-router-dom"
 import * as R from "react"
 
-function TaskActions(props: { task: Task.t }) {
+function TaskActions(props: { task: TrainerTask.t }) {
   const queryClient = RQ.useQueryClient()
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
@@ -20,15 +20,9 @@ function TaskActions(props: { task: Task.t }) {
     }
   }
 
-  const onStart = () => {
-    if (startMutation.isIdle) {
-      return startMutation.mutateAsync([maipl.client, props.task.id])
-    }
-  }
-
   const deleteMutation = RQ.useMutation({
-    mutationFn: (vars: Parameters<typeof Task.delete>) => {
-      return Task.delete(...vars)
+    mutationFn: (vars: Parameters<typeof TrainerTask.remove>) => {
+      return TrainerTask.remove(...vars)
     },
     onError: (err, vars) => {
       notify((onClose) => (
@@ -49,12 +43,19 @@ function TaskActions(props: { task: Task.t }) {
           Success: Deleted task #{vars[1]}
         </M.Alert>
       ))
-      queryClient.refetchQueries({ queryKey: ["tasks"] })
+      queryClient.refetchQueries({ queryKey: ["trainer_tasks"] })
     },
   })
 
+  const onStart = () => {
+    if (startMutation.isIdle) {
+      return startMutation.mutateAsync([maipl.client, props.task.id])
+    }
+  }
+
   const startMutation = RQ.useMutation({
-    mutationFn: (vars: Parameters<typeof Task.start>) => Task.start(...vars),
+    mutationFn: (vars: Parameters<typeof TrainerTask.start>) =>
+      TrainerTask.start(...vars),
     onError: (err, vars) => {
       notify((onClose) => (
         <M.Alert onClose={onClose} severity="error">
@@ -67,7 +68,7 @@ function TaskActions(props: { task: Task.t }) {
     },
     onSettled: () => {
       startMutation.reset()
-      queryClient.refetchQueries({ queryKey: ["tasks"] })
+      queryClient.refetchQueries({ queryKey: ["trainer_tasks"] })
     },
     onSuccess: (task) => {
       notify((onClose) => (
@@ -86,18 +87,19 @@ function TaskActions(props: { task: Task.t }) {
         to={`/${props.task.id}`}
       />
       <M.MenuItem
+        children="Console"
+        component={RR.Link}
+        to={`/new-tasks/console/${props.task.id}`}
+      />
+      <M.MenuItem
+        children="Log"
+        component={RR.Link}
+        to={`/new-tasks/log/${props.task.id}`}
+      />
+      <M.MenuItem
         disabled={props.task.status != "CREATED" || startMutation.isPending}
         onClick={onStart}
         children="Start"
-      />
-      <M.MenuItem
-        disabled={
-          props.task.status != "PENDING" && props.task.status != "STARTED"
-        }
-        onClick={() => {
-          console.warn("TaskActions cancelMutation not implemented")
-        }}
-        children="Cancel"
       />
       <M.Divider />
       <M.MenuItem
@@ -107,7 +109,7 @@ function TaskActions(props: { task: Task.t }) {
       />
       <M.MenuItem
         disabled={
-          props.task.status == "PENDING" ||
+          props.task.status == "RUNNING" ||
           props.task.status == "STARTED" ||
           deleteMutation.isPending
         }
@@ -130,14 +132,19 @@ const Tasks = (props: { sx?: M.SxProps }) => {
     setSelection,
   } = MR.TrainerTasks.useTable()
 
-  const { data: tasks } = MR.TrainerTasks.useQuery({
-    // filters
-    name: debouncedFilter.get("name"),
-    user: maipl.user?.id,
-    // pagination
-    page: pagination.pageIndex + 1,
+  const {
+    data: tasks,
+    isLoading,
+    isError,
+    error,
+  } = MR.TrainerTasks.useQuery({
     size: pagination.pageSize,
+    page: pagination.pageIndex + 1,
+    name: debouncedFilter.get("name"),
   })
+
+  if (isLoading) return <div>Loading...</div>
+  if (isError) return <div>Error: {error.message}</div>
 
   return (
     <M.Stack
@@ -174,8 +181,8 @@ const Tasks = (props: { sx?: M.SxProps }) => {
             cell: ({ row }) => <TaskActions task={row.original} />,
           }),
         ]}
-        rows={tasks}
-        count={tasks.length || 0}
+        rows={tasks.data}
+        count={tasks.count}
         pagination={pagination}
         selection={selection}
         setPagination={setPagination}

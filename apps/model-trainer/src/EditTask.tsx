@@ -67,9 +67,6 @@ function EditTask(props: {
   const [groups, setGroups] = R.useState<Array<string>>([])
   const [isModalOpen, setIsModalOpen] = R.useState(false)
   const [error, setError] = R.useState<string | null>(null)
-  const openModal = () => setIsModalOpen(true)
-  const closeModal = () => setIsModalOpen(false)
-
   const [selectedTrainDatasets, setSelectedTrainDatasets] = R.useState<
     string[]
   >([])
@@ -81,6 +78,9 @@ function EditTask(props: {
     Record<string, { annotation: string; batchSize: number }>
   >({})
 
+  const openModal = () => setIsModalOpen(true)
+  const closeModal = () => setIsModalOpen(false)
+
   const {
     debouncedFilter,
     filter,
@@ -91,6 +91,14 @@ function EditTask(props: {
     setPagination,
     setSelection,
   } = MR.Files.useTable()
+
+  const selectedFiles = Array.from(selection.values())
+  const selectedTrainDatasetFiles = selectedFiles.filter(
+    (file) => file.maipl_folder === File.t_maipl_folder.dataset
+  )
+  const selectedRecipeFiles = selectedFiles.filter(
+    (file) => file.maipl_folder === File.t_maipl_folder.recipe
+  )
 
   const { data: datasetFiles } = MR.Files.useQuery({
     maipl_folder: File.t_maipl_folder.dataset,
@@ -134,7 +142,6 @@ function EditTask(props: {
       createMutation.reset()
     },
     onSuccess: (task) => {
-      console.log("task is created", task)
       notify((onClose) => (
         <M.Alert onClose={onClose} severity="success">
           Success: Created task #{task.id}
@@ -173,23 +180,15 @@ function EditTask(props: {
       dataset_file: selectedDataset.id,
       recipe_file: selectedRecipe.id,
       model_file: selectedModel?.id,
-      train_datasets: selectedTrainDatasets.filter((dataset) => dataset.includes("/")),
-      val_datasets: selectedValDatasets.filter((dataset) => dataset.includes("/")),
-      train_dataset_options: trainDatasetOptions,
-      val_dataset_options: valDatasetOptions,
+      dataset_config: {
+        train: selectedTrainDatasets.filter((dataset) => dataset.includes("/")),
+        val: selectedValDatasets.filter((dataset) => dataset.includes("/")),
+        train_options: trainDatasetOptions,
+        val_options: valDatasetOptions,
+      },
     }
-
-    console.log(task)
     createMutation.mutateAsync([maipl.client, task])
   }
-
-  const selectedFiles = Array.from(selection.values())
-  const selectedTrainDatasetFiles = selectedFiles.filter(
-    (file) => file.maipl_folder === File.t_maipl_folder.dataset
-  )
-  const selectedRecipeFiles = selectedFiles.filter(
-    (file) => file.maipl_folder === File.t_maipl_folder.recipe
-  )
 
   R.useEffect(() => {
     if (selectedTrainDatasetFiles.length == 1) {
@@ -304,7 +303,7 @@ function EditTask(props: {
         string,
         { annotation: string; batchSize: number }
       > = {}
-      console.log(finalSelectedItems)
+
       finalSelectedItems.forEach((itemId) => {
         newOptions[itemId] = currentOptions[itemId] || {
           annotation: "",
@@ -312,7 +311,6 @@ function EditTask(props: {
         }
       })
       setDatasetOptions(newOptions)
-      console.log(newOptions)
 
       toggledItemRef.current = {}
     }
@@ -499,7 +497,6 @@ function EditTask(props: {
               selectedItems={selectedTrainDatasets}
               onSelectedItemsChange={handleTrainSelectionChange}
               onItemSelectionToggle={handleItemSelectionToggle}
-              
             >
               {renderTree(groups)}
             </SimpleTreeView>
@@ -570,49 +567,49 @@ function EditTask(props: {
               .map((dataset) => (
                 <M.Box key={dataset} sx={{ mt: 2 }}>
                   <M.Stack direction="row" spacing={2} alignItems="center">
-                  <M.Typography variant="subtitle1">{dataset}</M.Typography>
-                  <M.FormControl sx={{ flexGrow: 1 }}>
-                    <M.InputLabel>Annotation Dataset</M.InputLabel>
-                    <M.Select
-                      label="Annotation Dataset"
-                      value={valDatasetOptions[dataset]?.annotation || ""}
+                    <M.Typography variant="subtitle1">{dataset}</M.Typography>
+                    <M.FormControl sx={{ flexGrow: 1 }}>
+                      <M.InputLabel>Annotation Dataset</M.InputLabel>
+                      <M.Select
+                        label="Annotation Dataset"
+                        value={valDatasetOptions[dataset]?.annotation || ""}
+                        onChange={(e) =>
+                          setValDatasetOptions((prev) => ({
+                            ...prev,
+                            [dataset]: {
+                              ...prev[dataset],
+                              annotation: e.target.value as string,
+                            },
+                          }))
+                        }
+                      >
+                        {groups.flatMap((group) =>
+                          group.children.map((child) => (
+                            <M.MenuItem key={child.id} value={child.id}>
+                              {`${group.name}/${child.name}`}
+                            </M.MenuItem>
+                          ))
+                        )}
+                      </M.Select>
+                    </M.FormControl>
+                    <M.TextField
+                      type="number"
+                      label="Batch Size"
+                      value={valDatasetOptions[dataset]?.batchSize || ""}
                       onChange={(e) =>
                         setValDatasetOptions((prev) => ({
                           ...prev,
                           [dataset]: {
                             ...prev[dataset],
-                            annotation: e.target.value as string,
+                            batchSize: parseInt(e.target.value) || 0,
                           },
                         }))
                       }
-                    >
-                      {groups.flatMap((group) =>
-                        group.children.map((child) => (
-                          <M.MenuItem key={child.id} value={child.id}>
-                            {`${group.name}/${child.name}`}
-                          </M.MenuItem>
-                        ))
-                      )}
-                    </M.Select>
-                  </M.FormControl>
-                  <M.TextField
-                    type="number"
-                    label="Batch Size"
-                    value={valDatasetOptions[dataset]?.batchSize || ""}
-                    onChange={(e) =>
-                      setValDatasetOptions((prev) => ({
-                        ...prev,
-                        [dataset]: {
-                          ...prev[dataset],
-                          batchSize: parseInt(e.target.value) || 0,
-                        },
-                      }))
-                    }
-                    sx={{ width: "150px" }}
-                  />
-                </M.Stack>
-              </M.Box>
-            ))}
+                      sx={{ width: "150px" }}
+                    />
+                  </M.Stack>
+                </M.Box>
+              ))}
           </M.Stack>
         )}
         {tab == Tab.options && (
