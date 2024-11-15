@@ -1,0 +1,181 @@
+---
+- hosts: maipl-file-cache
+  vars:
+    nfs_server: 192.168.239.27
+  tasks:
+    - name: Install NFS server
+      apt:
+        name: nfs-kernel-server
+        state: present
+
+    - name: Create directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: nobody
+        group: nogroup
+        mode: '0777'
+      loop:
+        - /mnt/dev_storage
+        - /mnt/prod_storage
+        - /mnt/dev_tasks
+        - /mnt/prod_tasks
+
+    - name: Clear existing NFS exports
+      copy:
+        content: ""
+        dest: /etc/exports
+        force: yes
+
+    - name: Configure NFS exports
+      lineinfile:
+        path: /etc/exports
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - "/mnt/dev_storage *(rw,sync,no_subtree_check,no_root_squash)"
+        - "/mnt/prod_storage *(rw,sync,no_subtree_check,no_root_squash)"
+        - "/mnt/dev_tasks *(rw,sync,no_subtree_check,no_root_squash)"
+        - "/mnt/prod_tasks *(rw,sync,no_subtree_check,no_root_squash)"
+  
+    - name: Apply NFS exports
+      command: exportfs -a
+
+    - name: Restart NFS server
+      systemd:
+        name: nfs-kernel-server
+        state: restarted
+
+    - name: Start and enable NFS server
+      systemd:
+        name: nfs-kernel-server
+        state: started
+        enabled: true
+
+- hosts: backends,workers
+  vars:
+    nfs_server: 192.168.239.27
+  tasks:
+    - name: Install NFS client
+      apt:
+        name: nfs-common
+        state: present
+
+    - name: Create mount points
+      file:
+        path: /mnt/file_cache
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Create mount points for tasks
+      file:
+        path: /mnt/tasks
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Add entries to fstab with IP address
+      lineinfile:
+        path: /etc/fstab
+        line: "{{ nfs_server }}:/mnt/prod_storage /mnt/file_cache nfs rw,sync,hard,intr 0 0"
+
+    - name: Add entries to fstab with IP address
+      lineinfile:
+        path: /etc/fstab
+        line: "{{ nfs_server }}:/mnt/prod_tasks /mnt/tasks nfs rw,sync,hard,intr 0 0"
+
+    - name: Unmount NFS share /mnt/file_cache
+      mount:
+        path: /mnt/file_cache
+        state: unmounted
+
+    - name: Mount NFS share /mnt/file_cache
+      mount:
+        path: /mnt/file_cache
+        src: "{{ nfs_server }}:/mnt/prod_storage"
+        fstype: nfs
+        opts: rw,sync,hard,intr
+        state: mounted
+
+    - name: Unmount NFS share /mnt/tasks
+      mount:
+        path: /mnt/tasks
+        state: unmounted
+
+    - name: Mount NFS share /mnt/tasks
+      mount:
+        path: /mnt/tasks
+        src: "{{ nfs_server }}:/mnt/prod_tasks"
+        fstype: nfs
+        opts: rw,sync,hard,intr
+        state: mounted
+
+    - name: Verify NFS mounts
+      shell: df -h | grep /mnt
+
+- hosts: maipl-backend-dev
+  vars:
+    nfs_server: 192.168.239.27
+  tasks:
+    - name: Install NFS client
+      apt:
+        name: nfs-common
+        state: present
+
+    - name: Create mount points
+      file:
+        path: /mnt/file_cache
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Create mount points for tasks
+      file:
+        path: /mnt/tasks
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Add entries to fstab with IP address
+      lineinfile:
+        path: /etc/fstab
+        line: "{{ nfs_server }}:/mnt/dev_storage /mnt/file_cache nfs rw,sync,hard,intr 0 0"
+
+    - name: Add entries to fstab with IP address
+      lineinfile:
+        path: /etc/fstab
+        line: "{{ nfs_server }}:/mnt/dev_tasks /mnt/tasks nfs rw,sync,hard,intr 0 0"
+
+    - name: Unmount NFS share /mnt/file_cache
+      mount:
+        path: /mnt/file_cache
+        state: unmounted
+
+    - name: Mount NFS share /mnt/file_cache
+      mount:
+        path: /mnt/file_cache
+        src: "{{ nfs_server }}:/mnt/dev_storage"
+        fstype: nfs
+        opts: rw,sync,hard,intr
+        state: mounted
+
+    - name: Unmount NFS share /mnt/tasks
+      mount:
+        path: /mnt/tasks
+        state: unmounted
+
+    - name: Mount NFS share /mnt/tasks
+      mount:
+        path: /mnt/tasks
+        src: "{{ nfs_server }}:/mnt/dev_tasks"
+        fstype: nfs
+        opts: rw,sync,hard,intr
+        state: mounted
+
+    - name: Verify NFS mounts
+      shell: df -h | grep /mnt

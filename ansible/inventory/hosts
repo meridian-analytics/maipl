@@ -14,6 +14,9 @@ maipl-worker-c ansible_host=192.168.239.170
 [development]
 maipl-backend-dev ansible_host=192.168.239.20
 
+[mailcow_server]
+maipl-mail ansible_host=192.168.239.55
+
 [all:vars]
 ansible_user=ubuntu
 python_interpreter=/usr/bin/python3

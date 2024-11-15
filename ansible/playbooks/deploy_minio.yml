@@ -1,0 +1,6 @@
+---
+- name: Deploy Minio
+  hosts: minio_servers
+  become: true
+  roles:
+    - minio

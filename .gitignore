@@ -1,0 +1,10 @@
+.env
+
+# Ignore credentials directory
+credentials/
+
+# Terraform files
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl

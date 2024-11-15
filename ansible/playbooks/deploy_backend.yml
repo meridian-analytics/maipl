@@ -1,0 +1,85 @@
+---
+- name: Deploy backend and worker services
+  hosts: all
+  become: true
+  vars:
+    deploy_dir: "{{ ansible_env.HOME }}/deploy"
+    registry_url: "your-registry-url"
+    registry_username: "your-username"
+    registry_password: "{{ vault_registry_password }}"
+
+  tasks:
+
+    - name: Ensure deployment directory exists on Ansible controller
+      run_once: true
+      delegate_to: localhost
+      file:
+        path: "{{ deploy_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Download docker-compose.backend.yml to Ansible controller
+      run_once: true
+      delegate_to: localhost
+      get_url:
+        url: "https://git-dev.cs.dal.ca/meridian-private/maipl/maipl-backend/-/raw/dev/compose/docker-compose.backend.yml"
+        dest: "{{ deploy_dir }}/docker-compose.backend.yml"
+        mode: '0644'
+
+    - name: Download docker-compose.worker.yml to Ansible controller
+      run_once: true
+      delegate_to: localhost
+      get_url:
+        url: "https://git-dev.cs.dal.ca/meridian-private/maipl/maipl-backend/-/raw/dev/compose/docker-compose.worker.yml"
+        dest: "{{ deploy_dir }}/docker-compose.worker.yml"
+        mode: '0644'
+
+    - name: Create deployment directory on target instances
+      file:
+        path: "{{ deploy_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy docker-compose.backend.yml to backend instances
+      copy:
+        src: "{{ deploy_dir }}/docker-compose.backend.yml"
+        dest: "{{ deploy_dir }}/docker-compose.backend.yml"
+      when: "'backend' in inventory_hostname"
+
+    - name: Copy docker-compose.worker.yml to worker instances
+      copy:
+        src: "{{ deploy_dir }}/docker-compose.worker.yml"
+        dest: "{{ deploy_dir }}/docker-compose.worker.yml"
+      when: "'worker' in inventory_hostname"
+
+    - name: Transfer .env.backend file to backend instances
+      copy:
+        content: "{{ vault_env_backend }}"  # .env.backend content from Ansible Vault
+        dest: "{{ deploy_dir }}/.env.backend"
+        mode: '0644'
+      when: "'backend' in inventory_hostname"
+
+    - name: Transfer .env.worker file to worker instances
+      copy:
+        content: "{{ vault_env_worker }}"  # .env.worker content from Ansible Vault
+        dest: "{{ deploy_dir }}/.env.worker"
+        mode: '0644'
+      when: "'worker' in inventory_hostname"
+
+    - name: Log in to private Docker registry
+      docker_login:
+        registry_url: "{{ registry_url }}"
+        username: "{{ registry_username }}"
+        password: "{{ registry_password }}"
+
+    - name: Start backend services with Docker Compose
+      command: docker-compose -f "{{ deploy_dir }}/docker-compose.backend.yml" --env-file "{{ deploy_dir }}/.env.backend" up -d
+      args:
+        chdir: "{{ deploy_dir }}"
+      when: "'backend' in inventory_hostname"
+
+    - name: Start worker services with Docker Compose
+      command: docker-compose -f "{{ deploy_dir }}/docker-compose.worker.yml" --env-file "{{ deploy_dir }}/.env.worker" up -d
+      args:
+        chdir: "{{ deploy_dir }}"
+      when: "'worker' in inventory_hostname"
