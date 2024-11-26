@@ -1,6 +1,17 @@
 ---
 - name: Deploy Minio
-  hosts: minio_servers
+  hosts: minio_dev
   become: true
+  
+  pre_tasks:
+    - name: Include vault variables
+      include_vars:
+        file: "{{ inventory_dir }}/dev/group_vars/vault.yml"
+      no_log: true
+
   roles:
-    - minio
+    - role: minio
+      vars:
+        minio_volume_device: /dev/vdb
+        minio_data_dir: /data/minio
+        minio_config_dir: /etc/minio

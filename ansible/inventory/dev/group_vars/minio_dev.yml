@@ -1,4 +1,5 @@
 ---
+---
 # Volume configuration
 minio_volume_device: /dev/vdb
 minio_data_dir: /data/minio
@@ -10,8 +11,3 @@ docker_compose_version: "2.17.2"
 # Minio configuration
 minio_api_port: 9000
 minio_console_port: 9001
-
-# Monitoring configuration
-prometheus_config_dir: /etc/prometheus
-prometheus_conf_d_dir: "{{ prometheus_config_dir }}/conf.d"
-monitoring_server: "192.168.239.67"

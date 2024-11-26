@@ -1,0 +1,20 @@
+---
+- name: Copy Minio dashboard to temporary location
+  template:
+    src: minio-dashboard.json.j2
+    dest: /tmp/minio-dashboard.json
+    mode: '0644'
+  delegate_to: localhost  # Create file on Ansible controller
+
+- name: Import Minio dashboard to Grafana
+  uri:
+    url: "http://192.168.239.67:3000/api/dashboards/db"
+    method: POST
+    body_format: json
+    body:
+      dashboard: "{{ lookup('file', '/tmp/minio-dashboard.json') | from_json }}"
+      overwrite: true
+    headers:
+      Authorization: "Bearer {{ grafana_api_key }}"
+    status_code: 200
+  delegate_to: localhost

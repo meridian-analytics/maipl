@@ -1,0 +1,25 @@
+---
+- name: Wait for Minio metrics endpoint
+  uri:
+    url: "http://{{ ansible_host }}:9000/minio/v2/metrics/cluster"
+    method: GET
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 6
+  delay: 10
+  delegate_to: localhost
+
+- name: Check Prometheus target status
+  uri:
+    url: "http://192.168.239.67:9090/api/v1/targets"
+    method: GET
+  register: targets
+  delegate_to: localhost
+  failed_when: >
+    targets.json.data.activeTargets | selectattr('labels.job', 'equalto', 'minio')
+    | selectattr('health', 'equalto', 'down') | list | length > 0
+
+- name: Display target status
+  debug:
+    var: targets
