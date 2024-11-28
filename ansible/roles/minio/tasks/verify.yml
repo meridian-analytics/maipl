@@ -4,6 +4,7 @@
     url: "http://{{ ansible_host }}:9000/minio/v2/metrics/cluster"
     method: GET
     status_code: 200
+    timeout: 5  # Add timeout
   register: result
   until: result.status == 200
   retries: 6
@@ -12,7 +13,7 @@
 
 - name: Check Prometheus target status
   uri:
-    url: "http://192.168.239.67:9090/api/v1/targets"
+    url: "{{ prometheus_url }}/api/v1/targets"
     method: GET
   register: targets
   delegate_to: localhost
@@ -23,3 +24,15 @@
 - name: Display target status
   debug:
     var: targets
+
+- name: Verify Grafana dashboard
+  uri:
+    url: "{{ grafana_url }}/api/dashboards/uid/minio"
+    headers:
+      Authorization: "Bearer {{ grafana_api_key }}"
+    method: GET
+  register: dashboard
+  delegate_to: localhost
+  failed_when: dashboard.status != 200
+  retries: 3
+  delay: 5

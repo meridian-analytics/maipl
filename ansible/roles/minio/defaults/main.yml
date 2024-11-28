@@ -11,7 +11,25 @@ docker_compose_version: "2.17.2"
 minio_api_port: 9000
 minio_console_port: 9001
 
+monitoring:
+  server_ip: "192.168.239.67"
+  grafana:
+    port: 3000
+  prometheus:
+    port: 9090
+  loki:
+    port: 3100
+
+# Full URLs constructed from components
+monitoring_urls:
+  grafana: "http://{{ monitoring.server_ip }}:{{ monitoring.grafana.port }}"
+  prometheus: "http://{{ monitoring.server_ip }}:{{ monitoring.prometheus.port }}"
+  loki: "http://{{ monitoring.server_ip }}:{{ monitoring.loki.port }}"
+
 # Monitoring configuration
 prometheus_config_dir: /etc/prometheus
 prometheus_conf_d_dir: "{{ prometheus_config_dir }}/conf.d"
-monitoring_server: "192.168.239.67"
+monitoring_server: "{{ monitoring.server_ip }}"
+grafana_url: "{{ monitoring_urls.grafana }}"
+prometheus_url: "{{ monitoring_urls.prometheus }}"
+loki_url: "{{ monitoring_urls.loki }}"

@@ -7,8 +7,8 @@
     minio_data_dir: /data/minio
     minio_config_dir: /etc/minio
     docker_compose_version: "2.17.2"
-    grafana_url: "http://192.168.239.67:3000"
-    loki_url: "http://192.168.239.67:3100"
+    grafana_url: "{{ grafana_url }}"
+    loki_url: "{{ loki_url }}"
 
   roles:
     - minio

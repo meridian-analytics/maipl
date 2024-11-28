@@ -4,11 +4,11 @@
     src: minio-dashboard.json.j2
     dest: /tmp/minio-dashboard.json
     mode: '0644'
-  delegate_to: localhost  # Create file on Ansible controller
+  delegate_to: "{{ monitoring_server }}"  # Create file on Ansible controller
 
 - name: Import Minio dashboard to Grafana
   uri:
-    url: "http://192.168.239.67:3000/api/dashboards/db"
+    url: "{{ grafana_url }}/api/dashboards/db"
     method: POST
     body_format: json
     body:
@@ -17,4 +17,4 @@
     headers:
       Authorization: "Bearer {{ grafana_api_key }}"
     status_code: 200
-  delegate_to: localhost
+  delegate_to: "{{ monitoring_server }}"

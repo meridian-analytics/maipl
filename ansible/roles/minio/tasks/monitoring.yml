@@ -8,7 +8,7 @@
   loop:
     - /etc/prometheus/conf.d
     - /etc/prometheus/conf.d/jobs
-  delegate_to: 192.168.239.67
+  delegate_to: "{{ monitoring_server }}"
   become: true
 
 # Update main Prometheus config
@@ -18,7 +18,7 @@
     dest: /etc/prometheus/prometheus.yml
     mode: '0644'
     backup: yes
-  delegate_to: 192.168.239.67
+  delegate_to: "{{ monitoring_server }}"
   become: true
 
 # Add Minio job config
@@ -27,13 +27,13 @@
     src: minio.yml.j2
     dest: /etc/prometheus/conf.d/jobs/minio.yml
     mode: '0644'
-  delegate_to: 192.168.239.67
+  delegate_to: "{{ monitoring_server }}"
   become: true
 
 # Verify Prometheus config
 - name: Verify Prometheus configuration
   command: promtool check config /etc/prometheus/prometheus.yml
-  delegate_to: 192.168.239.67
+  delegate_to: "{{ monitoring_server }}"
   become: true
   register: prometheus_check
   failed_when: prometheus_check.rc != 0
@@ -44,14 +44,14 @@
     src: prometheus.service.j2
     dest: /etc/systemd/system/prometheus.service
     mode: '0644'
-  delegate_to: 192.168.239.67
+  delegate_to: "{{ monitoring_server }}"
   become: true
 
 # Reload systemd
 - name: Reload systemd
   systemd:
     daemon_reload: yes
-  delegate_to: 192.168.239.67
+  delegate_to: "{{ monitoring_server }}"
   become: true
 
 # Restart Prometheus instead of reload
@@ -59,13 +59,13 @@
   systemd:
     name: prometheus
     state: restarted
-  delegate_to: 192.168.239.67
+  delegate_to: "{{ monitoring_server }}"
   become: true
 
 # Add verification
 - name: Verify Prometheus target is up
   uri:
-    url: "http://192.168.239.67:9090/api/v1/targets"
+    url: "{{ prometheus_url }}/api/v1/targets"
     return_content: yes
   register: targets
   delegate_to: localhost
@@ -83,7 +83,7 @@
     state: directory
     mode: '0755'
 
-- name: Configure Promtail
+- name: Copy Promtail config
   template:
     src: promtail-config.yml.j2
     dest: "{{ minio_config_dir }}/promtail/config.yml"
@@ -101,6 +101,8 @@
           volumes:
             - /var/log:/var/log
             - "{{ minio_config_dir }}/promtail:/etc/promtail"
-          command: -config.file=/etc/promtail/config.yml
+          command: 
+            - -config.file=/etc/promtail/config.yml
+            - -config.expand-env=true
           restart: unless-stopped
 

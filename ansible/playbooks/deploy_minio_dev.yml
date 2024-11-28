@@ -6,7 +6,7 @@
   pre_tasks:
     - name: Include vault variables
       include_vars:
-        file: "{{ inventory_dir }}/dev/group_vars/vault.yml"
+        file: "../inventory/dev/group_vars/vault.yml" 
       no_log: true
 
   roles:

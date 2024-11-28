@@ -63,15 +63,30 @@ roles/minio/
 
 ## Variables
 
+The following variables can be configured to customize the Minio deployment:
+
 ```yaml
-# Default variables
+# Volume configuration
 minio_volume_device: /dev/vdb
 minio_data_dir: /data/minio
 minio_config_dir: /etc/minio
-monitoring_server: "192.168.239.67"
-grafana_url: "http://192.168.239.67:3000"
-loki_url: "http://192.168.239.67:3100"
+
+# Docker configuration
+docker_compose_version: "2.17.2"
+
+# Minio configuration
+minio_api_port: 9000
+minio_console_port: 9001
+
+# Monitoring configuration
+monitoring_server: "{{ monitoring.server_ip }}"
+grafana_url: "{{ monitoring_urls.grafana }}"
+prometheus_url: "{{ monitoring_urls.prometheus }}"
+loki_url: "{{ monitoring_urls.loki }}"
+grafana_api_key: "{{ monitoring.grafana.api_key }}"
 ```
+
+These variables can be overridden in your inventory or group vars to suit your environment.
 
 ## Monitoring Setup
 
@@ -90,7 +105,7 @@ loki_url: "http://192.168.239.67:3100"
 
 ```bash
 # Deploy Minio with monitoring
-ansible-playbook -i inventory/terraform.py playbooks/deploy_minio.yml --ask-vault-pass
+ansible-playbook -i inventory/dynamic/minio_dev.py playbooks/deploy_minio.yml --ask-vault-pass
 ```
 
 ## Verification
