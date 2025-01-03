@@ -12,3 +12,5 @@ The development environment uses a Minio cluster for object storage. Configurati
 - `/ansible/roles/minio` - Deployment playbooks
 - `/terraform/modules/minio/` - Infrastructure provisioning
 
+The staging/production environment uses a Minio multi node multi drive setup for stroage.
+

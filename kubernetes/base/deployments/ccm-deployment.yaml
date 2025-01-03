@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openstack-cloud-controller-manager
+  namespace: kube-system
+  labels:
+    app: openstack-cloud-controller-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openstack-cloud-controller-manager
+  template:
+    metadata:
+      labels:
+        app: openstack-cloud-controller-manager
+    spec:
+      containers:
+        - name: openstack-cloud-controller-manager
+          image: k8scloudprovider/openstack-cloud-controller-manager:v1.28.0
+          args:
+            - --cloud-provider=openstack
+            - --cloud-config=/etc/cloud/cloud.conf
+            - --leader-elect=true
+          volumeMounts:
+            - mountPath: /etc/cloud
+              name: cloud-config
+              readOnly: true
+      volumes:
+        - name: cloud-config
+          secret:
+            secretName: cloud-config # Reference to the Secret

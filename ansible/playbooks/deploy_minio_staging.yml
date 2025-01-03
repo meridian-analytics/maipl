@@ -1,0 +1,12 @@
+---
+- name: Deploy Minio
+  become: true
+  
+  pre_tasks:
+    - name: Include vault variables
+      include_vars:
+        file: "../inventory/staging/group_vars/vault.yml" 
+      no_log: true
+
+  roles:
+    - role: minio_k8s

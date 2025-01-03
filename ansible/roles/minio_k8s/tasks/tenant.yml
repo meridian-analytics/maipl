@@ -1,0 +1,54 @@
+---
+- name: Create MinIO tenant namespace
+  kubernetes.core.k8s:
+    name: "{{ minio_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Create MinIO tenant secrets
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: minio-creds
+        namespace: "{{ minio_namespace }}"
+      type: Opaque
+      data:
+        MINIO_ROOT_USER: "{{ minio_root_user | b64encode }}"
+        MINIO_ROOT_PASSWORD: "{{ minio_root_password | b64encode }}"
+
+- name: Create MinIO tenant
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: minio.min.io/v2
+      kind: Tenant
+      metadata:
+        name: minio
+        namespace: "{{ minio_namespace }}"
+      spec:
+        metadata:
+          labels:
+            app: minio
+        image: minio/minio:latest
+        imagePullPolicy: IfNotPresent
+        pools:
+          - servers: {{ minio_replicas }}
+            name: pool-0
+            volumesPerServer: 4
+            volumeClaimTemplate:
+              metadata:
+                name: data
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 10Gi
+        credsSecret:
+          name: minio-creds
+        console:
+          replicas: 1 

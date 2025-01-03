@@ -1,0 +1,32 @@
+---
+- name: Create MinIO Operator namespace
+  kubernetes.core.k8s:
+    name: minio-operator
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Add MinIO Operator Helm repository
+  kubernetes.core.helm_repository:
+    name: minio
+    repo_url: https://operator.min.io/
+
+- name: Install MinIO Operator via Helm
+  kubernetes.core.helm:
+    name: minio-operator
+    chart_ref: minio/operator
+    release_namespace: minio-operator
+    create_namespace: false
+    wait: true
+    state: present
+
+- name: Wait for MinIO Operator deployment
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: minio-operator
+    name: minio-operator
+  register: operator_status
+  until: operator_status.resources[0].status.availableReplicas is defined and operator_status.resources[0].status.availableReplicas > 0
+  retries: 30
+  delay: 10 

@@ -1,0 +1,236 @@
+---
+- name: Setup Kubernetes prerequisites
+  hosts: k8s_staging
+  become: true
+  tasks:
+    - name: Remove old Kubernetes repository files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/kubernetes.list
+        - /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+        - /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        - /usr/share/keyrings/kubernetes-archive-keyring.gpg
+
+    - name: Update apt cache (initial)
+      apt:
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - containerd
+        state: present
+        update_cache: yes
+
+    - name: Create keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Add Kubernetes signing key
+      shell: |
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        chmod a+r /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    - name: Add Kubernetes repository
+      shell: |
+        echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+    - name: Configure kernel modules
+      blockinfile:
+        path: /etc/modules-load.d/k8s.conf
+        create: yes
+        block: |
+          overlay
+          br_netfilter
+
+    - name: Load kernel modules
+      modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - overlay
+        - br_netfilter
+
+    - name: Configure sysctl parameters
+      sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        state: present
+        sysctl_file: /etc/sysctl.d/k8s.conf
+        reload: yes
+      loop:
+        - { name: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+        - { name: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+        - { name: 'net.ipv4.ip_forward', value: '1' }
+
+    - name: Create containerd directory
+      file:
+        path: /etc/containerd
+        state: directory
+        mode: '0755'
+
+    - name: Configure containerd
+      shell: |
+        containerd config default | sudo tee /etc/containerd/config.toml
+        sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+
+    - name: Restart containerd
+      systemd:
+        name: containerd
+        state: restarted
+        daemon_reload: yes
+        enabled: yes
+
+    - name: Update apt cache (final)
+      apt:
+        update_cache: yes
+
+    - name: Install Kubernetes packages
+      apt:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+
+    - name: Hold Kubernetes packages
+      dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop:
+        - kubelet
+        - kubeadm
+        - kubectl
+
+- name: Initialize Kubernetes master
+  hosts: maipl-k8s-staging-1
+  become: true
+  tasks:
+    - name: Reset existing cluster if any
+      command: kubeadm reset -f
+
+    - name: Initialize Kubernetes cluster
+      shell: |
+        kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address={{ ansible_host }} --v=5
+      register: kubeadm_init
+      ignore_errors: true
+
+    - name: Create .kube directory for ubuntu user
+      file:
+        path: /home/ubuntu/.kube
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Copy kube config for ubuntu user
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/ubuntu/.kube/config
+        remote_src: yes
+        owner: ubuntu
+        group: ubuntu
+        mode: '0600'
+
+    - name: Install Flannel CNI
+      become: false
+      shell: |
+        kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+      args:
+        creates: /home/ubuntu/.kube/flannel_installed
+
+    - name: Get join command
+      shell: kubeadm token create --print-join-command
+      register: join_command
+
+    - name: Set join command fact
+      set_fact:
+        join_command: "{{ join_command.stdout }}"
+
+- name: Join worker nodes
+  hosts: k8s_staging:!maipl-k8s-staging-1
+  become: true
+  tasks:
+    - name: Reset existing cluster if any
+      command: kubeadm reset -f
+
+    - name: Join cluster
+      shell: "{{ hostvars['maipl-k8s-staging-1']['join_command'] }}"
+      register: join_cluster
+      ignore_errors: true
+
+- name: Prepare volumes for MinIO
+  hosts: k8s_staging
+  become: true
+  tasks:
+    - name: Get volume information
+      shell: lsblk -f
+      register: volume_info
+
+    - name: Display volume information
+      debug:
+        var: volume_info.stdout_lines
+
+    - name: Wipe filesystem signatures
+      shell: wipefs -a /dev/{{ item }}
+      loop:
+        - vdb
+        - vdc
+        - vdd
+        - vde
+      ignore_errors: yes
+
+    - name: Format volumes
+      shell: |
+        mkfs.ext4 -F /dev/{{ item }}
+      loop:
+        - vdb
+        - vdc
+        - vdd
+        - vde
+
+    - name: Create mount points
+      file:
+        path: "/mnt/data{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - 0
+        - 1
+        - 2
+        - 3
+
+    - name: Add entries to fstab
+      lineinfile:
+        path: /etc/fstab
+        line: "/dev/{{ item.1 }} /mnt/data{{ item.0 }} ext4 defaults 0 0"
+        state: present
+      loop: "{{ [[0, 'vdb'], [1, 'vdc'], [2, 'vdd'], [3, 'vde']] }}"
+
+    - name: Mount volumes
+      mount:
+        path: "/mnt/data{{ item.0 }}"
+        src: "/dev/{{ item.1 }}"
+        fstype: ext4
+        state: mounted
+      loop: "{{ [[0, 'vdb'], [1, 'vdc'], [2, 'vdd'], [3, 'vde']] }}"
+
+    - name: Set correct permissions
+      file:
+        path: "/mnt/data{{ item }}"
+        owner: 1000
+        group: 1000
+        mode: '0755'
+      loop:
+        - 0
+        - 1
+        - 2
+        - 3
