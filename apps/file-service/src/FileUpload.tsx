@@ -33,11 +33,11 @@ const style = {
 
 // Type definitions for tracking upload progress and status
 type UploadProgress = {
-  loaded: number        // Number of bytes uploaded
-  total: number         // Total file size in bytes
-  startTime: number     // Upload start timestamp
-  lastLoaded: number    // Previously loaded bytes (for speed calculation)
-  lastTime: number      // Previous timestamp (for speed calculation)
+  loaded: number // Number of bytes uploaded
+  total: number // Total file size in bytes
+  startTime: number // Upload start timestamp
+  lastLoaded: number // Previously loaded bytes (for speed calculation)
+  lastTime: number // Previous timestamp (for speed calculation)
   speedSamples: number[] // Array of recent upload speeds for averaging
 }
 
@@ -62,14 +62,14 @@ type FileState = {
 
 // Possible states for the action buttons
 type ActionState =
-  | "none"      // Initial state
-  | "pending"   // Selected but not started
+  | "none" // Initial state
+  | "pending" // Selected but not started
   | "uploading" // Currently uploading
-  | "cancelling"// Cancel in progress
+  | "cancelling" // Cancel in progress
   | "cancelled" // Upload cancelled
-  | "error"     // Upload failed
+  | "error" // Upload failed
   | "duplicate" // File already exists
-  | "ok"        // Upload completed
+  | "ok" // Upload completed
 
 const column = RT.createColumnHelper<FileState>()
 
@@ -223,11 +223,11 @@ const ActionButton = R.memo(
 // 1. File selection via dropzone
 // 2. Upload management with progress tracking
 export default function FileUpload(props: {
-  accept?: DZ.Accept           // Allowed file types
-  disabled?: boolean          // Whether uploads are allowed
+  accept?: DZ.Accept // Allowed file types
+  disabled?: boolean // Whether uploads are allowed
   folder: File.t_maipl_folder // Target folder for uploads
-  onClose: () => void        // Called when modal is closed
-  text?: string              // Custom dropzone text
+  onClose: () => void // Called when modal is closed
+  text?: string // Custom dropzone text
   validator?: DZ.DropzoneOptions["validator"] // Custom file validation
 }) {
   const dz = DZ.useDropzone({
@@ -299,9 +299,9 @@ export default function FileUpload(props: {
 
 // Second step of file upload process - handles actual file uploads
 function FileUploadStep2(props: {
-  files: Array<DZ.FileWithPath>  // Files selected for upload
-  folder: File.t_maipl_folder   // Target folder
-  onClose: () => void          // Called when modal is closed
+  files: Array<DZ.FileWithPath> // Files selected for upload
+  folder: File.t_maipl_folder // Target folder
+  onClose: () => void // Called when modal is closed
 }) {
   const queryClient = RQ.useQueryClient()
   const maipl = MR.useMaipl()
@@ -436,10 +436,7 @@ function FileUploadStep2(props: {
 
         // Show a more informative notification
         notify((onClose) => (
-          <M.Alert
-            onClose={onClose}
-            severity="warning"
-          >
+          <M.Alert onClose={onClose} severity="warning">
             File already exists: {errorData.path}
           </M.Alert>
         ))
@@ -520,6 +517,7 @@ function FileUploadStep2(props: {
           (pevent) => {
             if (controller.signal.aborted) return
             setStatus((status) => {
+              const newStatus = new Map(status)
               const currentTime = Date.now()
               const existingStatus = status.get(path)
 
@@ -547,7 +545,7 @@ function FileUploadStep2(props: {
                 .slice(-5)
                 .filter((s) => !isNaN(s) && isFinite(s))
 
-              return {
+              newStatus.set(path, {
                 status:
                   pevent.total == null
                     ? "..."
@@ -560,7 +558,8 @@ function FileUploadStep2(props: {
                   lastTime: currentTime - 1000,
                   speedSamples,
                 },
-              }
+              })
+              return newStatus
             })
           },
           controller.signal,
