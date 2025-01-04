@@ -11,6 +11,7 @@ import * as DZ from "react-dropzone"
 import * as RR from "react-router-dom"
 import * as RRT from "react-router-typesafe"
 
+// Styles for the dropzone area
 const style = {
   base: {
     borderColor: M.colors.grey[500],
@@ -30,15 +31,17 @@ const style = {
   },
 }
 
+// Type definitions for tracking upload progress and status
 type UploadProgress = {
-  loaded: number
-  total: number
-  startTime: number
-  lastLoaded: number
-  lastTime: number
-  speedSamples: number[]
+  loaded: number        // Number of bytes uploaded
+  total: number         // Total file size in bytes
+  startTime: number     // Upload start timestamp
+  lastLoaded: number    // Previously loaded bytes (for speed calculation)
+  lastTime: number      // Previous timestamp (for speed calculation)
+  speedSamples: number[] // Array of recent upload speeds for averaging
 }
 
+// Maps file paths to their current status and progress
 type UploadStatus = Map<
   string,
   {
@@ -47,6 +50,7 @@ type UploadStatus = Map<
   }
 >
 
+// Represents a file in the upload table
 type FileState = {
   id: string
   name: string
@@ -55,6 +59,17 @@ type FileState = {
   status: string
   progress?: UploadProgress
 }
+
+// Possible states for the action buttons
+type ActionState =
+  | "none"      // Initial state
+  | "pending"   // Selected but not started
+  | "uploading" // Currently uploading
+  | "cancelling"// Cancel in progress
+  | "cancelled" // Upload cancelled
+  | "error"     // Upload failed
+  | "duplicate" // File already exists
+  | "ok"        // Upload completed
 
 const column = RT.createColumnHelper<FileState>()
 
@@ -154,13 +169,66 @@ function Element() {
   }
 }
 
+// Memoized action button component to prevent unnecessary re-renders
+const ActionButton = R.memo(
+  ({
+    state,
+    onCancel,
+    onRetry,
+  }: {
+    state: ActionState
+    onCancel: () => void
+    onRetry: () => void
+  }) => {
+    if (state === "uploading") {
+      return (
+        <M.Button
+          size="small"
+          color="error"
+          onClick={onCancel}
+          startIcon={<I.Cancel />}
+        >
+          Cancel
+        </M.Button>
+      )
+    }
+
+    if (state === "cancelling") {
+      return (
+        <M.Button
+          size="small"
+          disabled
+          startIcon={<M.CircularProgress size={16} />}
+        >
+          Cancelling
+        </M.Button>
+      )
+    }
+
+    if (state === "error" || state === "cancelled") {
+      return (
+        <M.Button size="small" onClick={onRetry} startIcon={<I.Refresh />}>
+          Retry
+        </M.Button>
+      )
+    }
+
+    return null
+  },
+  // Only re-render if the state changes
+  (prev, next) => prev.state === next.state
+)
+
+// Main file upload component with two steps:
+// 1. File selection via dropzone
+// 2. Upload management with progress tracking
 export default function FileUpload(props: {
-  accept?: DZ.Accept
-  disabled?: boolean
-  folder: File.t_maipl_folder
-  onClose: () => void
-  text?: string
-  validator?: DZ.DropzoneOptions["validator"]
+  accept?: DZ.Accept           // Allowed file types
+  disabled?: boolean          // Whether uploads are allowed
+  folder: File.t_maipl_folder // Target folder for uploads
+  onClose: () => void        // Called when modal is closed
+  text?: string              // Custom dropzone text
+  validator?: DZ.DropzoneOptions["validator"] // Custom file validation
 }) {
   const dz = DZ.useDropzone({
     accept: props.accept,
@@ -229,28 +297,11 @@ export default function FileUpload(props: {
   )
 }
 
-function formatDuration(seconds: number): string {
-  if (seconds < 60) {
-    return `${Math.ceil(seconds)}s`
-  }
-
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const remainingSeconds = Math.ceil(seconds % 60)
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`
-  } else if (minutes > 0) {
-    return `${minutes}m ${remainingSeconds}s`
-  }
-
-  return `${remainingSeconds}s`
-}
-
+// Second step of file upload process - handles actual file uploads
 function FileUploadStep2(props: {
-  files: Array<DZ.FileWithPath>
-  folder: File.t_maipl_folder
-  onClose: () => void
+  files: Array<DZ.FileWithPath>  // Files selected for upload
+  folder: File.t_maipl_folder   // Target folder
+  onClose: () => void          // Called when modal is closed
 }) {
   const queryClient = RQ.useQueryClient()
   const maipl = MR.useMaipl()
@@ -261,80 +312,11 @@ function FileUploadStep2(props: {
   const [status, setStatus] = R.useState<UploadStatus>(() => new Map())
   // table
   const table = MR.useTable<FileState, string>()
-  const columns = R.useMemo(
-    () => [
-      column.accessor("id", {
-        header: "Id",
-      }),
-      column.accessor("path", {
-        header: "Path",
-      }),
-      column.accessor("size", {
-        header: "Size",
-        cell: (ctx) => F.filesize(ctx.getValue()),
-      }),
-      column.accessor("status", {
-        header: "Status",
-        cell: (info) => {
-          const fileStatus = status.get(info.row.original.path)
-          return (
-            <M.Stack sx={{ width: 70 }}>
-              <UploadStatus status={fileStatus?.status ?? "none"} />
-            </M.Stack>
-          )
-        },
-      }),
-      column.accessor((row) => status.get(row.path), {
-        id: "speed",
-        header: "Progress",
-        cell: (info) => {
-          const fileStatus = status.get(info.row.original.path)
-          if (
-            !fileStatus?.progress ||
-            fileStatus.status === "ok" ||
-            fileStatus.status === "error"
-          ) {
-            return null
-          }
-
-          const { loaded, total, lastLoaded, lastTime, speedSamples } =
-            fileStatus.progress
-          const currentTime = Date.now()
-
-          // Calculate current speed
-          const currentSpeed =
-            (loaded - lastLoaded) / ((currentTime - lastTime) / 1000)
-
-          // Get average speed from samples
-          const avgSpeed =
-            speedSamples.length > 0
-              ? speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length
-              : currentSpeed
-
-          const remainingBytes = total - loaded
-          const remainingTime = avgSpeed > 0 ? remainingBytes / avgSpeed : 0
-
-          return (
-            <M.Stack
-              direction="row"
-              spacing={1}
-              alignItems="center"
-              divider={<M.Divider orientation="vertical" flexItem />}
-            >
-              <M.Typography variant="caption" sx={{ minWidth: 70 }}>
-                {F.filesize(avgSpeed)}/s
-              </M.Typography>
-              <M.Typography variant="caption" sx={{ minWidth: 80 }}>
-                {remainingTime > 0
-                  ? `${formatDuration(remainingTime)} left`
-                  : "Completing..."}
-              </M.Typography>
-            </M.Stack>
-          )
-        },
-      }),
-    ],
-    [status]
+  const [actionStates, setActionStates] = R.useState<Map<string, ActionState>>(
+    () => new Map()
+  )
+  const [abortControllers] = R.useState<Map<string, AbortController>>(
+    () => new Map()
   )
 
   // sorted files
@@ -353,97 +335,40 @@ function FileUploadStep2(props: {
     }
   }
 
-  // mutations
-  const uploadFile = RQ.useMutation({
-    mutationFn: (vars: Parameters<typeof File.create>) => File.create(...vars),
-    onError: (err, vars) => {
-      if (import.meta.env["DEV"]) {
-        console.error("FileUpload uploadMutation error", err, vars)
-      }
-      setStatus((status) => new Map(status).set(vars[1].path, "error"))
-    },
-    onSettled: () => {
-      uploadFile.reset()
-    },
-    onSuccess: (file) => {
-      setStatus((status) => {
-        const newStatus = new Map(status)
-        newStatus.set(file.path, { status: "ok" })
-        return newStatus
-      })
-    },
-  })
-
+  // Update the uploadMutation
   const uploadMutation = RQ.useMutation({
-    mutationFn: () =>
-      Promise.allSettled(
-        sortedFiles
-          .filter(
-            (file) =>
-              table.selection.has(file.path ?? file.name) &&
-              status.get(file.path ?? file.name) !== "ok"
-          )
-          .map((file) =>
-            maipl.enqueue(async () =>
-              uploadFile.mutateAsync([
-                maipl.client,
-                {
-                  file,
-                  maipl_folder: props.folder,
-                  meta: await File.discoverMeta(file),
-                  path: file.path ?? file.name,
-                  tag,
-                },
-                (pevent) => {
-                  setStatus((status) => {
-                    const newStatus = new Map(status)
-                    const currentTime = Date.now()
-                    const existingStatus = status.get(file.path ?? file.name)
-                    const progress = existingStatus?.progress ?? {
-                      loaded: 0,
-                      total: pevent.total ?? 0,
-                      startTime: currentTime,
-                      lastLoaded: 0,
-                      lastTime: currentTime,
-                      speedSamples: [], // Initialize empty samples array
-                    }
+    mutationFn: async () => {
+      const filesToUpload = sortedFiles.filter((file) =>
+        table.selection.has(file.path ?? file.name)
+      )
 
-                    // Calculate current speed
-                    const currentSpeed =
-                      (pevent.loaded - progress.loaded) /
-                      ((currentTime - progress.lastTime) / 1000)
-
-                    // Keep last 5 speed samples for moving average
-                    const speedSamples = [
-                      ...progress.speedSamples,
-                      currentSpeed,
-                    ]
-                      .slice(-5)
-                      .filter((s) => !isNaN(s) && isFinite(s))
-
-                    newStatus.set(file.path ?? file.name, {
-                      status:
-                        pevent.total == null
-                          ? "..."
-                          : `${((pevent.loaded / pevent.total) * 100).toFixed(
-                              2
-                            )}%`,
-                      progress: {
-                        loaded: pevent.loaded,
-                        total: pevent.total ?? 0,
-                        startTime: progress.startTime,
-                        lastLoaded: progress.loaded,
-                        lastTime: currentTime - 1000,
-                        speedSamples,
-                      },
-                    })
-                    return newStatus
-                  })
-                },
-              ])
-            )
-          )
-      ),
+      return Promise.allSettled(
+        filesToUpload.map((file) => {
+          const path = file.path ?? file.name
+          setActionStates((states) => {
+            const newStates = new Map(states)
+            newStates.set(path, "uploading")
+            return newStates
+          })
+          setStatus((status) => {
+            const newStatus = new Map(status)
+            newStatus.set(path, {
+              status: "0.00%",
+              progress: {
+                loaded: 0,
+                total: file.size,
+                startTime: Date.now(),
+                lastLoaded: 0,
+                lastTime: Date.now(),
+                speedSamples: [],
+              },
+            })
+            return newStatus
+          })
+          return uploadSingleFile(file)
+        })
+      )
+    },
     onError: (error, vars) => {
       notify((onClose) => (
         <M.Alert onClose={onClose} severity="error">
@@ -474,11 +399,369 @@ function FileUploadStep2(props: {
     },
   })
 
+  const uploadFile = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof File.create>) => File.create(...vars),
+    onError: (err: any, vars) => {
+      if (err.name === "CanceledError") {
+        setActionStates((states) => {
+          const newStates = new Map(states)
+          newStates.set(vars[1].path, "cancelled")
+          return newStates
+        })
+        setStatus((status) => {
+          const newStatus = new Map(status)
+          newStatus.set(vars[1].path, { status: "cancelled" })
+          return newStatus
+        })
+        return
+      }
+
+      if (import.meta.env["DEV"]) {
+        console.error("FileUpload uploadFile error", err, vars)
+      }
+
+      // Handle 409 Conflict (Duplicate file)
+      if (err.response?.status === 409) {
+        const errorData = err.response.data as FileErrorResponse
+        setActionStates((states) => {
+          const newStates = new Map(states)
+          newStates.set(vars[1].path, "duplicate")
+          return newStates
+        })
+        setStatus((status) => {
+          const newStatus = new Map(status)
+          newStatus.set(vars[1].path, { status: "duplicate" })
+          return newStatus
+        })
+
+        // Show a more informative notification
+        notify((onClose) => (
+          <M.Alert
+            onClose={onClose}
+            severity="warning"
+          >
+            File already exists: {errorData.path}
+          </M.Alert>
+        ))
+        return
+      }
+
+      // Handle other errors
+      setActionStates((states) => {
+        const newStates = new Map(states)
+        newStates.set(vars[1].path, "error")
+        return newStates
+      })
+      setStatus((status) => {
+        const newStatus = new Map(status)
+        newStatus.set(vars[1].path, { status: "error" })
+        return newStatus
+      })
+
+      // Show generic error notification
+      notify((onClose) => (
+        <M.Alert onClose={onClose} severity="error">
+          Error uploading file: {err.message}
+        </M.Alert>
+      ))
+    },
+    onSuccess: (file) => {
+      setActionStates((states) => {
+        const newStates = new Map(states)
+        newStates.set(file.path, "ok")
+        return newStates
+      })
+      setStatus((status) => {
+        const newStatus = new Map(status)
+        newStatus.set(file.path, { status: "ok" })
+        return newStatus
+      })
+    },
+  })
+
+  // Mutation for handling single file upload with progress tracking
+  const uploadSingleFile = R.useCallback(
+    async (file: DZ.FileWithPath) => {
+      const controller = new AbortController()
+      const path = file.path ?? file.name
+
+      // Initialize upload status
+      setStatus((status) => {
+        const newStatus = new Map(status)
+        newStatus.set(path, {
+          status: "0.00%",
+          progress: {
+            loaded: 0,
+            total: file.size,
+            startTime: Date.now(),
+            lastLoaded: 0,
+            lastTime: Date.now(),
+            speedSamples: [],
+          },
+        })
+        return newStatus
+      })
+
+      // Store abort controller for cancellation
+      abortControllers.set(path, controller)
+
+      try {
+        // Start file upload with progress tracking
+        await uploadFile.mutateAsync([
+          maipl.client,
+          {
+            file,
+            maipl_folder: props.folder,
+            meta: await File.discoverMeta(file),
+            path,
+            tag,
+          },
+          // Progress callback
+          (pevent) => {
+            if (controller.signal.aborted) return
+            setStatus((status) => {
+              const currentTime = Date.now()
+              const existingStatus = status.get(path)
+
+              if (
+                existingStatus?.status === "cancelled" ||
+                existingStatus?.status === "error"
+              ) {
+                return status
+              }
+
+              const progress = existingStatus?.progress ?? {
+                loaded: 0,
+                total: pevent.total ?? 0,
+                startTime: currentTime,
+                lastLoaded: 0,
+                lastTime: currentTime,
+                speedSamples: [],
+              }
+
+              const currentSpeed =
+                (pevent.loaded - progress.loaded) /
+                ((currentTime - progress.lastTime) / 1000)
+
+              const speedSamples = [...progress.speedSamples, currentSpeed]
+                .slice(-5)
+                .filter((s) => !isNaN(s) && isFinite(s))
+
+              return {
+                status:
+                  pevent.total == null
+                    ? "..."
+                    : `${((pevent.loaded / pevent.total) * 100).toFixed(2)}%`,
+                progress: {
+                  loaded: pevent.loaded,
+                  total: pevent.total ?? 0,
+                  startTime: progress.startTime,
+                  lastLoaded: progress.loaded,
+                  lastTime: currentTime - 1000,
+                  speedSamples,
+                },
+              }
+            })
+          },
+          controller.signal,
+        ])
+      } finally {
+        // Clean up abort controller after upload
+        abortControllers.delete(path)
+      }
+    },
+    [maipl, props.folder, tag, uploadFile]
+  )
+
+  // Add type for error response
+  type FileErrorResponse = {
+    code: string
+    message: string
+    path: string
+    type: string
+  }
+
+  // Add function to check for existing files
+  const checkExistingFiles = R.useCallback(
+    async (files: DZ.FileWithPath[]) => {
+      try {
+        // Get the list of existing files in the folder
+        const response = await File.list(maipl.client, {
+          maipl_folder: props.folder,
+          path: files.map((f) => f.path ?? f.name).join(","),
+        })
+
+        // Create a map of existing file paths
+        return new Map(response.data.map((file) => [file.path, file]))
+      } catch (error) {
+        console.error("Error checking existing files:", error)
+        return new Map()
+      }
+    },
+    [maipl.client, props.folder]
+  )
+
   // checkbox enabled?
   const rowCanSelect = R.useCallback(
     (file: FileState) =>
       uploadMutation.isIdle && status.get(file.path) !== "ok",
     [uploadMutation, status]
+  )
+
+  const handleCancel = R.useCallback(
+    (path: string) => {
+      const controller = abortControllers.get(path)
+      if (controller) {
+        setActionStates((states) => {
+          const newStates = new Map(states)
+          newStates.set(path, "cancelling")
+          return newStates
+        })
+        setStatus((status) => {
+          const newStatus = new Map(status)
+          newStatus.set(path, { status: "cancelling" })
+          return newStatus
+        })
+        controller.abort()
+      }
+    },
+    [abortControllers]
+  )
+
+  // Update handleRetry to be simpler
+  const handleRetry = R.useCallback(
+    (path: string) => {
+      const file = sortedFiles.find((f) => (f.path ?? f.name) === path)
+      if (file) {
+        setActionStates((states) => {
+          const newStates = new Map(states)
+          newStates.set(path, "uploading")
+          return newStates
+        })
+        setStatus((status) => {
+          const newStatus = new Map(status)
+          newStatus.set(path, {
+            status: "0.00%",
+            progress: {
+              loaded: 0,
+              total: file.size,
+              startTime: Date.now(),
+              lastLoaded: 0,
+              lastTime: Date.now(),
+              speedSamples: [],
+            },
+          })
+          return newStatus
+        })
+        uploadSingleFile(file)
+      }
+    },
+    [sortedFiles, uploadSingleFile]
+  )
+
+  // Create separate column definitions for status-dependent and action columns
+  const getStatusColumns = (status: UploadStatus) => [
+    column.accessor("status", {
+      header: "Status",
+      cell: (info) => {
+        const fileStatus = status.get(info.row.original.path)
+        return (
+          <M.Stack sx={{ width: 100 }}>
+            <UploadStatus status={fileStatus?.status ?? "none"} />
+          </M.Stack>
+        )
+      },
+    }),
+    column.accessor((row) => status.get(row.path), {
+      id: "speed",
+      header: "Progress",
+      cell: (info) => {
+        const fileStatus = status.get(info.row.original.path)
+        if (
+          !fileStatus?.progress ||
+          fileStatus.status === "ok" ||
+          fileStatus.status === "error"
+        ) {
+          return null
+        }
+        const { loaded, total, lastLoaded, lastTime, speedSamples } =
+          fileStatus.progress
+        const currentTime = Date.now()
+
+        // Calculate current speed
+        const currentSpeed =
+          (loaded - lastLoaded) / ((currentTime - lastTime) / 1000)
+
+        // Get average speed from samples
+        const avgSpeed =
+          speedSamples.length > 0
+            ? speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length
+            : currentSpeed
+
+        const remainingBytes = total - loaded
+        const remainingTime = avgSpeed > 0 ? remainingBytes / avgSpeed : 0
+
+        return (
+          <M.Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            divider={<M.Divider orientation="vertical" flexItem />}
+          >
+            <M.Typography variant="caption" sx={{ minWidth: 70 }}>
+              {F.filesize(avgSpeed)}/s
+            </M.Typography>
+            <M.Typography variant="caption" sx={{ minWidth: 80 }}>
+              {remainingTime > 0
+                ? `${formatDuration(remainingTime)} left`
+                : "Completing..."}
+            </M.Typography>
+          </M.Stack>
+        )
+      },
+    }),
+  ]
+
+  const getActionColumn = (
+    actionStates: Map<string, ActionState>,
+    handleCancel: (path: string) => void,
+    handleRetry: (path: string) => void
+  ) =>
+    column.accessor("path", {
+      id: "actions",
+      header: "Actions",
+      cell: (info) => {
+        const path = info.row.original.path
+        const state = actionStates.get(path) ?? "none"
+
+        return (
+          <M.Box sx={{ minWidth: 100 }}>
+            <ActionButton
+              state={state}
+              onCancel={() => handleCancel(path)}
+              onRetry={() => handleRetry(path)}
+            />
+          </M.Box>
+        )
+      },
+    })
+
+  const columns = R.useMemo(
+    () => [
+      column.accessor("id", {
+        header: "Id",
+      }),
+      column.accessor("path", {
+        header: "Path",
+      }),
+      column.accessor("size", {
+        header: "Size",
+        cell: (ctx) => F.filesize(ctx.getValue()),
+      }),
+      ...getStatusColumns(status),
+      getActionColumn(actionStates, handleCancel, handleRetry),
+    ],
+    [status, actionStates, handleCancel, handleRetry]
   )
 
   return (
@@ -540,6 +823,7 @@ function FileUploadStep2(props: {
   )
 }
 
+// Component for displaying file type icons in the dropzone
 function UploadIcon(props: {
   icon: typeof M.SvgIcon
   label: string
@@ -566,6 +850,7 @@ function UploadIcon(props: {
   )
 }
 
+// Component for displaying upload status chips
 function UploadStatus(props: { status: string }) {
   switch (props.status) {
     case "none":
@@ -576,6 +861,18 @@ function UploadStatus(props: { status: string }) {
       return <M.Chip color="warning" label="Pending" />
     case "ok":
       return <M.Chip color="success" label="Ok" />
+    case "cancelled":
+      return <M.Chip color="default" label="Cancelled" />
+    case "cancelling":
+      return (
+        <M.Chip
+          color="default"
+          label="Cancelling"
+          icon={<M.CircularProgress size={16} />}
+        />
+      )
+    case "duplicate":
+      return <M.Chip color="warning" label="Already exists" />
     default:
       return <M.Chip label={props.status} color="info" />
   }

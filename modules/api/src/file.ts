@@ -179,6 +179,7 @@ const create = async (
   client: Client.t,
   body: t_create_request,
   onUploadProgress?: A.AxiosRequestConfig["onUploadProgress"],
+  signal?: AbortSignal,
 ): Promise<t> => {
   const checksum = hexDigest(await sha256(await body.file.arrayBuffer()))
   const formData = new FormData()
@@ -192,6 +193,7 @@ const create = async (
     .post<t_create_response>(`${K.MAIPL_FILE_BACKEND}/api/file/`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
       onUploadProgress,
+      signal,
     })
     .then(r => r.data)
   return {
