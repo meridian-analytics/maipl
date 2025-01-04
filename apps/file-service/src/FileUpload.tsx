@@ -30,7 +30,22 @@ const style = {
   },
 }
 
-type UploadStatus = Map<string, string> // path -> status
+type UploadProgress = {
+  loaded: number
+  total: number
+  startTime: number
+  lastLoaded: number
+  lastTime: number
+  speedSamples: number[]
+}
+
+type UploadStatus = Map<
+  string,
+  {
+    status: string
+    progress?: UploadProgress
+  }
+>
 
 type FileState = {
   id: string
@@ -38,6 +53,7 @@ type FileState = {
   path: string
   size: number
   status: string
+  progress?: UploadProgress
 }
 
 const column = RT.createColumnHelper<FileState>()
@@ -85,9 +101,15 @@ function Element() {
         />
       )
     case File.t_maipl_folder.dataset:
-      return <FileUpload folder={folder} onClose={onClose} accept={{
-        "application/hdf5": [".h5"]
-      }} />
+      return (
+        <FileUpload
+          folder={folder}
+          onClose={onClose}
+          accept={{
+            "application/hdf5": [".h5"],
+          }}
+        />
+      )
     case File.t_maipl_folder.model:
       return (
         <FileUpload
@@ -152,7 +174,7 @@ export default function FileUpload(props: {
       ...(dz.isDragAccept ? style.accept : {}),
       ...(dz.isDragReject ? style.reject : {}),
     }),
-    [dz.isFocused, dz.isDragAccept, dz.isDragReject],
+    [dz.isFocused, dz.isDragAccept, dz.isDragReject]
   )
   if (dz.acceptedFiles.length > 0) {
     return (
@@ -184,13 +206,13 @@ export default function FileUpload(props: {
               <M.Stack direction="row">
                 <UploadIcon icon={I.FolderOutlined} label="Folder" />
                 {Object.entries(props.accept ?? {}).flatMap(([_mime, exts]) =>
-                  exts.map(e => (
+                  exts.map((e) => (
                     <UploadIcon
                       icon={I.InsertDriveFileOutlined}
                       key={e}
                       label={e}
                     />
-                  )),
+                  ))
                 )}
               </M.Stack>
               <M.Typography>
@@ -205,6 +227,24 @@ export default function FileUpload(props: {
       </M.Stack>
     </MR.Modal>
   )
+}
+
+function formatDuration(seconds: number): string {
+  if (seconds < 60) {
+    return `${Math.ceil(seconds)}s`
+  }
+
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const remainingSeconds = Math.ceil(seconds % 60)
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`
+  } else if (minutes > 0) {
+    return `${minutes}m ${remainingSeconds}s`
+  }
+
+  return `${remainingSeconds}s`
 }
 
 function FileUploadStep2(props: {
@@ -222,37 +262,88 @@ function FileUploadStep2(props: {
   // table
   const table = MR.useTable<FileState, string>()
   const columns = R.useMemo(
-    () =>
-      [
-        column.accessor("id", {
-          header: "Id",
-        }),
-        column.accessor("path", {
-          header: "Path",
-        }),
-        column.accessor("size", {
-          header: "Size",
-          cell: ctx => F.filesize(ctx.getValue()),
-        }),
-        column.accessor("status", {
-          header: "Status",
-          cell: info => (
+    () => [
+      column.accessor("id", {
+        header: "Id",
+      }),
+      column.accessor("path", {
+        header: "Path",
+      }),
+      column.accessor("size", {
+        header: "Size",
+        cell: (ctx) => F.filesize(ctx.getValue()),
+      }),
+      column.accessor("status", {
+        header: "Status",
+        cell: (info) => {
+          const fileStatus = status.get(info.row.original.path)
+          return (
             <M.Stack sx={{ width: 70 }}>
-              <UploadStatus status={info.getValue()} />
+              <UploadStatus status={fileStatus?.status ?? "none"} />
             </M.Stack>
-          ),
-        }),
-      ] as Array<MR.ColumnDef<FileState>>,
-    [],
+          )
+        },
+      }),
+      column.accessor((row) => status.get(row.path), {
+        id: "speed",
+        header: "Progress",
+        cell: (info) => {
+          const fileStatus = status.get(info.row.original.path)
+          if (
+            !fileStatus?.progress ||
+            fileStatus.status === "ok" ||
+            fileStatus.status === "error"
+          ) {
+            return null
+          }
+
+          const { loaded, total, lastLoaded, lastTime, speedSamples } =
+            fileStatus.progress
+          const currentTime = Date.now()
+
+          // Calculate current speed
+          const currentSpeed =
+            (loaded - lastLoaded) / ((currentTime - lastTime) / 1000)
+
+          // Get average speed from samples
+          const avgSpeed =
+            speedSamples.length > 0
+              ? speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length
+              : currentSpeed
+
+          const remainingBytes = total - loaded
+          const remainingTime = avgSpeed > 0 ? remainingBytes / avgSpeed : 0
+
+          return (
+            <M.Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              divider={<M.Divider orientation="vertical" flexItem />}
+            >
+              <M.Typography variant="caption" sx={{ minWidth: 70 }}>
+                {F.filesize(avgSpeed)}/s
+              </M.Typography>
+              <M.Typography variant="caption" sx={{ minWidth: 80 }}>
+                {remainingTime > 0
+                  ? `${formatDuration(remainingTime)} left`
+                  : "Completing..."}
+              </M.Typography>
+            </M.Stack>
+          )
+        },
+      }),
+    ],
+    [status]
   )
 
   // sorted files
   const sortedFiles = R.useMemo(
     () =>
       [...props.files].sort((a, b) =>
-        (a.path ?? a.name).localeCompare(b.path ?? b.name),
+        (a.path ?? a.name).localeCompare(b.path ?? b.name)
       ),
-    [props.files],
+    [props.files]
   )
 
   // event handlers
@@ -269,13 +360,17 @@ function FileUploadStep2(props: {
       if (import.meta.env["DEV"]) {
         console.error("FileUpload uploadMutation error", err, vars)
       }
-      setStatus(status => new Map(status).set(vars[1].path, "error"))
+      setStatus((status) => new Map(status).set(vars[1].path, "error"))
     },
     onSettled: () => {
       uploadFile.reset()
     },
-    onSuccess: file => {
-      setStatus(status => new Map(status).set(file.path, "ok"))
+    onSuccess: (file) => {
+      setStatus((status) => {
+        const newStatus = new Map(status)
+        newStatus.set(file.path, { status: "ok" })
+        return newStatus
+      })
     },
   })
 
@@ -284,11 +379,11 @@ function FileUploadStep2(props: {
       Promise.allSettled(
         sortedFiles
           .filter(
-            file =>
+            (file) =>
               table.selection.has(file.path ?? file.name) &&
-              status.get(file.path ?? file.name) !== "ok",
+              status.get(file.path ?? file.name) !== "ok"
           )
-          .map(file =>
+          .map((file) =>
             maipl.enqueue(async () =>
               uploadFile.mutateAsync([
                 maipl.client,
@@ -299,23 +394,58 @@ function FileUploadStep2(props: {
                   path: file.path ?? file.name,
                   tag,
                 },
-                pevent =>
-                  setStatus(status =>
-                    new Map(status).set(
-                      file.path ?? file.name,
-                      pevent.total == null
-                        ? "..."
-                        : `${((pevent.loaded / pevent.total) * 100).toFixed(
-                            2,
-                          )}%`,
-                    ),
-                  ),
-              ]),
-            ),
-          ),
+                (pevent) => {
+                  setStatus((status) => {
+                    const newStatus = new Map(status)
+                    const currentTime = Date.now()
+                    const existingStatus = status.get(file.path ?? file.name)
+                    const progress = existingStatus?.progress ?? {
+                      loaded: 0,
+                      total: pevent.total ?? 0,
+                      startTime: currentTime,
+                      lastLoaded: 0,
+                      lastTime: currentTime,
+                      speedSamples: [], // Initialize empty samples array
+                    }
+
+                    // Calculate current speed
+                    const currentSpeed =
+                      (pevent.loaded - progress.loaded) /
+                      ((currentTime - progress.lastTime) / 1000)
+
+                    // Keep last 5 speed samples for moving average
+                    const speedSamples = [
+                      ...progress.speedSamples,
+                      currentSpeed,
+                    ]
+                      .slice(-5)
+                      .filter((s) => !isNaN(s) && isFinite(s))
+
+                    newStatus.set(file.path ?? file.name, {
+                      status:
+                        pevent.total == null
+                          ? "..."
+                          : `${((pevent.loaded / pevent.total) * 100).toFixed(
+                              2
+                            )}%`,
+                      progress: {
+                        loaded: pevent.loaded,
+                        total: pevent.total ?? 0,
+                        startTime: progress.startTime,
+                        lastLoaded: progress.loaded,
+                        lastTime: currentTime - 1000,
+                        speedSamples,
+                      },
+                    })
+                    return newStatus
+                  })
+                },
+              ])
+            )
+          )
       ),
     onError: (error, vars) => {
-      notify(onClose => (
+      notify((onClose) => (
         <M.Alert onClose={onClose} severity="error">
           Error: There was an error uploading files
         </M.Alert>
@@ -327,9 +457,9 @@ function FileUploadStep2(props: {
     onSettled: () => {
       uploadMutation.reset()
     },
-    onSuccess: data => {
-      notify(onClose => {
-        const count = data.filter(f => f.status == "fulfilled").length
+    onSuccess: (data) => {
+      notify((onClose) => {
+        const count = data.filter((f) => f.status == "fulfilled").length
         return count == data.length ? (
           <M.Alert onClose={onClose} severity="success">
             Success: Uploaded {count} files
@@ -348,7 +478,7 @@ function FileUploadStep2(props: {
   const rowCanSelect = R.useCallback(
     (file: FileState) =>
       uploadMutation.isIdle && status.get(file.path) !== "ok",
-    [uploadMutation, status],
+    [uploadMutation, status]
   )
 
   return (
@@ -359,25 +489,28 @@ function FileUploadStep2(props: {
             props.files.reduce(
               (r, f) =>
                 table.selection.has(f.path ?? f.name) ? r + f.size : r,
-              0,
-            ),
+              0
+            )
           )})`}
           variant="h5"
         />
         <AcceptedFiles
           {...table}
           columns={columns}
-          rows={sortedFiles.map(file => ({
-            id: file.path ?? file.name,
-            name: file.name,
-            path: file.path ?? file.name,
-            size: file.size,
-            status:
-              status.get(file.path ?? file.name) ??
-              (table.selection.has(file.path ?? file.name)
-                ? "pending"
-                : "none"),
-          }))}
+          rows={sortedFiles.map((file) => {
+            const fileStatus = status.get(file.path ?? file.name)
+            return {
+              id: file.path ?? file.name,
+              name: file.name,
+              path: file.path ?? file.name,
+              size: file.size,
+              status:
+                fileStatus?.status ??
+                (table.selection.has(file.path ?? file.name)
+                  ? "pending"
+                  : "none"),
+            }
+          })}
           rowCanSelect={rowCanSelect}
           visibility={{
             id: false,
@@ -387,7 +520,7 @@ function FileUploadStep2(props: {
           <M.TextField
             disabled={uploadMutation.isPending}
             label="Tag (optional)"
-            onChange={e => setTag(e.currentTarget.value)}
+            onChange={(e) => setTag(e.currentTarget.value)}
             value={tag}
           />
           <M.Stack flexGrow={1} />
