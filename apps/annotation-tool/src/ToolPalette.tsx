@@ -1,36 +1,36 @@
 import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
-import * as Specviz from "specviz-react"
+import * as AppContext from "./AppContext"
 
 export default function ToolPalette(props: M.StackProps) {
-  const tool = Specviz.useTool()
+  const app = AppContext.useContext()
   return (
     <M.Stack {...props}>
       <MR.ActionButton
         children={<I.AddLocation />}
-        className={tool.tool === "annotate" ? "active" : ""}
-        onClick={_ => tool.setTool("annotate")}
+        className={app.tool == AppContext.Tool.Annotate ? "active" : ""}
+        onClick={_ => app.setTool(AppContext.Tool.Annotate)}
         title="Annotate"
       />
 
       <MR.ActionButton
         children={<I.SelectAllOutlined />}
-        className={tool.tool === "select" ? "active" : ""}
-        onClick={_ => tool.setTool("select")}
+        className={app.tool == AppContext.Tool.Select ? "active" : ""}
+        onClick={_ => app.setTool(AppContext.Tool.Select)}
         title="Select"
       />
       <MR.ActionButton
         children={<I.ZoomInOutlined />}
-        className={tool.tool === "zoom" ? "active" : ""}
-        onClick={_ => tool.setTool("zoom")}
+        className={app.tool == AppContext.Tool.Zoom ? "active" : ""}
+        onClick={_ => app.setTool(AppContext.Tool.Zoom)}
         title="Zoom"
       />
       <MR.ActionButton
         children={<I.PanToolOutlined />}
-        className={tool.tool === "pan" ? "active" : ""}
-        onClick={_ => tool.setTool("pan")}
-        title="Pan"
+        className={app.tool == AppContext.Tool.Move ? "active" : ""}
+        onClick={_ => app.setTool(AppContext.Tool.Move)}
+        title="Move"
       />
     </M.Stack>
   )

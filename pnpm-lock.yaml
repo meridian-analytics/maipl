@@ -32,6 +32,9 @@ importers:
       '@maipl/react':
         specifier: workspace:^
         version: link:../../modules/react
+      '@meridian-analytics/specviz':
+        specifier: 1.0.0-beta
+        version: 1.0.0-beta(react-dom@18.3.1)(react@18.3.1)
       '@mui/icons-material':
         specifier: ^5.15.14
         version: 5.16.1(@mui/material@5.16.1)(@types/react@18.3.3)(react@18.3.1)
@@ -71,9 +74,6 @@ importers:
       react-router-typesafe:
         specifier: ^1.4.4
         version: 1.5.0(react-router-dom@6.24.1)(react@18.3.1)(typescript@5.5.3)
-      specviz-react:
-        specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react
-        version: git-dev.cs.dal.ca/meridian/specviz-react/ef79b2c2cd1b05ffe093899399aa8696adf5530d(typescript@5.5.3)
       zod:
         specifier: ^3.22.4
         version: 3.23.8
@@ -361,12 +361,12 @@ importers:
       '@maipl/format':
         specifier: workspace:^
         version: link:../format
+      '@meridian-analytics/specviz':
+        specifier: 1.0.0-beta
+        version: 1.0.0-beta(react-dom@18.3.1)(react@18.3.1)
       axios:
         specifier: ^1.6.8
         version: 1.7.2
-      specviz-react:
-        specifier: git+https://git-dev.cs.dal.ca/meridian/specviz-react
-        version: git-dev.cs.dal.ca/meridian/specviz-react/ef79b2c2cd1b05ffe093899399aa8696adf5530d(typescript@5.5.3)
 
   modules/async: {}
 
@@ -1153,6 +1153,16 @@ packages:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
+
+  /@meridian-analytics/specviz@1.0.0-beta(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-AgTfGKieap6ZNxamsEHxwX3ykWV9VY/G4OXz8KRZy/fR3dduXRjseg8IH7fhsERiRiyUkHK47bmFNFm8TFMLrQ==}
+    peerDependencies:
+      react: ^18.3.1
+      react-dom: ^18.3.1
+    dependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    dev: false
 
   /@monaco-editor/loader@1.4.0(monaco-editor@0.47.0):
     resolution: {integrity: sha512-00ioBig0x642hytVspPl7DbQyaSWRaolYie/UFNjoTdvoKPzo6xrXLhTk9ixgIKcLH5b5vDOjVNiGyY+uDCUlg==}
@@ -2435,17 +2445,4 @@ packages:
 
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
-    dev: false
-
-  git-dev.cs.dal.ca/meridian/specviz-react/ef79b2c2cd1b05ffe093899399aa8696adf5530d(typescript@5.5.3):
-    resolution: {commit: ef79b2c2cd1b05ffe093899399aa8696adf5530d, repo: https://git-dev.cs.dal.ca/meridian/specviz-react, type: git}
-    id: git-dev.cs.dal.ca/meridian/specviz-react/ef79b2c2cd1b05ffe093899399aa8696adf5530d
-    name: specviz-react
-    version: 0.10.0
-    peerDependencies:
-      typescript: ^5.5.3
-    dependencies:
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      typescript: 5.5.3
     dev: false

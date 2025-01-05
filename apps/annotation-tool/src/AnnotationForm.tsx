@@ -1,19 +1,20 @@
 import * as MR from "@maipl/react"
+import * as Specviz from "@meridian-analytics/specviz"
+import * as Audio from "@meridian-analytics/specviz/audio"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import { Form } from "@rjsf/mui"
 import validator from "@rjsf/validator-ajv8"
 import React from "react"
 import { ErrorBoundary } from "react-error-boundary"
-import * as Specviz from "specviz-react"
-import * as Audio from "specviz-react/audio"
+import * as AppContext from "./AppContext"
 import * as SchemaContext from "./SchemaContext"
 
 export default function AnnotationForm(props: {
   sx?: M.SxProps
 }) {
-  const region = Specviz.useRegion()
-  const ids = Array.from(region.transformedSelection)
+  const note = Specviz.Note.useContext()
+  const ids = Array.from(note.selection)
   return (
     <ErrorBoundary
       fallbackRender={({ error }) => <p>Error: {error.message}</p>}
@@ -55,10 +56,10 @@ function MonoForm(props: {
   regionId: string
   sx?: M.SxProps
 }) {
+  const app = AppContext.useContext()
   const audio = Audio.useContext()
-  const regions = Specviz.useRegion()
-  const focus = Specviz.useFocus()
-  const region = regions.regions.get(props.regionId)
+  const note = Specviz.Note.useContext()
+  const region = note.regions.get(props.regionId)
   const schema = SchemaContext.useContext()
   const derivedUiSchema = React.useMemo(
     () => SchemaContext.deriveMonoFormUiSchema(schema.schema, schema.uiSchema),
@@ -71,15 +72,13 @@ function MonoForm(props: {
       sx={props.sx}
       title="Edit Annotation"
       actions={[
-        focus.region &&
-        !audio.transport.state.pause &&
-        region.id == focus.region.id ? (
+        app.focus && !audio.state.pause && region.id == app.focus ? (
           <MR.ActionButton
             key="0"
             children={<I.Stop />}
             onClick={() => {
               audio.transport.stop()
-              focus.setFocus(null)
+              app.setFocus(null)
             }}
             title="Stop Annotation"
           />
@@ -88,7 +87,7 @@ function MonoForm(props: {
             key="0"
             children={<I.PlayArrow />}
             onClick={() => {
-              focus.setFocus(region.id)
+              app.setFocus(region.id)
               audio.transport.play()
             }}
             title="Play Annotation"
@@ -97,8 +96,8 @@ function MonoForm(props: {
         <MR.ActionButton
           key="1"
           children={<I.DeleteForever />}
-          disabled={!regions.canDelete(region)}
-          onClick={regions.delete}
+          disabled={!note.canDelete(region)}
+          onClick={() => note.delete(new Set([region.id]))}
           title="Delete Annotation"
         />,
       ]}
@@ -106,11 +105,13 @@ function MonoForm(props: {
         <M.Box sx={{ marginTop: -4, padding: 2 }}>
           <Form
             children=" "
-            formData={region}
+            formData={region.properties}
             onChange={e =>
-              regions.updateRegion(region.id, { ...region, ...e.formData })
+              note.updateProperties(new Set([region.id]), prev =>
+                updateProperties(prev ?? {}, schema.schema, e.formData),
+              )
             }
-            readonly={!regions.canUpdate(region)}
+            readonly={!note.canUpdate(region)}
             schema={schema.schema}
             uiSchema={derivedUiSchema}
             validator={validator}
@@ -124,19 +125,29 @@ function MonoForm(props: {
           justifyContent="space-between"
         >
           <M.Box className="encoder">
-            <Specviz.Encoder.X {...region} />
+            <Specviz.Encoder.X1 region={region} label="s" />
             <M.Typography>Offset</M.Typography>
           </M.Box>
           <M.Box className="encoder">
-            <Specviz.Encoder.X2 {...region} />
+            <Specviz.Encoder.X2 region={region} label="s" />
             <M.Typography>Duration</M.Typography>
           </M.Box>
           <M.Box className="encoder">
-            <Specviz.Encoder.Y2 {...region} />
+            <Specviz.Encoder.Y2
+              direction={-1}
+              format={v => (v / 1000).toFixed(3)}
+              label="kHz"
+              region={region}
+            />
             <M.Typography>Min</M.Typography>
           </M.Box>
           <M.Box className="encoder">
-            <Specviz.Encoder.Y1 {...region} />
+            <Specviz.Encoder.Y1
+              direction={-1}
+              format={v => (v / 1000).toFixed(3)}
+              label="kHz"
+              region={region}
+            />
             <M.Typography>Max</M.Typography>
           </M.Box>
         </M.Stack>
@@ -148,7 +159,7 @@ function MonoForm(props: {
 function PolyForm(props: {
   sx?: M.SxProps
 }) {
-  const region = Specviz.useRegion()
+  const note = Specviz.Note.useContext()
   const schema = SchemaContext.useContext()
   const derivedSchema = React.useMemo(
     () => SchemaContext.deriveSchemaWithoutDefaults(schema.schema),
@@ -162,10 +173,10 @@ function PolyForm(props: {
     () =>
       SchemaContext.derivePolyFormData(
         schema.schema,
-        region.transformedRegions,
-        region.transformedSelection,
+        note.regions,
+        note.selection,
       ),
-    [region.transformedRegions, region.transformedSelection, schema.schema],
+    [note.regions, note.selection, schema.schema],
   )
   return (
     <MR.Panel
@@ -177,7 +188,9 @@ function PolyForm(props: {
             children=" "
             formData={formData}
             onChange={e => {
-              region.updateSelectedRegions(r => ({ ...r, ...e.formData }))
+              note.updateProperties(note.selection, prev =>
+                updateProperties(prev ?? {}, schema.schema, e.formData),
+              )
             }}
             schema={derivedSchema}
             uiSchema={derivedUi}
@@ -187,4 +200,19 @@ function PolyForm(props: {
       }
     />
   )
+}
+
+function updateProperties(
+  props: Record<string, unknown>,
+  schema: SchemaContext.JsonSchema,
+  formData: Record<string, unknown>,
+) {
+  const next = { ...props }
+  let v: unknown
+  for (const key in schema.properties) {
+    v = formData[key]
+    if (v === undefined) delete next[key]
+    else next[key] = v
+  }
+  return next
 }

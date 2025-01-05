@@ -20,7 +20,10 @@ type t_context = {
   logout: () => void
 }
 
-type t_router = (context: t_context) => Array<RR.RouteObject>
+type t_router = (
+  context: t_context,
+  queryClient: RQ.QueryClient,
+) => Array<RR.RouteObject>
 
 const MaiplContext = R.createContext<t_context>({
   client: Client.guest,
@@ -174,7 +177,7 @@ function MaiplContextProvider(props: {
             path: "/profile",
             element: <MR.Profile />,
           },
-          ...props.router(context),
+          ...props.router(context, queryClient),
         ],
     {
       basename: props.basename || import.meta.env["BASE_URL"] || "/",

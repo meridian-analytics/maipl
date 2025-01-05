@@ -1,75 +1,74 @@
+import type * as Specviz from "@meridian-analytics/specviz"
 import * as R from "react"
-import * as Specviz from "specviz-react"
 import * as SchemaContext from "./SchemaContext"
 
 type Context = {
-  dispatch: R.Dispatch<Action>
   filters: State
+  setFilters: R.Dispatch<R.SetStateAction<Context["filters"]>>
+  resetFilters: () => void
+  filterFn?: Specviz.Note.FilterFn
 }
 
-type State = FilterState
-
-type Action =
-  | { kind: "setFilters"; filters: R.SetStateAction<FilterState> }
-  | { kind: "resetFilters" }
+type State = Record<string, FilterValue>
 
 type FilterValueString = string | string[]
 type FilterValueNumber = number | [null | number, null | number]
 type FilterValueBoolean = boolean | boolean[]
 type FilterValue = FilterValueString | FilterValueNumber | FilterValueBoolean
-type FilterState = Record<string, FilterValue>
-
-export function resetFilters(): Action {
-  return { kind: "resetFilters" }
-}
-
-export function setFilters(filters: FilterState): Action {
-  return { kind: "setFilters", filters }
-}
-
-function reducer(state: State, action: Action): State {
-  switch (action.kind) {
-    case "resetFilters":
-      return {}
-    case "setFilters":
-      return typeof action.filters == "function"
-        ? action.filters(state)
-        : action.filters
-  }
-}
 
 const defaultContext: Context = {
-  dispatch: () => {
-    console.error("dispatch called outside of context")
-  },
   filters: {},
+  resetFilters() {
+    throw Error("resetFilters called outside of context")
+  },
+  setFilters() {
+    throw Error("setFilters called outside of context")
+  },
 }
 
 const Context = R.createContext(defaultContext)
 
+const emptyState: State = {}
+
+function objectIsEmpty(obj: Record<string, unknown>): boolean {
+  for (const _ in obj) return false
+  return true
+}
+
 export function Provider(props: { children: R.ReactNode }) {
   const schema = SchemaContext.useContext()
-  const [filters, dispatch] = R.useReducer(reducer, defaultContext.filters)
-
-  const filterFn: Specviz.RegionContext.TransformProps["fn"] = R.useMemo(
-    () =>
-      Specviz.RegionContext.transformFilter((region: Specviz.Region) =>
-        Object.entries(schema.schema.properties).every(([key, field]) =>
-          filterAuxField(region, key, field, filters),
-        ),
-      ),
-    [schema.schema.properties, filters],
+  const [state, internalSetState] = R.useState(emptyState)
+  const setFilters: Context["setFilters"] = R.useCallback(
+    fn =>
+      internalSetState(prev => {
+        const next = typeof fn == "function" ? fn(prev) : fn
+        if (Object.is(next, prev)) return prev
+        if (objectIsEmpty(next)) return emptyState
+        return next
+      }),
+    [],
   )
-
-  const value: Context = R.useMemo(() => ({ dispatch, filters }), [filters])
-
+  const resetFilters: Context["resetFilters"] = R.useCallback(
+    () => internalSetState(emptyState),
+    [],
+  )
+  const filterFn: Specviz.Note.FilterFn = R.useCallback(
+    region =>
+      Object.entries(schema.schema.properties).every(([key, field]) =>
+        filterAuxField(region.properties ?? {}, key, field, state),
+      ),
+    [schema.schema.properties, state],
+  )
   return (
-    <Context.Provider value={value}>
-      <Specviz.RegionContext.Transform
-        fn={filterFn}
-        children={props.children}
-      />
-    </Context.Provider>
+    <Context.Provider
+      children={props.children}
+      value={{
+        filters: state,
+        filterFn: state == emptyState ? undefined : filterFn,
+        resetFilters,
+        setFilters,
+      }}
+    />
   )
 }
 
@@ -78,31 +77,22 @@ export function useContext() {
 }
 
 function filterAuxField(
-  region: Specviz.Region,
+  properties: Specviz.Note.Properties,
   key: string,
   field: SchemaContext.FieldSchema,
-  filters: FilterState,
+  filters: State,
 ): boolean {
-  if (key in filters) {
-    if (key in region) {
-      switch (field.type) {
-        case "boolean":
-          return filterAuxBoolean(
-            region[key],
-            filters[key] as FilterValueBoolean,
-          )
-        case "string":
-          return filterAuxString(
-            region[key],
-            rjsfCheckboxesBugfix(filters[key]) as FilterValueString,
-          )
-        case "number":
-          return filterAuxNumber(region[key], filters[key] as FilterValueNumber)
-      }
-    }
-    return false
+  const f: undefined | FilterValue = filters[key]
+  if (f == null) return true
+  const p = properties?.[key]
+  switch (field.type) {
+    case "boolean":
+      return filterAuxBoolean(p, f as FilterValueBoolean)
+    case "string":
+      return filterAuxString(p, f as FilterValueString)
+    case "number":
+      return filterAuxNumber(p, f as FilterValueNumber)
   }
-  return true
 }
 
 function filterAuxString(value: unknown, filter: FilterValueString): boolean {
@@ -110,12 +100,15 @@ function filterAuxString(value: unknown, filter: FilterValueString): boolean {
     return filter.length == 0 || value.some(v => filter.includes(v))
   }
   if (Array.isArray(value)) {
-    return value.includes(filter as string)
+    return filter == "" || value.includes(filter as string)
   }
   if (Array.isArray(filter)) {
-    return filter.length == 0 || filter.includes(value as string)
+    return (
+      filter.length == 0 ||
+      filter.includes(value == null ? "" : (value as string))
+    )
   }
-  return value === filter
+  return value == filter
 }
 
 function filterAuxNumber(value: unknown, filter: FilterValueNumber): boolean {
@@ -143,6 +136,6 @@ function filterAuxBoolean(value: unknown, filter: FilterValueBoolean): boolean {
   return filter.length == 0 || filter.includes(value as boolean)
 }
 
-export function rjsfCheckboxesBugfix(a: unknown) {
-  return Array.isArray(a) ? a.filter(Boolean) : a
+export function rjsfCheckboxesBugfix(a?: FilterValueString) {
+  return Array.isArray(a) ? a.filter(v => v !== undefined) : a
 }

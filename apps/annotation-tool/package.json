@@ -6,6 +6,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
+    "@meridian-analytics/specviz": "1.0.0-beta",
     "@maipl/api": "workspace:^",
     "@maipl/format": "workspace:^",
     "@maipl/js": "workspace:^",
@@ -23,7 +24,6 @@
     "react-error-boundary": "^4.0.13",
     "react-router-dom": "^6.22.3",
     "react-router-typesafe": "^1.4.4",
-    "specviz-react": "git+https://git-dev.cs.dal.ca/meridian/specviz-react#0.11.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

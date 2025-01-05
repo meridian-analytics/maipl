@@ -1,8 +1,10 @@
 import * as F from "@maipl/format"
 import * as MR from "@maipl/react"
+import * as Specviz from "@meridian-analytics/specviz"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
-import * as Specviz from "specviz-react"
+import * as React from "react"
+import type * as AppContext from "./AppContext"
 import * as FilterContext from "./FilterContext"
 import * as SchemaContext from "./SchemaContext"
 
@@ -10,15 +12,15 @@ export default function AnnotationList(props: {
   setShowFilters: (state: boolean) => void
   sx?: M.SxProps
 }) {
-  function order(a: Specviz.Region, b: Specviz.Region) {
+  function order(a: Specviz.Note.Region, b: Specviz.Note.Region) {
     return a.x == b.x ? a.y - b.y : a.x - b.x
   }
   const filter = FilterContext.useContext()
-  const region = Specviz.useRegion()
+  const note = Specviz.Note.useContext()
   return (
     <MR.Panel
       sx={props.sx}
-      title={`Annotations (${region.transformedRegions.size} / ${region.regions.size})`}
+      title={`Annotations (${note.regions.size} / ${note.count})`}
       actions={
         Object.keys(filter.filters).length > 0
           ? [
@@ -31,7 +33,7 @@ export default function AnnotationList(props: {
               <MR.ActionButton
                 key="1"
                 children={<I.FilterListOff color="warning" />}
-                onClick={() => filter.dispatch(FilterContext.resetFilters())}
+                onClick={() => filter.resetFilters()}
                 title="Reset Filters"
               />,
             ]
@@ -46,7 +48,7 @@ export default function AnnotationList(props: {
       }
       contents={
         <M.List disablePadding>
-          {Array.from(region.transformedRegions.values())
+          {Array.from(note.regions.values())
             .sort(order)
             .map(r => (
               <AnnotationListItem key={r.id} {...r} />
@@ -57,28 +59,29 @@ export default function AnnotationList(props: {
   )
 }
 
-export function AnnotationListItem(props: Specviz.Region) {
+export function AnnotationListItem(
+  props: Specviz.Note.Region<AppContext.UserData>,
+) {
   const schema = SchemaContext.useContext()
-  const region = Specviz.useRegion()
+  const note = Specviz.Note.useContext()
+  const primary = React.useMemo(
+    () =>
+      [
+        schema.getLabel(props.properties?.label),
+        props.properties?.comments,
+      ].join(" - "),
+    [props.properties?.comments, props.properties?.label, schema.getLabel],
+  )
+  const secondary = F.duration(props.x, props.x + props.width)
   return (
     <M.ListItem disablePadding key={props.id}>
       <M.ListItemButton
-        selected={region.transformedSelection.has(props.id)}
+        selected={note.selection.has(props.id)}
         onClick={e => {
-          region.selectId(
-            props.id,
-            e.metaKey || e.ctrlKey
-              ? Specviz.SelectionMode.invert
-              : Specviz.SelectionMode.replace,
-          )
+          note.select(new Set([props.id]), Specviz.Note.selectionMode(e))
         }}
       >
-        <M.ListItemText
-          primary={schema.getLabel(
-            FilterContext.rjsfCheckboxesBugfix(props["label"]),
-          )}
-          secondary={F.duration(props.x, props.x + props.width)}
-        />
+        <M.ListItemText primary={primary} secondary={secondary} />
       </M.ListItemButton>
     </M.ListItem>
   )

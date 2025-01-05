@@ -12,7 +12,7 @@ export type Context = {
 export function Provider(props: { children: React.ReactNode }) {
   const { schema } = SchemaContext.useContext()
   const [state, setState] = React.useState<State>(() => ({
-    clipboard: {},
+    clipboard: emptyClipboard,
     fields: new Set(Object.keys(schema.properties)),
   }))
   const note = Specviz.Note.useContext()
