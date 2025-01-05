@@ -19,6 +19,8 @@ export function hexDigest(bytes: ArrayBuffer): string {
 }
 
 /** sha256: Compute the SHA256 hash of an ArrayBuffer */
-export function sha256(bytes: ArrayBuffer): Promise<ArrayBuffer> {
+export function sha256(
+  bytes: ArrayBuffer | ArrayBufferView,
+): Promise<ArrayBuffer> {
   return window.crypto.subtle.digest("SHA-256", bytes)
 }
