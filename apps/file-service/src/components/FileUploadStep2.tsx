@@ -484,6 +484,37 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
     [status, actionStates, handleCancel, handleRetry]
   )
 
+  // Add a function to cancel all uploads
+  const handleCancelAll = R.useCallback(() => {
+    // Cancel all active uploads
+    abortControllers.forEach((controller) => {
+      controller.abort()
+    })
+    // Update status for all files
+    setActionStates((states) => {
+      const newStates = new Map(states)
+      sortedFiles.forEach((file) => {
+        const path = file.path ?? file.name
+        if (states.get(path) === "uploading") {
+          newStates.set(path, "cancelled")
+        }
+      })
+      return newStates
+    })
+    setStatus((status) => {
+      const newStatus = new Map(status)
+      sortedFiles.forEach((file) => {
+        const path = file.path ?? file.name
+        if (status.get(path)?.status === "uploading") {
+          newStatus.set(path, { status: "cancelled" })
+        }
+      })
+      return newStatus
+    })
+    // Close the modal
+    props.onClose()
+  }, [sortedFiles, abortControllers, props.onClose])
+
   return (
     <MR.Modal onClose={props.onClose}>
       <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
@@ -529,7 +560,7 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
           <M.Stack flexGrow={1} />
           <M.Button
             children={uploadMutation.isPending ? "Cancel" : "Close"}
-            onClick={props.onClose}
+            onClick={uploadMutation.isPending ? handleCancelAll : props.onClose}
           />
           <M.Button
             children={uploadMutation.isPending ? "Please wait ..." : "Upload"}
