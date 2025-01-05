@@ -2,11 +2,19 @@
 FROM node:20-alpine as build
 WORKDIR /build
 
-# pnpm
-RUN corepack enable
+# Install pnpm directly
+RUN npm install -g pnpm@9.0.1
 
 # git
 RUN apk add git
+
+# Set build argument for environment
+ARG NODE_ENV=staging
+
+# First copy scripts and env files
+COPY scripts/ ./scripts/
+COPY .env/ ./.env/
+RUN chmod +x scripts/setup-env.sh
 
 # dependencies
 COPY package.json package.json
@@ -14,10 +22,13 @@ COPY pnpm-lock.yaml pnpm-lock.yaml
 COPY pnpm-workspace.yaml pnpm-workspace.yaml
 RUN pnpm install --frozen-lockfile
 
-# build
-COPY apps apps
-COPY modules modules
-#COPY tsconfig.json tsconfig.json
+# Copy source files
+COPY apps/ ./apps/
+COPY modules/ ./modules/
+
+# Run environment setup
+RUN ./scripts/setup-env.sh ${NODE_ENV}
+
 RUN pnpm --recursive install
 RUN pnpm @build
 

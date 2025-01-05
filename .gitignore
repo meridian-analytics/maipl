@@ -1,21 +1,14 @@
-# development
-.vscode
-
-# env
-.env*
-!.env*.defaults
-
-# log
-*.log
-
-# npm
+# Environment files
+.env/.env
+apps/*/.env
 node_modules
-
-# production
 dist
 
-# typescript
+
+*.log
+
+.vscode
+
 *.tsbuildinfo
 
-# mock data
 apps/model-trainer/src/data/
