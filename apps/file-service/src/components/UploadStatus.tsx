@@ -8,6 +8,8 @@ export function UploadStatus(props: { status: string }) {
       return <></>
     case "error":
       return <M.Chip color="error" label="Error" />
+    case "timeout":
+      return <M.Chip color="error" label="Timeout" />
     case "pending":
       return <M.Chip color="warning" label="Pending" />
     case "ok":

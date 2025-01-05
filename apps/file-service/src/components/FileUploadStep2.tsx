@@ -117,7 +117,13 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
   })
 
   const uploadFile = RQ.useMutation({
-    mutationFn: (vars: Parameters<typeof File.create>) => File.create(...vars),
+    mutationFn: (vars: Parameters<typeof File.create>) => {
+      const [client, body, onProgress, signal] = vars
+      return File.create(client, body, onProgress, signal, {
+        //timeout: 1800000, // 30 minutes timeout (should be less than server timeout)
+        timeout: 10000, 
+      })
+    },
     onError: (err: any, vars) => {
       if (err.name === "CanceledError") {
         setActionStates((states) => {
@@ -135,6 +141,32 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
 
       if (import.meta.env["DEV"]) {
         console.error("FileUpload uploadFile error", err, vars)
+      }
+
+      // Handle network errors and timeouts
+      if (err.code === "ERR_NETWORK" || err.code === "ECONNABORTED" || err.response?.status === 504) {
+        setActionStates((states) => {
+          const newStates = new Map(states)
+          newStates.set(vars[1].path, "timeout")
+          return newStates
+        })
+        setStatus((status) => {
+          const newStatus = new Map(status)
+          newStatus.set(vars[1].path, { status: "timeout" })
+          return newStatus
+        })
+
+        const timeoutMessage = 
+          err.code === "ECONNABORTED" ? "Client timeout: Upload took too long." :
+          err.response?.status === 504 ? "Server timeout: The server took too long to respond." :
+          "Network error: Connection was lost.";
+
+        notify((onClose) => (
+          <M.Alert onClose={onClose} severity="error">
+            {timeoutMessage} Please try again with a smaller file or better connection.
+          </M.Alert>
+        ))
+        return
       }
 
       // Handle 409 Conflict (Duplicate file)
@@ -527,4 +559,4 @@ function formatDuration(seconds: number): string {
   }
 
   return `${remainingSeconds}s`
-} 
+}

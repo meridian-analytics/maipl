@@ -180,6 +180,7 @@ const create = async (
   body: t_create_request,
   onUploadProgress?: A.AxiosRequestConfig["onUploadProgress"],
   signal?: AbortSignal,
+  config?: A.AxiosRequestConfig,
 ): Promise<t> => {
   const checksum = hexDigest(await sha256(await body.file.arrayBuffer()))
   const formData = new FormData()
@@ -194,6 +195,7 @@ const create = async (
       headers: { "Content-Type": "multipart/form-data" },
       onUploadProgress,
       signal,
+      ...config,
     })
     .then(r => r.data)
   return {
