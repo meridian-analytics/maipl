@@ -116,7 +116,7 @@ export default function FileUpload(props: FileUploadProps) {
   if (acceptedFiles.length > 0) {
     return (
       <FileUploadStep2
-        files={acceptedFiles}
+        files={dz.acceptedFiles as Array<DZ.FileWithPath>}
         folder={props.folder}
         onClose={props.onClose}
       />

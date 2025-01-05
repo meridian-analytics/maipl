@@ -1,6 +1,5 @@
 /* specviz-react defaults */
 .visualization {
-  height: 300px;
   background-color: #fbf1a9;
   border-radius: 0.25rem;
   border: 1px solid #000;
@@ -81,6 +80,8 @@
 }
 
 .annotation rect {
+  width: 100%;
+  height: 100%;
   fill: rgba(66, 66, 66, 0.66);
   stroke: rgba(200, 200, 200, 0.66);
 }

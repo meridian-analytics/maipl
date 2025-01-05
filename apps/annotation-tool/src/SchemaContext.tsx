@@ -4,9 +4,9 @@
  * Supported features are described by simple zod parsers
  */
 
-import type * as JSF from "@rjsf/utils"
+import type * as Specviz from "@meridian-analytics/specviz"
+import * as JSF from "@rjsf/utils"
 import * as R from "react"
-import type * as Specviz from "specviz-react"
 import * as Z from "zod"
 
 export const OptionsSchema = Z.array(
@@ -106,6 +106,7 @@ export type UiSchema = Z.infer<typeof UiSchema>
 export type MaiplSchema = Z.infer<typeof MaiplSchema>
 
 export type Context = {
+  defaults: Map<string, unknown>
   getLabel: (key: unknown | unknown[]) => string
   labels: Map<string, string>
   schema: JsonSchema
@@ -113,6 +114,7 @@ export type Context = {
 }
 
 const defaultContext: Context = {
+  defaults: new Map(),
   getLabel: () => {
     throw Error("lookup called outside ot context provider")
   },
@@ -120,10 +122,8 @@ const defaultContext: Context = {
   schema: {
     properties: {
       label: {
-        oneOf: [
-          { const: "0", title: "0" },
-          { const: "1", title: "1" },
-        ],
+        enum: ["0", "1"],
+        title: "Label",
         type: "string",
       },
       score: {
@@ -136,7 +136,13 @@ const defaultContext: Context = {
     },
     type: "object",
   },
-  uiSchema: {},
+  uiSchema: {
+    label: {
+      "ui:enumNames": ["Zero", "One"],
+      "ui:placeholder": "(Unlabeled)",
+      "ui:widget": "SelectWidget",
+    },
+  },
 }
 
 const Context = R.createContext(defaultContext)
@@ -160,39 +166,49 @@ export function Provider(props: ProviderProps) {
       }
     }
   }, [props.jsonSchema])
-  const labels = R.useMemo<Context["labels"]>(() => {
-    const res: Context["labels"] = new Map()
-    const label = schema.properties["label"]
-    if (label) {
-      if ("oneOf" in label) {
-        for (const m of label.oneOf) {
-          res.set(m.const, m.title)
-        }
-      } else if ("anyOf" in label) {
-        for (const m of label.anyOf) {
-          res.set(m.const, m.title)
-        }
-      } else if ("enum" in label)
-        for (const m of label.enum) {
-          res.set(m, m)
-        }
+  const defaults = R.useMemo<Context["defaults"]>(() => {
+    const res: Context["defaults"] = new Map()
+    for (const [key, field] of Object.entries(schema.properties)) {
+      if ("default" in field) res.set(key, field.default)
     }
     return res
-  }, [schema])
+  }, [schema.properties])
+  const labels: Context["labels"] = R.useMemo(
+    () =>
+      new Map(
+        Array.from(
+          JSF.optionsList(schema.properties?.["label"], uiSchema?.["label"]) ??
+            [],
+          o => [o.value, o.label],
+        ),
+      ),
+    [schema, uiSchema],
+  )
   const getLabel = R.useCallback<Context["getLabel"]>(
-    key =>
-      Array.isArray(key)
+    key => {
+      const ui = JSF.getUiOptions(uiSchema?.["label"])
+      return Array.isArray(key)
         ? key.length == 0
-          ? "(Unlabeled)"
+          ? ui.placeholder ?? "(Unlabeled)"
           : key.map(k => labels.get(k as string) ?? `(NoLabel ${k})`).join(", ")
-        : labels.get(key as string) ?? `(NoLabel ${key})`,
-    [labels],
+        : key === undefined
+          ? ui.placeholder ?? "(Unlabeled)"
+          : labels.get(key as string) ?? `(NoLabel ${key})`
+    },
+    [labels, uiSchema],
   )
-  const value = R.useMemo<Context>(
-    () => ({ getLabel, labels, schema, uiSchema }),
-    [getLabel, labels, schema, uiSchema],
+  return (
+    <Context.Provider
+      children={props.children}
+      value={{
+        defaults,
+        getLabel,
+        labels,
+        schema,
+        uiSchema,
+      }}
+    />
   )
-  return <Context.Provider value={value} children={props.children} />
 }
 
 export function useContext() {
@@ -211,7 +227,15 @@ export function deriveFilterUiSchema(
           return [[key, { "ui:widget": "CheckboxesWidget" }]]
         case "string":
           if ("enum" in field || "anyOf" in field || "oneOf" in field)
-            return [[key, { "ui:widget": "CheckboxesWidget" }]]
+            return [
+              [
+                key,
+                {
+                  "ui:widget": "EnumWidget",
+                  "ui:placeholder": uiSchema[key]["ui:placeholder"],
+                },
+              ],
+            ]
           return []
         case "number":
           return [[key, { "ui:widget": "NumberMinMaxWidget" }]]
@@ -254,29 +278,30 @@ export function derivePolyFormUiSchema(
 
 export function derivePolyFormData(
   schema: JsonSchema,
-  regions: Specviz.RegionState,
-  selection: Specviz.SelectionState,
-): Record<string, Specviz.RegionValue> {
-  const m: Map<string, Specviz.RegionValue> = new Map()
+  regions: Specviz.Note.RegionState,
+  selection: Specviz.Note.SelectionState,
+): Record<string, unknown> {
+  const m: Map<string, unknown> = new Map()
+  const undef = Symbol()
+  const mixed = Symbol()
   for (const r of regions.values()) {
     if (selection.has(r.id)) {
       for (const k of Object.keys(schema.properties)) {
-        const v1 = r[k]
-        if (v1 == null) continue
+        const v1 = r.properties?.[k] ?? undef
         const v2 = m.get(k)
-        if (v2 == null) {
+        if (v2 === undefined) {
           m.set(k, v1)
         } else if (Array.isArray(v1) && Array.isArray(v2)) {
           m.set(k, Array.from(new Set(v1).intersection(new Set(v2))))
-        } else if (v1 !== v2) {
-          m.set(k, "")
+        } else if (v1 != v2) {
+          m.set(k, mixed)
         }
         // else v == v2, do nothing
       }
     }
   }
   for (const [k, v] of m) {
-    if ((Array.isArray(v) && v.length == 0) || v == "") {
+    if (v == undef || v == mixed || (Array.isArray(v) && v.length == 0)) {
       m.delete(k)
     }
   }

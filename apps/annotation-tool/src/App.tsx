@@ -1,7 +1,8 @@
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
-import * as AnnotationTool from "./AnnotationTool"
+import * as AnnotateBatch from "./AnnotateBatch"
+import * as AnnotateBatchSegment from "./AnnotateBatchSegment"
 import Batches from "./Batches"
 import NewBatch from "./NewBatch"
 import * as ShowBatch from "./ShowBatch"
@@ -54,7 +55,7 @@ function LocalNavigation() {
   )
 }
 
-const router: MR.t_router = context => [
+const router: MR.t_router = (context, queryClient) => [
   {
     path: "/",
     element: <Layout />,
@@ -81,11 +82,12 @@ const router: MR.t_router = context => [
       },
       {
         path: "annotate/:batchId",
-        element: <AnnotationTool.LoadFromBatchId />,
+        loader: AnnotateBatch.loader(context),
       },
       {
         path: "annotate/:batchId/segment/:segmentId",
-        element: <AnnotationTool.LoadFromBatchIdAndSegmentId />,
+        loader: AnnotateBatchSegment.loader(context, queryClient),
+        Component: AnnotateBatchSegment.Component,
       },
     ],
   },

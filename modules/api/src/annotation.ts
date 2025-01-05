@@ -1,5 +1,5 @@
 import * as K from "@maipl/constants"
-import type * as Specviz from "specviz-react"
+import type * as Specviz from "@meridian-analytics/specviz"
 import type * as Client from "./client"
 import type { t_page, t_page_params } from "./types"
 
@@ -14,7 +14,7 @@ type t = {
   /** Backing file identifier */
   file: number
   /** Selected region for the annotation */
-  region: Specviz.Region
+  region: Specviz.Note.Region
   /** Segment identifier this annotation belongs to */
   segment: number
   /** Annotator identifier */

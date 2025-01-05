@@ -1,10 +1,11 @@
 import * as MR from "@maipl/react"
+import * as Specviz from "@meridian-analytics/specviz"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import { Form } from "@rjsf/mui"
 import validator from "@rjsf/validator-ajv8"
 import * as React from "react"
-import * as Specviz from "specviz-react"
+import EnumWidget from "./EnumWidget"
 import * as FilterContext from "./FilterContext"
 import NumberMinMaxWidget from "./NumberMinMaxWidget"
 import * as SchemaContext from "./SchemaContext"
@@ -15,7 +16,7 @@ export default function AnnotationFilters(props: {
 }) {
   const schema = SchemaContext.useContext()
   const filter = FilterContext.useContext()
-  const region = Specviz.useRegion()
+  const note = Specviz.Note.useContext()
   const derivedSchema = React.useMemo(
     () => SchemaContext.deriveSchemaWithoutDefaults(schema.schema),
     [schema.schema],
@@ -27,8 +28,8 @@ export default function AnnotationFilters(props: {
   return (
     <MR.Panel
       sx={props.sx}
-      title={`Filter Annotations (${region.transformedRegions.size} /
-            ${region.regions.size})`}
+      title={`Filter Annotations (${note.regions.size} /
+            ${note.count})`}
       actions={
         Object.keys(filter.filters).length > 0
           ? [
@@ -42,7 +43,7 @@ export default function AnnotationFilters(props: {
                 key="1"
                 children={<I.FilterListOff color="warning" />}
                 onClick={() => {
-                  filter.dispatch(FilterContext.resetFilters())
+                  filter.resetFilters()
                   props.setShowFilters(false)
                 }}
                 title="Reset Filters"
@@ -66,10 +67,9 @@ export default function AnnotationFilters(props: {
             validator={validator}
             widgets={{
               NumberMinMaxWidget,
+              EnumWidget,
             }}
-            onChange={e =>
-              filter.dispatch(FilterContext.setFilters(e.formData))
-            }
+            onChange={e => filter.setFilters(e.formData)}
           />
         </M.Box>
       }

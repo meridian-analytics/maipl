@@ -4,12 +4,12 @@
   "version": "0.1.0",
   "type": "module",
   "dependencies": {
+    "@meridian-analytics/specviz": "1.0.0-beta",
     "@maipl/buffer": "workspace:^",
     "@maipl/constants": "workspace:^",
     "@maipl/csv": "workspace:^",
     "@maipl/format": "workspace:^",
-    "axios": "^1.6.8",
-    "specviz-react": "git+https://git-dev.cs.dal.ca/meridian/specviz-react#0.11.0"
+    "axios": "^1.6.8"
   },
   "exports": {
     ".": "./src/index.ts"
