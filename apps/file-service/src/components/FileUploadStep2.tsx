@@ -120,8 +120,7 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
     mutationFn: (vars: Parameters<typeof File.create>) => {
       const [client, body, onProgress, signal] = vars
       return File.create(client, body, onProgress, signal, {
-        //timeout: 1800000, // 30 minutes timeout (should be less than server timeout)
-        timeout: 10000, 
+        timeout: 1800000, // 30 minutes timeout (should be less than server timeout)
       })
     },
     onError: (err: any, vars) => {
@@ -144,7 +143,11 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
       }
 
       // Handle network errors and timeouts
-      if (err.code === "ERR_NETWORK" || err.code === "ECONNABORTED" || err.response?.status === 504) {
+      if (
+        err.code === "ERR_NETWORK" ||
+        err.code === "ECONNABORTED" ||
+        err.response?.status === 504
+      ) {
         setActionStates((states) => {
           const newStates = new Map(states)
           newStates.set(vars[1].path, "timeout")
@@ -156,14 +159,17 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
           return newStatus
         })
 
-        const timeoutMessage = 
-          err.code === "ECONNABORTED" ? "Client timeout: Upload took too long." :
-          err.response?.status === 504 ? "Server timeout: The server took too long to respond." :
-          "Network error: Connection was lost.";
+        const timeoutMessage =
+          err.code === "ECONNABORTED"
+            ? "Client timeout: Upload took too long."
+            : err.response?.status === 504
+            ? "Server timeout: The server took too long to respond."
+            : "Network error: Connection was lost."
 
         notify((onClose) => (
           <M.Alert onClose={onClose} severity="error">
-            {timeoutMessage} Please try again with a smaller file or better connection.
+            {timeoutMessage} Please try again with a smaller file or better
+            connection.
           </M.Alert>
         ))
         return
