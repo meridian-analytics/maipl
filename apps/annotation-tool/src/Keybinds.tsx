@@ -39,24 +39,24 @@ export default function Keybinds() {
         }}
       />
       <Specviz.Keypress
-        bind="a"
+        bind="_a"
         onKeyDown={() => app.setTool(AppContext.Tool.Annotate)}
       />
       <Specviz.Keypress
-        bind="s"
+        bind="_s"
         onKeyDown={() => app.setTool(AppContext.Tool.Select)}
       />
       <Specviz.Keypress
-        bind="d"
+        bind="_d"
         onKeyDown={() => app.setTool(AppContext.Tool.Zoom)}
       />
       <Specviz.Keypress
-        bind="f"
+        bind="_f"
         onKeyDown={() => app.setTool(AppContext.Tool.Move)}
       />
-      <Specviz.Keypress bind="z" onKeyDown={() => audio.transport.seek(0)} />
-      <Specviz.Keypress bind="x" onKeyDown={() => audio.transport.play()} />
-      <Specviz.Keypress bind="c" onKeyDown={() => audio.transport.stop()} />
+      <Specviz.Keypress bind="_z" onKeyDown={() => audio.transport.seek(0)} />
+      <Specviz.Keypress bind="_x" onKeyDown={() => audio.transport.play()} />
+      <Specviz.Keypress bind="_c" onKeyDown={() => audio.transport.stop()} />
     </Specviz.Bindings>
   )
 }
