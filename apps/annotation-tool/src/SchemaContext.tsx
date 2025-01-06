@@ -223,24 +223,31 @@ export function deriveFilterUiSchema(
     ...uiSchema,
     ...objectFlatMap(schema.properties, ([key, field]) => {
       switch (field.type) {
-        case "boolean":
+        case "boolean": {
           return [[key, { "ui:widget": "CheckboxesWidget" }]]
-        case "string":
-          if ("enum" in field || "anyOf" in field || "oneOf" in field)
+        }
+        case "string": {
+          if ("enum" in field || "anyOf" in field || "oneOf" in field) {
+            const ui = uiSchema?.[key]
             return [
               [
                 key,
                 {
                   "ui:widget": "EnumWidget",
-                  "ui:placeholder": uiSchema[key]["ui:placeholder"],
+                  "ui:placeholder": ui?.["ui:placeholder"],
+                  "ui:enumNames": ui?.["ui:enumNames"],
                 },
               ],
             ]
+          }
           return []
-        case "number":
+        }
+        case "number": {
           return [[key, { "ui:widget": "NumberMinMaxWidget" }]]
-        default:
+        }
+        default: {
           return []
+        }
       }
     }),
   }
