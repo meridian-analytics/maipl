@@ -177,8 +177,10 @@ export function Provider(props: ProviderProps) {
     () =>
       new Map(
         Array.from(
-          JSF.optionsList(schema.properties?.["label"], uiSchema?.["label"]) ??
-            [],
+          JSF.optionsList(
+            schema.properties?.["label"] ?? {},
+            uiSchema?.["label"],
+          ) ?? [],
           o => [o.value, o.label],
         ),
       ),
