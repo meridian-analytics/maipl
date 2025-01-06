@@ -43,16 +43,16 @@ importers:
         version: 5.16.13(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@rjsf/core':
         specifier: ^5.23.2
-        version: 5.23.2(@rjsf/utils@5.23.2)(react@18.3.1)
+        version: 5.23.2(@rjsf/utils@5.23.2(react@18.3.1))(react@18.3.1)
       '@rjsf/mui':
         specifier: ^5.23.2
-        version: 5.23.2(@emotion/react@11.11.4)(@emotion/styled@11.11.5)(@mui/icons-material@5.16.1)(@mui/material@5.16.1)(@rjsf/core@5.23.2)(@rjsf/utils@5.23.2)(react@18.3.1)
+        version: 5.23.2(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react@18.3.1))(@mui/icons-material@5.16.13(@mui/material@5.16.13(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.18)(react@18.3.1))(@mui/material@5.16.13(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@rjsf/core@5.23.2(@rjsf/utils@5.23.2(react@18.3.1))(react@18.3.1))(@rjsf/utils@5.23.2(react@18.3.1))(react@18.3.1)
       '@rjsf/utils':
         specifier: ^5.23.2
         version: 5.23.2(react@18.3.1)
       '@rjsf/validator-ajv8':
         specifier: ^5.23.2
-        version: 5.23.2(@rjsf/utils@5.23.2)
+        version: 5.23.2(@rjsf/utils@5.23.2(react@18.3.1))
       '@tanstack/react-query':
         specifier: ^5.28.9
         version: 5.62.15(react@18.3.1)
@@ -1057,23 +1057,14 @@ packages:
     resolution: {integrity: sha512-xfSkCAchbdG5PnbrKqFWwia4Bi61nH+wm8wLEqfHDyp7Y3dZzgqS2itV8i4gAq9pC2HsTpwyBC6Ds8VHZ96JlA==}
     engines: {node: '>=14.0.0'}
 
-  /@rjsf/core@5.23.2(@rjsf/utils@5.23.2)(react@18.3.1):
+  '@rjsf/core@5.23.2':
     resolution: {integrity: sha512-jSz3X8SOZ1xL3wMPhBt01j/cA4FszhdGTLBhHfncM9nme4SpbQ6GRAiePOBakEVhT89GAM11ML1DA888YTZfmg==}
     engines: {node: '>=14'}
     peerDependencies:
       '@rjsf/utils': ^5.23.x
       react: ^16.14.0 || >=17
-    dependencies:
-      '@rjsf/utils': 5.23.2(react@18.3.1)
-      lodash: 4.17.21
-      lodash-es: 4.17.21
-      markdown-to-jsx: 7.4.7(react@18.3.1)
-      nanoid: 3.3.7
-      prop-types: 15.8.1
-      react: 18.3.1
-    dev: false
 
-  /@rjsf/mui@5.23.2(@emotion/react@11.11.4)(@emotion/styled@11.11.5)(@mui/icons-material@5.16.1)(@mui/material@5.16.1)(@rjsf/core@5.23.2)(@rjsf/utils@5.23.2)(react@18.3.1):
+  '@rjsf/mui@5.23.2':
     resolution: {integrity: sha512-mkKe7hIQzo4ku3cNArUgD2X15JqidSXKcvuRV4+sT5WOw/9zoT0ZzCm99NmmaMf9ugcwHNqZmW5R1aCvAxHKrQ==}
     engines: {node: '>=14'}
     peerDependencies:
@@ -1084,45 +1075,21 @@ packages:
       '@rjsf/core': ^5.23.x
       '@rjsf/utils': ^5.23.x
       react: '>=17'
-    dependencies:
-      '@emotion/react': 11.11.4(@types/react@18.3.3)(react@18.3.1)
-      '@emotion/styled': 11.11.5(@emotion/react@11.11.4)(@types/react@18.3.3)(react@18.3.1)
-      '@mui/icons-material': 5.16.1(@mui/material@5.16.1)(@types/react@18.3.3)(react@18.3.1)
-      '@mui/material': 5.16.1(@emotion/react@11.11.4)(@emotion/styled@11.11.5)(@types/react@18.3.3)(react-dom@18.3.1)(react@18.3.1)
-      '@rjsf/core': 5.23.2(@rjsf/utils@5.23.2)(react@18.3.1)
-      '@rjsf/utils': 5.23.2(react@18.3.1)
-      react: 18.3.1
-    dev: false
 
-  /@rjsf/utils@5.23.2(react@18.3.1):
+  '@rjsf/utils@5.23.2':
     resolution: {integrity: sha512-CDpZTroRE1O2lkZBNYsWCRj7moF3fqnwIo/Vf3flhoS7rGwb8kWlIHakOOBZxlqorKZB1UPzhQZn+FcwhzNldw==}
     engines: {node: '>=14'}
     peerDependencies:
       react: ^16.14.0 || >=17
-    dependencies:
-      json-schema-merge-allof: 0.8.1
-      jsonpointer: 5.0.1
-      lodash: 4.17.21
-      lodash-es: 4.17.21
-      react: 18.3.1
-      react-is: 18.3.1
-    dev: false
 
-  /@rjsf/validator-ajv8@5.23.2(@rjsf/utils@5.23.2):
+  '@rjsf/validator-ajv8@5.23.2':
     resolution: {integrity: sha512-EHOTZ/YxTcFHpCj2p42PD3daxJyozZ5gkIVCfbtIXgTtubt/pOMFvM2OxNcQ6OBQ+ulo96OmnDxYGsNPpZZVaw==}
     engines: {node: '>=14'}
     peerDependencies:
       '@rjsf/utils': ^5.23.x
-    dependencies:
-      '@rjsf/utils': 5.23.2(react@18.3.1)
-      ajv: 8.17.1
-      ajv-formats: 2.1.1(ajv@8.17.1)
-      lodash: 4.17.21
-      lodash-es: 4.17.21
-    dev: false
 
-  /@rollup/rollup-android-arm-eabi@4.18.1:
-    resolution: {integrity: sha512-lncuC4aHicncmbORnx+dUaAgzee9cm/PbIqgWz1PpXuwc+sa1Ct83tnqUDy/GFKleLiN7ZIeytM6KJ4cAn1SxA==}
+  '@rollup/rollup-android-arm-eabi@4.29.2':
+    resolution: {integrity: sha512-s/8RiF4bdmGnc/J0N7lHAr5ZFJj+NdJqJ/Hj29K+c4lEdoVlukzvWXB9XpWZCdakVT0YAw8iyIqUP2iFRz5/jA==}
     cpu: [arm]
     os: [android]
 
