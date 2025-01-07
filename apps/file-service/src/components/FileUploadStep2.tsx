@@ -18,6 +18,50 @@ import { ActionButton } from "./ActionButton"
 const column = RT.createColumnHelper<FileState>()
 const AcceptedFiles = MR.Table<FileState, string>()
 
+// Add this helper function at the top level
+async function processQueue<T>(
+  items: T[],
+  process: (item: T) => Promise<any>,
+  concurrency: number
+): Promise<PromiseSettledResult<any>[]> {
+  const results: PromiseSettledResult<any>[] = []
+  const inProgress = new Set<Promise<any>>()
+  const queue = [...items]
+
+  async function processNext(): Promise<void> {
+    if (queue.length === 0) return
+
+    const item = queue.shift()!
+    const promise = process(item)
+      .then(
+        (value) => results.push({ status: "fulfilled", value }),
+        (reason) => results.push({ status: "rejected", reason })
+      )
+      .finally(() => {
+        inProgress.delete(promise)
+        if (queue.length > 0) {
+          return processNext()
+        }
+      })
+
+    inProgress.add(promise)
+  }
+
+  // Start initial batch of promises
+  await Promise.all(
+    Array(Math.min(concurrency, items.length))
+      .fill(null)
+      .map(() => processNext())
+  )
+
+  // Wait for all promises to complete
+  while (inProgress.size > 0) {
+    await Promise.race(inProgress)
+  }
+
+  return results
+}
+
 // Second step of file upload process - handles actual file uploads
 export function FileUploadStep2(props: FileUploadStep2Props) {
   const queryClient = RQ.useQueryClient()
@@ -59,8 +103,9 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
         table.selection.has(file.path ?? file.name)
       )
 
-      return Promise.allSettled(
-        filesToUpload.map((file) => {
+      return processQueue(
+        filesToUpload,
+        (file) => {
           const path = file.path ?? file.name
           setActionStates((states) => {
             const newStates = new Map(states)
@@ -83,7 +128,8 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
             return newStatus
           })
           return uploadSingleFile(file)
-        })
+        },
+        5 // Limit to 5 concurrent uploads
       )
     },
     onError: (error, vars) => {
@@ -479,6 +525,20 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
       }),
       column.accessor("path", {
         header: "Path",
+        cell: (ctx) => (
+          <M.Tooltip title={ctx.getValue()}>
+            <M.Box
+              sx={{
+                maxWidth: 300,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {ctx.getValue()}
+            </M.Box>
+          </M.Tooltip>
+        ),
       }),
       column.accessor("size", {
         header: "Size",
