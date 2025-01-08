@@ -12,3 +12,5 @@ dist
 *.tsbuildinfo
 
 apps/model-trainer/src/data/
+
+.DS_Store
