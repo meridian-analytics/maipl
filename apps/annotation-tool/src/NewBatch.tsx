@@ -8,7 +8,12 @@ import validator from "@rjsf/validator-ajv8"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
-import * as BatchParameters from "./schema/BatchParametersSchema"
+import {
+  MagSpectrogramSchema,
+  MagSpectrogramUiSchema,
+  MelSpectrogramSchema,
+  MelSpectrogramUiSchema,
+} from "./schema/BatchParametersSchema"
 
 const style = {
   base: {
@@ -73,6 +78,9 @@ function NewBatch(props: { onClose: () => void }) {
 
   // field: parameters (for spectrogram)
   const [parameters, setParameters] = R.useState({})
+  const [spectrogramType, setSpectrogramType] = R.useState<
+    "MagSpectrogram" | "MelSpectrogram"
+  >("MagSpectrogram")
 
   // field: annotation_file
   const [annotationFile, setAnnotationFile] = R.useState<null | number>(null)
@@ -127,7 +135,7 @@ function NewBatch(props: { onClose: () => void }) {
       Batch.create(...vars),
     onError: (err, vars) => {
       notify((onClose) => (
-        <M.Alert onClose={onClose} severity='error'>
+        <M.Alert onClose={onClose} severity="error">
           Error: Could not create batch
         </M.Alert>
       ))
@@ -140,7 +148,7 @@ function NewBatch(props: { onClose: () => void }) {
     },
     onSuccess: (batch) => {
       notify((onClose) => (
-        <M.Alert onClose={onClose} severity='success'>
+        <M.Alert onClose={onClose} severity="success">
           Success: Created batch{" "}
           {
             <M.Link
@@ -161,7 +169,7 @@ function NewBatch(props: { onClose: () => void }) {
       Batch.preview(...vars),
     onError: (err, vars) => {
       notify((onClose) => (
-        <M.Alert onClose={onClose} severity='error'>
+        <M.Alert onClose={onClose} severity="error">
           Error: Could not preview batch
         </M.Alert>
       ))
@@ -174,7 +182,7 @@ function NewBatch(props: { onClose: () => void }) {
       setPreviewImage(imageUrl)
       setTab(Tab.preview)
       notify((onClose) => (
-        <M.Alert onClose={onClose} severity='success'>
+        <M.Alert onClose={onClose} severity="success">
           Success: Previewed batch
         </M.Alert>
       ))
@@ -191,8 +199,8 @@ function NewBatch(props: { onClose: () => void }) {
 
   const onPreview = () => {
     if (previewMutation.isIdle) {
-      setTab(Tab.preview) 
-      setPreviewImage(null) 
+      setTab(Tab.preview)
+      setPreviewImage(null)
       previewMutation.mutate([
         maipl.client,
         {
@@ -230,44 +238,62 @@ function NewBatch(props: { onClose: () => void }) {
   return (
     <MR.Modal onClose={props.onClose} sx={{ minWidth: 600 }}>
       <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
-        <M.Typography variant='h6'>Create new batch ...</M.Typography>
+        <M.Typography variant="h6">Create new batch ...</M.Typography>
         <M.Stack component={M.Paper} padding={2}>
           <M.TextField
-            label='Batch Name'
+            label="Batch Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           <M.TextField
-            label='Description'
+            label="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
+          <M.FormControl fullWidth>
+            <M.InputLabel>Spectrogram Type</M.InputLabel>
+            <M.Select
+              value={spectrogramType}
+              onChange={(e) => {
+                setSpectrogramType(
+                  e.target.value as "MagSpectrogram" | "MelSpectrogram"
+                )
+                setParameters({}) // Reset parameters when type changes
+              }}
+              label="Spectrogram Type"
+            >
+              <M.MenuItem value="MagSpectrogram">
+                Magnitude Spectrogram
+              </M.MenuItem>
+              <M.MenuItem value="MelSpectrogram">Mel Spectrogram</M.MenuItem>
+            </M.Select>
+          </M.FormControl>
           <MR.Picker
-            label='Annotation Configuration'
+            label="Annotation Configuration"
             setValue={(value) => setAnnotationFile(Number(value))}
             value={annotationFile ? String(annotationFile) : ""}
             values={optionsForFiles(annotationFiles)}
             fullWidth
           />
         </M.Stack>
-        <M.Stack direction='row' flexGrow={1} justifyContent='center'>
+        <M.Stack direction="row" flexGrow={1} justifyContent="center">
           <M.Tabs
-            indicatorColor='primary'
+            indicatorColor="primary"
             onChange={(_e, value) => setTab(value as Tab)}
             value={tab}
           >
-            <M.Tab label='Files' value={Tab.files} />
-            <M.Tab label='Segments' value={Tab.segments} />
-            <M.Tab label='Spectrogram' value={Tab.parameters} />
+            <M.Tab label="Files" value={Tab.files} />
+            <M.Tab label="Segments" value={Tab.segments} />
+            <M.Tab label="Spectrogram" value={Tab.parameters} />
             {(previewMutation.isPending || previewImage) && (
-              <M.Tab label='Preview' value={Tab.preview} />
+              <M.Tab label="Preview" value={Tab.preview} />
             )}
           </M.Tabs>
         </M.Stack>
         {tab == Tab.files &&
           selectionType == SelectionType.initial &&
           importFile == null && (
-            <M.Stack direction='row'>
+            <M.Stack direction="row">
               <M.Stack
                 component={M.Button}
                 flexGrow={1}
@@ -278,12 +304,12 @@ function NewBatch(props: { onClose: () => void }) {
                 <M.Typography>Select Files</M.Typography>
               </M.Stack>
 
-              <M.Stack sx={style.base} alignItems='center' flexGrow={1}>
+              <M.Stack sx={style.base} alignItems="center" flexGrow={1}>
                 <I.InsertDriveFileOutlined sx={{ fontSize: 50 }} />
                 <MR.Picker
-                  label='IMPORT .CSV'
+                  label="IMPORT .CSV"
                   setValue={(value) => setImportFile(Number(value))}
-                  value=''
+                  value=""
                   values={optionsForFiles(importFiles)}
                   fullWidth
                 />
@@ -294,23 +320,23 @@ function NewBatch(props: { onClose: () => void }) {
           selectionType == SelectionType.manual &&
           importFile == null && (
             <>
-              <M.Stack direction='row' alignItems='center'>
+              <M.Stack direction="row" alignItems="center">
                 <M.TextField
-                  label='Path'
+                  label="Path"
                   onChange={(e) => table.filter.set("path", e.target.value)}
-                  placeholder='path/to/folder'
+                  placeholder="path/to/folder"
                   value={table.filter.get("path")}
                 />
                 <M.TextField
-                  label='Tag'
+                  label="Tag"
                   onChange={(e) => table.filter.set("tag", e.target.value)}
-                  placeholder='my-tag'
+                  placeholder="my-tag"
                   value={table.filter.get("tag")}
                 />
                 <M.Stack flexGrow={1} />
                 <M.Button
-                  size='medium'
-                  children='Go Back'
+                  size="medium"
+                  children="Go Back"
                   onClick={() => setSelectionType(SelectionType.initial)}
                 />
               </M.Stack>
@@ -333,8 +359,8 @@ function NewBatch(props: { onClose: () => void }) {
             </>
           )}
         {tab == Tab.files && importFile && (
-          <M.Stack sx={style.base} direction='row' spacing={4}>
-            <M.Stack alignItems='center'>
+          <M.Stack sx={style.base} direction="row" spacing={4}>
+            <M.Stack alignItems="center">
               <I.InsertDriveFileOutlined sx={{ fontSize: 50 }} />
               <M.Typography>
                 {importFiles.get(importFile)!.basename}
@@ -348,7 +374,7 @@ function NewBatch(props: { onClose: () => void }) {
                 Files and annotations will be imported from this file.
               </M.Typography>
               <M.Button
-                children='Cancel import'
+                children="Cancel import"
                 onClick={() => setImportFile(null)}
               />
             </M.Stack>
@@ -357,18 +383,18 @@ function NewBatch(props: { onClose: () => void }) {
         {tab == Tab.segments && (
           <M.Stack>
             <M.TextField
-              label='Length (seconds)'
+              label="Length (seconds)"
               onChange={(e) =>
                 setSegmentParameters((prev) => ({
                   ...prev,
                   length: Math.max(1, Number(e.target.value) || 60),
                 }))
               }
-              type='number'
+              type="number"
               value={segmentParameters.length}
             />
             <M.TextField
-              label='Step (seconds)'
+              label="Step (seconds)"
               onChange={(e) =>
                 setSegmentParameters((prev) => ({
                   ...prev,
@@ -378,7 +404,7 @@ function NewBatch(props: { onClose: () => void }) {
                       : Math.max(1, Number(e.target.value) || 60),
                 }))
               }
-              type='number'
+              type="number"
               value={segmentParameters.step ?? segmentParameters.length}
             />
             <MR.Switch
@@ -389,7 +415,7 @@ function NewBatch(props: { onClose: () => void }) {
                   pad: typeof v == "function" ? v(prev.pad) : v,
                 }))
               }
-              label='Pad'
+              label="Pad"
             />
           </M.Stack>
         )}
@@ -417,13 +443,13 @@ function NewBatch(props: { onClose: () => void }) {
                 }}
               >
                 <M.CircularProgress />
-                <M.Typography variant='body2' sx={{ mt: 2 }}>
+                <M.Typography variant="body2" sx={{ mt: 2 }}>
                   Generating preview...
                 </M.Typography>
               </M.Box>
             ) : previewImage ? (
               <M.Box
-                component='img'
+                component="img"
                 src={previewImage}
                 onError={(e) => {
                   console.error("Image load error:", e)
@@ -437,7 +463,7 @@ function NewBatch(props: { onClose: () => void }) {
                 }}
               />
             ) : (
-              <M.Typography variant='body1'>
+              <M.Typography variant="body1">
                 No preview available. Click the Preview button to generate one.
               </M.Typography>
             )}
@@ -451,20 +477,27 @@ function NewBatch(props: { onClose: () => void }) {
             overflowY: "auto",
             overflowX: "hidden",
             paddingX: 2,
-            // use height to ensure Form stays mounted; fixes #6
             height: tab == Tab.parameters ? "auto" : 0,
           }}
         >
           <Form
-            children=' '
+            children=" "
             formData={parameters}
             onChange={(e) => setParameters(e.formData)}
-            schema={BatchParameters.schema}
-            uiSchema={BatchParameters.uiSchema}
+            schema={
+              spectrogramType === "MagSpectrogram"
+                ? MagSpectrogramSchema
+                : MelSpectrogramSchema
+            }
+            uiSchema={
+              spectrogramType === "MagSpectrogram"
+                ? MagSpectrogramUiSchema
+                : MelSpectrogramUiSchema
+            }
             validator={validator}
           />
         </M.Stack>
-        <M.Stack direction='row'>
+        <M.Stack direction="row">
           {selectionType == SelectionType.manual && (
             <M.Typography>
               Selection: {table.selection.size} files (
@@ -479,16 +512,16 @@ function NewBatch(props: { onClose: () => void }) {
           )}
           <M.Stack flexGrow={1} />
           <M.Button
-            children='Preview'
+            children="Preview"
             onClick={onPreview}
             disabled={table.selection.size === 0 || previewMutation.isPending}
           />
-          <M.Button children='Close' onClick={props.onClose} />
+          <M.Button children="Close" onClick={props.onClose} />
           <M.Button
-            children='Create'
+            children="Create"
             disabled={createMutation.isPending}
             onClick={onCreate}
-            variant='contained'
+            variant="contained"
           />
         </M.Stack>
       </M.Stack>
