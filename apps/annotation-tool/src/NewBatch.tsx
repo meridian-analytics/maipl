@@ -77,7 +77,7 @@ function NewBatch(props: { onClose: () => void }) {
   const [description, setDescription] = R.useState("")
 
   // field: parameters (for spectrogram)
-  const [parameters, setParameters] = R.useState({})
+  const [parameters, setParameters] = R.useState({ type: "MagSpectrogram" })
   const [spectrogramType, setSpectrogramType] = R.useState<
     "MagSpectrogram" | "MelSpectrogram"
   >("MagSpectrogram")
@@ -255,10 +255,11 @@ function NewBatch(props: { onClose: () => void }) {
             <M.Select
               value={spectrogramType}
               onChange={(e) => {
-                setSpectrogramType(
-                  e.target.value as "MagSpectrogram" | "MelSpectrogram"
-                )
-                setParameters({}) // Reset parameters when type changes
+                const newType = e.target.value as
+                  | "MagSpectrogram"
+                  | "MelSpectrogram"
+                setSpectrogramType(newType)
+                setParameters({ type: newType }) // Reset parameters but keep type
               }}
               label="Spectrogram Type"
             >
@@ -483,7 +484,9 @@ function NewBatch(props: { onClose: () => void }) {
           <Form
             children=" "
             formData={parameters}
-            onChange={(e) => setParameters(e.formData)}
+            onChange={(e) =>
+              setParameters({ ...e.formData, type: spectrogramType })
+            }
             schema={
               spectrogramType === "MagSpectrogram"
                 ? MagSpectrogramSchema

@@ -10,7 +10,12 @@ import * as R from "react"
 import * as RR from "react-router-dom"
 import * as RRT from "react-router-typesafe"
 import BatchShare from "./BatchShare"
-import * as BatchParameters from "./schema/BatchParametersSchema"
+import {
+  MagSpectrogramSchema,
+  MagSpectrogramUiSchema,
+  MelSpectrogramSchema,
+  MelSpectrogramUiSchema,
+} from "./schema/BatchParametersSchema"
 
 export enum Tab {
   files = "files",
@@ -89,29 +94,36 @@ export default function ShowBatch(props: ShowBatchProps) {
 
   // field: parameters (for spectrogram)
   const [parameters, setParameters] = R.useState(props.batch.parameters)
+  const [spectrogramType, setSpectrogramType] = R.useState<
+    "MagSpectrogram" | "MelSpectrogram"
+  >(
+    () =>
+      (props.batch.parameters as { type: "MagSpectrogram" | "MelSpectrogram" })
+        .type
+  )
 
   // field: annotation_file
   const [annotationFile, _setAnnotationFile] = R.useState<null | number>(
-    props.batch.annotation_file,
+    props.batch.annotation_file
   )
 
   // field: segment_parameters
   const [segmentParameters, setSegmentParameters] = R.useState(
-    props.batch.segment_parameters,
+    props.batch.segment_parameters
   )
 
   // field: share_to
   const [shareTo, setShareTo] = R.useState<Map<number, Batch.t_role_code>>(
-    () => new Map(),
+    () => new Map()
   )
 
   const table = MR.Files.useTable({
     selection: R.useMemo(
       () =>
         new Map(
-          props.batch.filelist.map(id => [id, true as unknown as File.t]),
+          props.batch.filelist.map((id) => [id, true as unknown as File.t])
         ),
-      [props.batch],
+      [props.batch]
     ),
   })
 
@@ -126,7 +138,7 @@ export default function ShowBatch(props: ShowBatchProps) {
   const updateMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Batch.patch>) => Batch.patch(...vars),
     onError: (err, vars) => {
-      notify(onClose => (
+      notify((onClose) => (
         <M.Alert onClose={onClose} severity="error">
           Error: Could not update batch
         </M.Alert>
@@ -139,7 +151,7 @@ export default function ShowBatch(props: ShowBatchProps) {
       updateMutation.reset()
     },
     onSuccess: () => {
-      notify(onClose => (
+      notify((onClose) => (
         <M.Alert onClose={onClose} severity="success">
           Success: updated batch{" "}
           {
@@ -183,13 +195,33 @@ export default function ShowBatch(props: ShowBatchProps) {
           <M.TextField
             label="Batch Name"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
           />
           <M.TextField
             label="Description"
             value={description}
-            onChange={e => setDescription(e.target.value)}
+            onChange={(e) => setDescription(e.target.value)}
           />
+          <M.FormControl fullWidth>
+            <M.InputLabel>Spectrogram Type</M.InputLabel>
+            <M.Select
+              value={spectrogramType}
+              onChange={(e) => {
+                const newType = e.target.value as
+                  | "MagSpectrogram"
+                  | "MelSpectrogram"
+                setSpectrogramType(newType)
+                setParameters({ type: newType })
+              }}
+              label="Spectrogram Type"
+              disabled={(props.batch.allow_change_settings ?? true) === false}
+            >
+              <M.MenuItem value="MagSpectrogram">
+                Magnitude Spectrogram
+              </M.MenuItem>
+              <M.MenuItem value="MelSpectrogram">Mel Spectrogram</M.MenuItem>
+            </M.Select>
+          </M.FormControl>
           <MR.Picker
             disabled={true}
             label="Annotation Configuration"
@@ -223,13 +255,13 @@ export default function ShowBatch(props: ShowBatchProps) {
             <M.Stack direction="row" alignItems="center">
               <M.TextField
                 label="Path"
-                onChange={e => table.filter.set("path", e.target.value)}
+                onChange={(e) => table.filter.set("path", e.target.value)}
                 placeholder="path/to/folder"
                 value={table.filter.get("path")}
               />
               <M.TextField
                 label="Tag"
-                onChange={e => table.filter.set("tag", e.target.value)}
+                onChange={(e) => table.filter.set("tag", e.target.value)}
                 placeholder="my-tag"
                 value={table.filter.get("tag")}
               />
@@ -257,8 +289,8 @@ export default function ShowBatch(props: ShowBatchProps) {
           <M.Stack>
             <M.TextField
               label="Length (seconds)"
-              onChange={e =>
-                setSegmentParameters(prev => ({
+              onChange={(e) =>
+                setSegmentParameters((prev) => ({
                   ...prev,
                   length: Math.max(1, Number(e.target.value) || 60),
                 }))
@@ -268,8 +300,8 @@ export default function ShowBatch(props: ShowBatchProps) {
             />
             <M.TextField
               label="Step (seconds)"
-              onChange={e =>
-                setSegmentParameters(prev => ({
+              onChange={(e) =>
+                setSegmentParameters((prev) => ({
                   ...prev,
                   step:
                     e.target.value == ""
@@ -282,8 +314,8 @@ export default function ShowBatch(props: ShowBatchProps) {
             />
             <MR.Switch
               value={segmentParameters.pad}
-              setValue={v =>
-                setSegmentParameters(prev => ({
+              setValue={(v) =>
+                setSegmentParameters((prev) => ({
                   ...prev,
                   pad: typeof v == "function" ? v(prev.pad) : v,
                 }))
@@ -305,10 +337,20 @@ export default function ShowBatch(props: ShowBatchProps) {
             <Form
               children=" "
               formData={parameters}
-              onChange={e => setParameters(e.formData)}
-              readonly={(props.batch.allow_change_settings ?? true) == false}
-              schema={BatchParameters.schema}
-              uiSchema={BatchParameters.uiSchema}
+              onChange={(e) =>
+                setParameters({ ...e.formData, type: spectrogramType })
+              }
+              readonly={(props.batch.allow_change_settings ?? true) === false}
+              schema={
+                spectrogramType === "MagSpectrogram"
+                  ? MagSpectrogramSchema
+                  : MelSpectrogramSchema
+              }
+              uiSchema={
+                spectrogramType === "MagSpectrogram"
+                  ? MagSpectrogramUiSchema
+                  : MelSpectrogramUiSchema
+              }
               validator={validator}
             />
           </M.Stack>
@@ -327,8 +369,8 @@ export default function ShowBatch(props: ShowBatchProps) {
             {F.filesize(
               files.data.reduce(
                 (r, f) => r + (table.selection.has(f.id) ? f.size : 0),
-                0,
-              ),
+                0
+              )
             )}
             )
           </M.Typography>

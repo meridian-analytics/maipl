@@ -90,11 +90,8 @@ export const MagSpectrogramSchema: RJSFSchema = {
       type: "string",
     },
     type: {
-      default: "MagSpectrogram",
-      enum: ["MagSpectrogram"],
-      title: "Type",
-      description: "Type of spectrogram (Magnitude Spectrogram)",
       type: "string",
+      default: "MagSpectrogram",
     },
   },
 }
@@ -108,6 +105,9 @@ export const MagSpectrogramUiSchema: UiSchema = {
   },
   vmin: {
     "ui:widget": "range",
+  },
+  type: {
+    "ui:widget": "hidden",
   },
 }
 
@@ -174,10 +174,8 @@ export const MelSpectrogramSchema: RJSFSchema = {
       minimum: 0,
     },
     type: {
-      default: "MelSpectrogram",
-      enum: ["MelSpectrogram"],
-      title: "Type",
       type: "string",
+      default: "MelSpectrogram",
     },
   },
 }
@@ -191,5 +189,8 @@ export const MelSpectrogramUiSchema: UiSchema = {
   },
   resample_method: {
     "ui:widget": "select",
+  },
+  type: {
+    "ui:widget": "hidden",
   },
 }
