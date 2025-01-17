@@ -149,7 +149,6 @@ type t_create_response = Omit<t, "created_at"> & { created_at: string }
 /** Batch.t_get_response */
 type t_get_response = Omit<t, "created_at"> & { created_at: string }
 
-
 /** Batch.t_filter_params */
 type t_filter_params = {
   /** Batch name comtains ... */
@@ -206,6 +205,22 @@ type t_update_request = Omit<t, "created_at" | "shared_to"> & {
   shared_to: t_share_change[]
 }
 
+/** Batch.t_export_response */
+type t_export_response = {
+  filename: string
+}
+
+/** Batch.export: export an existing batch */
+const export_ = async (client: Client.t, id: number): Promise<string> => {
+  const response = await client
+    .post<t_export_response>(
+      `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/export/`,
+      { batch_id: id }
+    )
+    .then((r) => r.data)
+  return response.filename
+}
+
 /** Batch.audios: get list of batch audios */
 const audios = async (
   client: Client.t,
@@ -249,50 +264,6 @@ const preview = async (
     }
   )
   return response.data
-}
-
-
-/** Batch.export: export an existing batch */
-const export_ = async (client: Client.t, id: number): Promise<File.t> => {
-  const { data: annotations } = await Annotation.list(client, {
-    batch: id,
-    size: 100, // todo: limited to 100. backend task?
-  })
-  const columns = {
-    id: "Id",
-    batch: "Batch",
-    segment: "Segment",
-    file: "File",
-    user_id: "Owner",
-    created_at: "Date",
-    ...Object.fromEntries(
-      annotations.flatMap((a) => Object.keys(a.region)).map((k) => [k, k])
-    ),
-  }
-  const filename = `batch-${id}-${Date.now()}.csv`
-  return File.create(client, {
-    file: new window.File(
-      [
-        CSV.encode(
-          columns,
-          annotations.map((a) => ({
-            ...a.region,
-            ...a,
-            created_at: F.iso8601(a.created_at),
-          }))
-        ),
-      ],
-      filename,
-      { type: "text/csv" }
-    ),
-    maipl_folder: File.t_maipl_folder.annotation,
-    meta: {
-      maipl: "annotations",
-      batch: id,
-    },
-    path: filename,
-    tag: "export",
-  })
 }
 
 /** Batch.delete: delete an existing batch */
@@ -451,6 +422,7 @@ export {
   type t_role,
   type t_segment_parameters,
   type t_update_request,
+  type t_export_response,
   audios,
   create,
   preview,

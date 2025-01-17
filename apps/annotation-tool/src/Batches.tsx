@@ -36,7 +36,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
       return Batch.delete(...vars)
     },
     onError: (err, vars) => {
-      notify(onClose => (
+      notify((onClose) => (
         <M.Alert severity="error" onClose={onClose}>
           Error: Could not delete batch "{props.batch.batch_name}"
         </M.Alert>
@@ -49,7 +49,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
       deleteMutation.reset()
     },
     onSuccess: () => {
-      notify(onClose => (
+      notify((onClose) => (
         <M.Alert severity="success" onClose={onClose}>
           Success: Deleted batch "{props.batch.batch_name}"
         </M.Alert>
@@ -62,7 +62,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
     mutationFn: (vars: Parameters<typeof Batch.export>) =>
       Batch.export(...vars),
     onError: (err, vars) => {
-      notify(onClose => (
+      notify((onClose) => (
         <M.Alert severity="error" onClose={onClose}>
           Error: Could not export batch "{props.batch.batch_name}"
         </M.Alert>
@@ -74,10 +74,10 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
     onSettled: () => {
       exportMutation.reset()
     },
-    onSuccess: file => {
-      notify(onClose => (
+    onSuccess: (filename) => {
+      notify((onClose) => (
         <M.Alert severity="success" onClose={onClose}>
-          Success: Exported "{props.batch.batch_name}" to {file.path}`
+          Success: Exported "{props.batch.batch_name}" to {filename}
         </M.Alert>
       ))
       queryClient.refetchQueries({ queryKey: ["files"] })
@@ -88,7 +88,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
     mutationFn: (vars: Parameters<typeof Batch.process>) =>
       Batch.process(...vars),
     onError: (err, vars) => {
-      notify(onClose => (
+      notify((onClose) => (
         <M.Alert severity="error" onClose={onClose}>
           Error: Could not process batch "{props.batch.batch_name}"
         </M.Alert>
@@ -101,7 +101,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
       processMutation.reset()
     },
     onSuccess: () => {
-      notify(onClose => (
+      notify((onClose) => (
         <M.Alert severity="success" onClose={onClose}>
           Success: Started processing batch "{props.batch.batch_name} ..."
         </M.Alert>
@@ -223,20 +223,20 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
       MR.Batches.column.display({
         id: "share",
         header: "Share",
-        cell: info => <ShareAvatars batch={info.row.original} />,
+        cell: (info) => <ShareAvatars batch={info.row.original} />,
       }),
       MR.Batches.column.display({
         id: "status",
         header: "Status",
-        cell: info => <BatchStatus batch={info.row.original} />,
+        cell: (info) => <BatchStatus batch={info.row.original} />,
       }),
       MR.Batches.column.display({
         id: "actions",
         header: "",
-        cell: info => <BatchActions batch={info.row.original} />,
+        cell: (info) => <BatchActions batch={info.row.original} />,
       }),
     ],
-    [],
+    []
   )
 
   return (
@@ -253,7 +253,7 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
       <M.Stack direction="row">
         <M.TextField
           label="Name"
-          onChange={e => filter.set("name", e.currentTarget.value)}
+          onChange={(e) => filter.set("name", e.currentTarget.value)}
           placeholder="Batch name..."
           value={filter.get("name")}
         />
