@@ -24,7 +24,7 @@ function useTable(props?: {
   const [pagination, setPagination] = usePagination(props?.pagination)
   const [selection, setSelection] = useSelection(props?.selection)
   const filter = useFilter(
-    R.useMemo(() => ({ name: props?.name ?? "" }), [props?.name]),
+    R.useMemo(() => ({ name: props?.name ?? "" }), [props?.name])
   )
   const debouncedFilter = useDebounce(filter, props?.debounceDelay)
   // biome-ignore lint/correctness/useExhaustiveDependencies: go to first page when query changes
@@ -61,26 +61,32 @@ function useQuery(props: Batch.t_list_request) {
 const Table = BaseTable([
   column.accessor("batch_name", {
     header: "Name",
+    size: 100,
   }),
   column.accessor("description", {
     header: "Description",
+    size: 300,
   }),
   column.accessor("segments", {
     header: "Segments",
-    cell: info => info.getValue()?.length ?? 0,
+    cell: (info) => info.getValue()?.length ?? 0,
+    size: 100,
   }),
   column.accessor("user_id", {
     header: "Owner",
+    size: 100,
   }),
   column.accessor("progress", {
     header: "Progress",
+    size: 100,
   }),
   column.accessor("created_at", {
     header: "Date",
-    cell: info => {
+    cell: (info) => {
       const value = info.getValue()
       return value == null ? "-" : iso8601(value)
     },
+    size: 150,
   }),
 ] as Array<ColumnDef<Batch.t_list_item>>)
 

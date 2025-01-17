@@ -65,7 +65,9 @@ function SelectionActions(props: {
     const message = [
       `Are you sure you want to delete ${props.selection.size} files?`,
       Tree.toString(
-        Tree.fromPaths(Array.from(props.selection.values(), file => file.path)),
+        Tree.fromPaths(
+          Array.from(props.selection.values(), (file) => file.path)
+        )
       ),
     ]
 
@@ -166,7 +168,6 @@ function ShareAvatars(props: { file: File.t }) {
 }
 
 export default function Files(props: { sx?: M.SxProps }) {
-  
   const qs = RRT.useLoaderData<UseLoaderData>()
   const setSearch = RR.useSearchParams()[1]
   const { selection, setSelection, updateTag } = MR.Files.useTable()
@@ -181,7 +182,7 @@ export default function Files(props: { sx?: M.SxProps }) {
         page: String(value.page),
         size: String(value.size),
       },
-      options,
+      options
     )
   }
 
@@ -189,46 +190,51 @@ export default function Files(props: { sx?: M.SxProps }) {
     () =>
       [
         MR.Files.column.accessor(
-          file => File.safeMeta(file, "audio", "duration", 0),
+          (file) => File.safeMeta(file, "audio", "duration", 0),
           {
             id: "duration",
             header: "Duration",
-            cell: info => {
+            cell: (info) => {
               const value = info.getValue()
               return value ? `${value.toFixed(2)} sec` : "-"
             },
-          },
+            size: 100,
+          }
         ),
         MR.Files.column.accessor(
-          file => File.safeMeta(file, "audio", "channels", 0),
+          (file) => File.safeMeta(file, "audio", "channels", 0),
           {
             id: "channels",
             header: "Channels",
-            cell: info => info.getValue(),
-          },
+            cell: (info) => info.getValue(),
+            size: 100,
+          }
         ),
         MR.Files.column.accessor(
-          file => File.safeMeta(file, "audio", "sample_rate", 0),
+          (file) => File.safeMeta(file, "audio", "sample_rate", 0),
           {
             id: "sample_rate",
             header: "Rate",
-            cell: info => {
+            cell: (info) => {
               const value = info.getValue()
               return value ? `${value} Hz` : "-"
             },
-          },
+            size: 100,
+          }
         ),
         MR.Files.column.accessor("shared_to", {
           header: "Share",
-          cell: info => <ShareAvatars file={info.row.original} />,
+          cell: (info) => <ShareAvatars file={info.row.original} />,
+          size: 50,
         }),
         MR.Files.column.display({
           id: "actions",
           header: "",
-          cell: info => <FileActions file={info.row.original} />,
+          cell: (info) => <FileActions file={info.row.original} />,
+          size: 50,
         }),
       ] as Array<MR.ColumnDef<File.t>>,
-    [],
+    []
   )
 
   const { data: files } = MR.Files.useQuery({
@@ -252,9 +258,9 @@ export default function Files(props: { sx?: M.SxProps }) {
         }}
       >
         <RR.Outlet />
-        <M.Stack direction='row'>
+        <M.Stack direction="row">
           <MR.Picker
-            label='Folder'
+            label="Folder"
             setValue={(folder) => {
               if (folder) {
                 JS.invariantEnum(
@@ -280,7 +286,7 @@ export default function Files(props: { sx?: M.SxProps }) {
             ]}
           />
           <M.TextField
-            label='Path'
+            label="Path"
             onChange={(e) =>
               setState(
                 {
@@ -292,11 +298,11 @@ export default function Files(props: { sx?: M.SxProps }) {
                 { replace: true }
               )
             }
-            placeholder='path/to/folder'
+            placeholder="path/to/folder"
             value={qs.path}
           />
           <M.TextField
-            label='Tag'
+            label="Tag"
             onChange={(e) =>
               setState(
                 {
@@ -308,11 +314,11 @@ export default function Files(props: { sx?: M.SxProps }) {
                 { replace: true }
               )
             }
-            placeholder='my-tag'
+            placeholder="my-tag"
             value={qs.tag}
           />
           <MR.Picker
-            label='Shared'
+            label="Shared"
             setValue={(shared) => {
               if (shared) {
                 JS.invariantEnum(

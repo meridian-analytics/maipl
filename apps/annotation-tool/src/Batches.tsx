@@ -221,19 +221,22 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
   const columns = R.useMemo(
     () => [
       MR.Batches.column.display({
-        id: "share",
-        header: "Share",
-        cell: (info) => <ShareAvatars batch={info.row.original} />,
-      }),
-      MR.Batches.column.display({
         id: "status",
         header: "Status",
         cell: (info) => <BatchStatus batch={info.row.original} />,
+        size: 80,
+      }),
+      MR.Batches.column.display({
+        id: "share",
+        header: "Share",
+        cell: (info) => <ShareAvatars batch={info.row.original} />,
+        size: 80,
       }),
       MR.Batches.column.display({
         id: "actions",
         header: "",
         cell: (info) => <BatchActions batch={info.row.original} />,
+        size: 50,
       }),
     ],
     []

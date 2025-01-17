@@ -44,7 +44,7 @@ function useTable(props?: {
       queryClient.invalidateQueries(["files", "list"])
     },
     onError: (error) => {
-      <M.Alert onClose={onClose} severity='error'>
+      ;<M.Alert onClose={onClose} severity="error">
         Error: Could not update tag
       </M.Alert>
     },
@@ -115,15 +115,19 @@ function useQuery(props: File.t_list_request) {
 const Table = BaseTable([
   column.accessor("path", {
     header: "Path",
+    size: 300,
   }),
   column.accessor("basename", {
     header: "File Name",
+    size: 200,
   }),
   column.accessor("dirname", {
     header: "Path",
+    size: 300,
   }),
   column.accessor("extname", {
     header: "Type",
+    size: 80,
   }),
   column.accessor("size", {
     header: "Size",
