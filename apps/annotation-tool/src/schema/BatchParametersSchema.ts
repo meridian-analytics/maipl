@@ -134,6 +134,7 @@ export const MelSpectrogramSchema: RJSFSchema = {
       type: "integer",
     },
     rate: {
+      default: 24000,
       title: "Rate(Hz)",
       description: "Desired sampling rate in Hz",
       type: "integer",
@@ -146,7 +147,7 @@ export const MelSpectrogramSchema: RJSFSchema = {
       type: "string",
     },
     num_filters: {
-      default: 40,
+      default: 400,
       title: "Number of Filters",
       description: "The number of filters in the filter bank",
       type: "integer",
