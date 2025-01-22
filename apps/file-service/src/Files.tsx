@@ -224,13 +224,21 @@ export default function Files(props: { sx?: M.SxProps }) {
         ),
         MR.Files.column.accessor("shared_to", {
           header: "Share",
-          cell: (info) => <ShareAvatars file={info.row.original} />,
+          cell: (info) => (
+            <M.Box sx={{ display: "flex", justifyContent: "center" }}>
+              <ShareAvatars file={info.row.original} />
+            </M.Box>
+          ),
           size: 50,
         }),
         MR.Files.column.display({
-          id: "actions",
+          id: "actions", 
           header: "",
-          cell: (info) => <FileActions file={info.row.original} />,
+          cell: (info) => (
+            <M.Box sx={{ display: "flex", justifyContent: "center" }}>
+              <FileActions file={info.row.original} />
+            </M.Box>
+          ),
           size: 50,
         }),
       ] as Array<MR.ColumnDef<File.t>>,
