@@ -127,6 +127,47 @@ export const MelSpectrogramSchema: RJSFSchema = {
       description: "Step size in seconds",
       type: "number",
     },
+    freq_min: {
+      default: 0,
+      title: "Frequency min(Hz)",
+      description: "Lower frequency bound in Hz for the spectrogram",
+      type: "integer",
+    },
+    freq_max: {
+      default: 12000,
+      title: "Frequency max(Hz)",
+      description: "Upper frequency bound in Hz for the spectrogram",
+      type: "integer",
+    },
+    vmin: {
+      default: 0,
+      maximum: 1,
+      minimum: 0,
+      multipleOf: 0.1,
+      title: "vmin",
+      description:
+        "Minimum value for color scaling in the spectrogram visualization",
+      type: "integer",
+    },
+    vmax: {
+      default: 1,
+      maximum: 1,
+      minimum: 0,
+      multipleOf: 0.1,
+      title: "vmax",
+      description:
+        "Maximum value for color scaling in the spectrogram visualization",
+      type: "integer",
+    },
+    amplification: {
+      default: 1,
+      maximum: 5,
+      minimum: 1,
+      multipleOf: 0.1,
+      title: "Amplification",
+      description: "Amplification factor applied to the spectrogram values",
+      type: "integer",
+    },
     channel: {
       default: 0,
       title: "Channel",
@@ -174,6 +215,23 @@ export const MelSpectrogramSchema: RJSFSchema = {
       type: "number",
       minimum: 0,
     },
+    low_pass: {
+      title: "Low Pass(Hz)",
+      description: "Low-pass filter cutoff frequency in Hz",
+      type: "integer",
+    },
+    high_pass: {
+      title: "High Pass(Hz)",
+      description: "High-pass filter cutoff frequency in Hz",
+      type: "integer",
+    },
+    color_map: {
+      default: "viridis",
+      enum: ["magma", "viridis"],
+      title: "Color Map",
+      description: "Color scheme used for spectrogram visualization",
+      type: "string",
+    },
     type: {
       type: "string",
       default: "MelSpectrogram",
@@ -190,6 +248,18 @@ export const MelSpectrogramUiSchema: UiSchema = {
   },
   resample_method: {
     "ui:widget": "select",
+  },
+  type: {
+    "ui:widget": "hidden",
+  },
+  vmax: {
+    "ui:widget": "range",
+  },
+  vmin: {
+    "ui:widget": "range",
+  },
+  amplification: {
+    "ui:widget": "range",
   },
   type: {
     "ui:widget": "hidden",
