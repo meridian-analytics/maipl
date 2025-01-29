@@ -195,18 +195,18 @@ function AxisProvider(props: { children: R.ReactNode }) {
     return {
       seconds: Specviz.Axis.time(
         loaderData.active.segment.start,
-        loaderData.active.segment.end,
+        loaderData.active.segment.end
       ),
-      hertz: Specviz.Axis.frequency(
-        loaderData.batch.parameters.freq_max,
-        loaderData.batch.parameters.freq_min,
+      hertz: Specviz.Axis.nonlinear(
+        loaderData.batch.frequency_axis,
+        "hertz",
+        Format.hz
       ),
     }
   }, [
     loaderData.active.segment.start,
     loaderData.active.segment.end,
-    loaderData.batch.parameters.freq_max,
-    loaderData.batch.parameters.freq_min,
+    loaderData.batch.frequency_axis,
   ])
   return <Specviz.Axis.Provider value={axes} children={props.children} />
 }
