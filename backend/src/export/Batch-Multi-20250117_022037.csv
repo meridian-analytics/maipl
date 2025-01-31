@@ -1,0 +1,6 @@
+start,end,freq_min,freq_max,duration,filename,label,call_type,quality,comments,score
+2.779,6.378,2000.0,7333.33,3.599,/MULTICHANNEL/lk_kw_90.wav,1,,,,0
+15.036,19.454,2266.67,7033.33,4.418,/MULTICHANNEL/lk_kw_90.wav,1,,,,0
+23.515,27.577,2000.0,6700.0,4.062,/MULTICHANNEL/lk_kw_90.wav,1,,,,0
+77.779,81.021,1400.0,8100.0,3.242,/MULTICHANNEL/lk_kw_90.wav,1,,,,0
+88.005,90.321,866.67,5800.0,2.316,/MULTICHANNEL/lk_kw_90.wav,1,,,,0

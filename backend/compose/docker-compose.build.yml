@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    image: registry.maipl-dev.com/maipl-backend/ketos-backend:dev
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
+    image: registry.maipl-dev.com/maipl-backend/ketos-worker:dev

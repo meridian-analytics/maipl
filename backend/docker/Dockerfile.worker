@@ -1,0 +1,51 @@
+# Use an official NVIDIA CUDA runtime as a parent image
+FROM nvidia/cuda:11.4.3-cudnn8-devel-ubuntu20.04
+
+# Set environment variables
+# Set python to be unbuffered so that output is printed in real time
+ENV PYTHONUNBUFFERED 1
+# Set DEBIAN_FRONTEND to noninteractive to avoid tzdata prompt
+ENV DEBIAN_FRONTEND=noninteractive
+# Set timezone to Toronto
+ENV TZ=America/Toronto
+
+# Install Python and pip
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    curl \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y \
+    python3.10 \
+    python3.10-distutils \
+    libhdf5-serial-dev \
+    libsndfile1 \
+    inotify-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install pip from source
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+    && python3.10 get-pip.py
+
+# Create symbolic links for Python and pip
+RUN ln -sf /usr/bin/python3.10 /usr/bin/python \
+    && ln -sf /usr/bin/python3.10 /usr/bin/python3 \
+    && ln -sf /usr/bin/pip3 /usr/bin/pip
+
+# Set the working directory to /backend
+WORKDIR /backend
+COPY src/requirements.txt requirements.txt
+
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# Install Scipy>=1.6.0 and aural-features
+RUN pip install scipy>=1.6.0
+RUN pip install aural-features
+
+RUN mkdir -p /cache
+RUN mkdir -p /temp
+RUN mkdir -p /logs
+RUN mkdir -p /tasks
+
+COPY src/. .

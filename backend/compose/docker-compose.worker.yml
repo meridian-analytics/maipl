@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
+    image: registry.maipl-dev.com/maipl-backend/ketos-worker:dev
+    container_name: ketos-worker
+    volumes:
+      - cache_volume:/cache
+      - ../logs:/logs
+    command: /backend/entrypoint.worker.sh
+    env_file:
+      - ../config/.env.stage
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: all
+            capabilities: [utility, compute, video]
+
+volumes:
+  cache_volume:
+    name: cache_volume

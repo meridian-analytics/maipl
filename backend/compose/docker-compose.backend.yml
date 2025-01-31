@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    image: registry.maipl-dev.com/maipl-backend/ketos-backend:dev
+    container_name: ketos-backend
+    ports:
+      - "${DJANGO_PORT:-8000}:8000"
+    volumes:
+      - cache_volume:/cache
+      - ../logs:/logs
+    command: /backend/entrypoint.backend.sh
+    env_file:
+      - ../config/.env.stage
+
+volumes:
+  cache_volume:
+    name: cache_volume
+      

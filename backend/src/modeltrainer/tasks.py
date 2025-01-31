@@ -1,0 +1,71 @@
+import os
+
+from celery import shared_task
+from django.conf import settings
+from common.logger import logger
+from common.file_utils import download_file, create_local_path, create_console_output_file, write_to_console
+
+from .models import TrainingTask
+
+from constance import config
+from .mock_services import mock_train_model
+
+TASK_LOCAL_STORAGE = settings.TASKS_LOCAL_STORAGE
+FILE_CACHE_DIR = settings.FILE_CACHE_DIR
+USE_MOCK_TRAINING = config.USE_MOCK_TRAINING
+
+@shared_task(bind=True, name='train_model')
+def train_model(self, task_id):
+    task = TrainingTask.objects.get(id=task_id)
+    task.status = 'STARTED'
+    task.save()
+    logger.info(f"Task: {task} started")
+    task_context = {
+        "task": task,
+        "local_path": create_local_path(task, "train"),
+        "console_output_file": create_console_output_file(task),
+        "dataset_file": "",
+        "recipe_file": "",
+    }
+    download_training_files(task_context)
+    run_training(task_context)
+
+def download_training_files(task_context):
+    task = task_context["task"]
+    local_path = task_context["local_path"]
+    console_output_file = task_context["console_output_file"]
+
+    dataset_cache_path = download_file(task.dataset_file_id)
+    recipe_cache_path = download_file(task.recipe_file_id)
+
+    #create symlinks to the cache path
+    os.symlink(dataset_cache_path, os.path.join(local_path, "dataset.h5"))
+    os.symlink(recipe_cache_path, os.path.join(local_path, "recipe.json"))
+
+    task_context["dataset_file"] = os.path.join(local_path, "dataset.h5")
+    task_context["recipe_file"] = os.path.join(local_path, "recipe.json")
+    
+    logger.info(f"Dataset file: {task_context['dataset_file']}")
+    logger.info(f"Recipe file: {task_context['recipe_file']}")
+
+    #write the dataset and recipe file paths to the console output file
+    with open(console_output_file, "a") as f:
+        f.write(f"Dataset file: {task_context['dataset_file']}\n")
+        f.write(f"Recipe file: {task_context['recipe_file']}\n")
+        f.write("Files downloaded\n")
+    
+    #write the content of the recipt file to the console output file
+    with open(console_output_file, "a") as f:
+        f.write(f"Recipe file content: {open(recipe_cache_path).read()}\n")
+
+def run_training(task_context):
+    task = task_context["task"]
+    if USE_MOCK_TRAINING:
+        task.status = 'RUNNING'
+        task.save()
+        model_file_path = mock_train_model(task_context)
+    else:
+        real_training(task_context)
+
+def real_training(task_context):
+    pass
