@@ -1,0 +1,21 @@
+{
+    "spectrogram": {
+        "duration": "3.0 s",
+        "rate": "2000 Hz",
+        "window": "0.075 s",
+        "step": "0.25 s",
+        "n_filters": 35,
+        "window_func": "hamming",
+        "type": "MelSpectrogram",
+        "transforms": [
+            {
+                "name": "adjust_range",
+                "range": "[0,1]"
+            },
+            {
+                "name": "resize",
+                "shape": "[256,256]"
+            }
+        ]
+    }
+}

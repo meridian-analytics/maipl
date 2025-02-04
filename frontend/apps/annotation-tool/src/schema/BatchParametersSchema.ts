@@ -260,8 +260,5 @@ export const MelSpectrogramUiSchema: UiSchema = {
   },
   amplification: {
     "ui:widget": "range",
-  },
-  type: {
-    "ui:widget": "hidden",
-  },
+  }
 }

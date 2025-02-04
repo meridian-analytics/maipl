@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react"
-import model_recipe from "./data/model_recipe.json"
-import audio_repr from "./data/audio_repr.json"
-import recipe from "./data/recipe.json"
+import model_recipe from "./schema/model_recipe.json"
+import audio_repr from "./schema/audio_repr.json"
+import recipe from "./schema/recipe.json"
 import Form from "@rjsf/mui"
 import validator from "@rjsf/validator-ajv8"
-import recipe_ui_schema from "./data/recipe_ui_schema.json"
-import ui_schema from "./data/ui_schema.json"
+import recipe_ui_schema from "./schema/recipe_ui_schema.json"
+import ui_schema from "./schema/ui_schema.json"
 import {
   Box,
   TextField,

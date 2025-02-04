@@ -1,0 +1,66 @@
+name: Frontend Build & Deploy
+
+on:
+  push:
+    branches:
+      - frontend-dev
+    paths:
+      - "frontend/**"
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+    env:
+      REGISTRY_URL: registry.maipl-dev.com
+      REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+      STAGING_HOST: 192.168.239.137
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fix build issues
+        run: |
+          # Fix annotation-tool schema
+          cd frontend/apps/annotation-tool/src/schema
+          sed -i 's/type: {/rangeType: {/' BatchParametersSchema.ts
+          
+          # Create model recipe template
+          mkdir -p frontend/apps/model-trainer/src/data
+          echo '{}' > frontend/apps/model-trainer/src/data/model_recipe.json
+          cd ../../../..
+
+      - name: Set script permissions
+        run: |
+          chmod +x frontend/scripts/build.sh
+
+      - name: login to registry
+        run: |
+          echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin
+
+      - name: build and push image
+        run: |
+          cd frontend
+          source ./scripts/build.sh
+
+      - name: Deploy to staging
+        run: |
+          if ! ssh ubuntu@$STAGING_HOST "
+            docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password $REGISTRY_PASSWORD || exit 1
+            docker pull $REGISTRY_URL/maipl-frontend:dev || exit 1
+            docker stop frontend-app || true
+            docker rm frontend-app || true
+            docker run -d --name frontend-app \
+              --restart unless-stopped \
+              -p 4000:4000 \
+              $REGISTRY_URL/maipl-frontend:dev || exit 1
+            
+            # Verify container is running
+            sleep 5
+            if ! docker ps | grep -q frontend-app; then
+              echo 'Container failed to start' >&2
+              exit 1
+            fi
+          "; then
+            echo 'Deployment failed' >&2
+            exit 1
+          fi

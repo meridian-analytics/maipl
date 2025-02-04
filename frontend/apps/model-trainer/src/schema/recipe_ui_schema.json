@@ -1,0 +1,20 @@
+{
+    "interface": {
+        "ui:title": "Interface",
+        "ui:widget": "select",
+        "ui:options": {
+            "label": "Model Interface",
+            "helperText": "Select the interface type for your model"
+        }
+    },
+    "essential_fields": {
+        "n_classes": {
+            "ui:title": "Number of Classes",
+            "ui:widget": "text",
+            "ui:options": {
+                "label": "Number of Classes",
+                "helperText": "Enter the number of classes for your model"
+            }
+        }
+    }
+}
