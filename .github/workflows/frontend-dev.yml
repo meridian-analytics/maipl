@@ -18,17 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fix build issues
-        run: |
-          # Fix annotation-tool schema
-          cd frontend/apps/annotation-tool/src/schema
-          sed -i 's/type: {/rangeType: {/' BatchParametersSchema.ts
-          
-          # Create model recipe template
-          mkdir -p frontend/apps/model-trainer/src/data
-          echo '{}' > frontend/apps/model-trainer/src/data/model_recipe.json
-          cd ../../../..
-
       - name: Set script permissions
         run: |
           chmod +x frontend/scripts/build.sh
