@@ -20,17 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set script permissions
-        run: |
-          chmod +x backend/scripts/build.sh
-
       - name: login to registry
         run: |
           echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin 
 
       - name: Build backend and worker
-        run: |
-          ./backend/scripts/build.sh
+        working-directory: backend/compose
+        run: docker compose -f docker-compose.build.yml build
 
       - name: Push backend and worker to registry
         run: |
