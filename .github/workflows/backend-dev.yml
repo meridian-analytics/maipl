@@ -1,0 +1,73 @@
+name: Backend and Worker Build and Deploy to Live instance
+
+on:
+  push:
+    branches:
+      - backend-dev
+    paths:
+      - backend/**
+
+jobs:
+  build:
+    runs-on: self-hosted
+    env:
+      REGISTRY_URL: registry.maipl-dev.com
+      REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+      BACKEND_HOST: 192.168.239.79
+      WORKER_HOST: 192.168.239.79
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set script permissions
+        run: |
+          chmod +x backend/scripts/build.sh
+
+      - name: login to registry
+        run: |
+          echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin 
+
+      - name: Build backend and worker
+        run: |
+          ./backend/scripts/build.sh
+
+      - name: Push backend and worker to registry
+        run: |
+          docker push $REGISTRY_URL/maipl-backend/ketos-backend:dev
+          docker push $REGISTRY_URL/maipl-backend/ketos-worker:dev
+
+      - name: Deploy backend 
+        run: |
+          # Create directory if it doesn't exist
+          ssh ubuntu@$BACKEND_HOST "mkdir -p ~/backend"
+          # Create .env file directly from the secret
+          echo "${{ secrets.STAGING_ENV_FILE }}" > backend/.env
+
+          # Copy both compose and env files
+          scp backend/.env ubuntu@$BACKEND_HOST:~/backend/
+          scp backend/compose/docker-compose.backend.yml ubuntu@$BACKEND_HOST:~/backend/
+
+          # Deploy
+          ssh ubuntu@$BACKEND_HOST "cd ~/backend && \
+            docker compose pull && \
+            docker compose down --remove-orphans && \
+            docker compose up -d && \
+            docker system prune -f"
+      
+      - name: Deploy worker
+        run: |
+          # Create directory if it doesn't exist
+          ssh ubuntu@$WORKER_HOST "mkdir -p ~/worker"
+          # Create .env file directly from the secret
+          echo "${{ secrets.STAGING_ENV_FILE }}" > worker/.env
+
+          # Copy compose file
+          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST:~/worker/
+
+          # Deploy
+          ssh ubuntu@$WORKER_HOST "cd ~/worker && \
+            docker compose pull && \
+            docker compose down --remove-orphans && \
+            docker compose up -d && \
+            docker system prune -f"

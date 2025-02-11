@@ -10,13 +10,11 @@ services:
     ports:
       - "${DJANGO_PORT:-8000}:8000"
     volumes:
-      - cache_volume:/cache
       - ../logs:/logs
+      - ${FILE_CACHE_LOCATION:-/mnt/file_cache}:/cache
+      - ${TASKS_LOCAL_STORAGE:-/mnt/tasks}:/tasks
     command: /backend/entrypoint.backend.sh
     env_file:
-      - ../config/.env.stage
+      - .env
 
-volumes:
-  cache_volume:
-    name: cache_volume
       
