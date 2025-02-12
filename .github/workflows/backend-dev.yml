@@ -16,7 +16,7 @@ jobs:
       REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
       REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
       BACKEND_HOST: 192.168.239.79
-      WORKER_HOST: 192.168.239.79
+      WORKER_HOST: 192.168.239.170
 
     steps:
       - uses: actions/checkout@v4
@@ -57,7 +57,7 @@ jobs:
           # Create directory if it doesn't exist
           ssh ubuntu@$WORKER_HOST "mkdir -p ~/worker"
           # Create .env file directly from the secret
-          echo "${{ secrets.STAGING_ENV_FILE }}" > backend/.env
+          echo "${{ secrets.STAGING_ENV_FILE }}" > worker/.env
 
           # Copy both compose and env files
           scp backend/.env ubuntu@$WORKER_HOST:~/worker/
