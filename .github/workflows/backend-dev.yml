@@ -43,7 +43,7 @@ jobs:
 
           # Copy both compose and env files
           scp backend/.env ubuntu@$BACKEND_HOST:~/backend/
-          scp backend/compose/docker-compose.backend.yml ubuntu@$BACKEND_HOST:~/backend/
+          scp backend/compose/docker-compose.backend.yml ubuntu@$BACKEND_HOST:~/backend/docker-compose.yml
 
           # Deploy
           ssh ubuntu@$BACKEND_HOST "cd ~/backend && \
@@ -61,7 +61,7 @@ jobs:
 
           # Copy both compose and env files
           scp backend/.env ubuntu@$WORKER_HOST:~/worker/
-          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST:~/worker/
+          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST:~/worker/docker-compose.yml
 
           # Deploy
           ssh ubuntu@$WORKER_HOST "cd ~/worker && \
