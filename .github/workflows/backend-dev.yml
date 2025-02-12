@@ -41,8 +41,7 @@ jobs:
           # Create .env file directly from the secret
           echo "${{ secrets.STAGING_ENV_FILE }}" > backend/.env
 
-          # Copy both compose and env files
-          scp backend/.env ubuntu@$BACKEND_HOST:~/backend/
+          # Copy both compose file
           scp backend/compose/docker-compose.backend.yml ubuntu@$BACKEND_HOST:~/backend/docker-compose.yml
 
           # Deploy
@@ -59,8 +58,7 @@ jobs:
           # Create .env file directly from the secret
           echo "${{ secrets.STAGING_ENV_FILE }}" > worker/.env
 
-          # Copy both compose and env files
-          scp backend/.env ubuntu@$WORKER_HOST:~/worker/
+          # Copy both compose file
           scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST:~/worker/docker-compose.yml
 
           # Deploy
