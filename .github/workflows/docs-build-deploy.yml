@@ -1,0 +1,61 @@
+name: Build and Deploy Docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs-build-deploy.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY_URL: registry.maipl-dev.com
+      REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+      DOCS_HOST: 192.168.239.166
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Install dependencies
+        working-directory: docs
+        run: npm ci
+
+      - name: Build documentation
+        working-directory: docs
+        run: npm run build
+
+      - name: Login to registry
+        run: |
+          echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin
+
+      - name: Build and push Docker image
+        working-directory: docs
+        run: |
+          docker build -t $REGISTRY_URL/maipl-backend/docs-site:latest .
+          docker push $REGISTRY_URL/maipl-backend/docs-site:latest
+
+      - name: Deploy docs site
+        run: |
+          ssh ubuntu@$DOCS_HOST "\
+            docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password $REGISTRY_PASSWORD && \
+            docker pull $REGISTRY_URL/maipl-backend/docs-site:latest && \
+            docker stop docs-site || true && \
+            docker rm docs-site || true && \
+            docker run -d --name docs-site -p 3000:80 --restart unless-stopped $REGISTRY_URL/maipl-backend/docs-site:latest && \
+            docker system prune -f"
