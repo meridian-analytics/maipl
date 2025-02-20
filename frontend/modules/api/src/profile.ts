@@ -3,27 +3,28 @@ import type * as Client from "./client"
 import type * as User from "./user"
 
 /** Profile.t_update_request */
-type t_update_request = Omit<User.t, "id">
+type t_update_request = {
+  first_name?: string
+  last_name?: string
+  password?: string
+  current_password?: string
+}
 
 /** Profile.get: get profile for current user */
 const get = (client: Client.t): Promise<User.t> => {
   return client
     .get<User.t>(`${K.MAIPL_AUTH_BACKEND}/api/user/profile/`)
-    .then(r => r.data)
+    .then((r) => r.data)
 }
 
 /** Profile.update: update profile for current user */
 const update = async (
   client: Client.t,
-  body: t_update_request,
+  body: t_update_request
 ): Promise<User.t> => {
   return client
-    .put<User.t>(`${K.MAIPL_AUTH_BACKEND}/api/user/profile/`, {
-      email: body.email,
-      first_name: body.first_name,
-      last_name: body.last_name,
-    })
-    .then(r => r.data)
+    .patch<User.t>(`${K.MAIPL_AUTH_BACKEND}/api/user/profile/update/`, body)
+    .then((r) => r.data)
 }
 
 export { type t_update_request, get, update }
