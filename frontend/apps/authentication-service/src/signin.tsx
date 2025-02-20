@@ -141,13 +141,6 @@ export default function Signin() {
               <M.Grid item xs>
                 <M.Link href="#" variant="body2" children="Forgot password?" />
               </M.Grid>
-              <M.Grid item>
-                <M.Link
-                  href="#"
-                  variant="body2"
-                  children="Don't have an account? Sign Up"
-                />
-              </M.Grid>
             </M.Grid>
           </M.Box>
         </M.Box>
