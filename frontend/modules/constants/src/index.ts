@@ -64,3 +64,8 @@ export const MAIPL_REACT_QUERY_DEVTOOLS: boolean = safeParseBoolean(
   import.meta.env["MAIPL_REACT_QUERY_DEVTOOLS"],
   false,
 )
+
+export const MAIPL_DOCUMENTATION_URL: string = safeParseString(
+  import.meta.env["MAIPL_DOCUMENTATION_URL"],
+  "https://docs.maipl-dev.com",
+)

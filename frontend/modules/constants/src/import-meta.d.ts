@@ -11,5 +11,6 @@ interface ImportMeta {
     readonly MAIPL_MODEL_RUNNER_BACKEND: string
     readonly MAIPL_MODEL_RUNNER_FRONTEND: string
     readonly MAIPL_REACT_QUERY_DEVTOOLS: string
+    readonly MAIPL_DOCUMENTATION_URL: string
   }
 }
