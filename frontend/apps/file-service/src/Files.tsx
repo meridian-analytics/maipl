@@ -45,7 +45,7 @@ function parseParams(search: URLSearchParams) {
   const tag = search.get("tag") ?? ""
   const shared = search.get("shared") ?? File.t_filter_shared.all
   const page = Number.parseInt(search.get("page") ?? "1")
-  const size = Number.parseInt(search.get("size") ?? "100")
+  const size = Number.parseInt(search.get("size") ?? "25")
   JS.invariantEnum(folder, File.t_maipl_folder, "File.t_maipl_folder")
   JS.invariantEnum(shared, File.t_filter_shared, "File.t_filter_shared")
   JS.invariant(!Number.isNaN(page), "page must be a number")
@@ -232,7 +232,7 @@ export default function Files(props: { sx?: M.SxProps }) {
           size: 50,
         }),
         MR.Files.column.display({
-          id: "actions", 
+          id: "actions",
           header: "",
           cell: (info) => (
             <M.Box sx={{ display: "flex", justifyContent: "center" }}>
