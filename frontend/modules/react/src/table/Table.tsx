@@ -204,17 +204,25 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
           ...props.sx,
         }}
       >
-        <M.TableContainer sx={{ flexGrow: 1, position: "relative" }}>
+        <M.TableContainer
+          sx={{
+            flexGrow: 1,
+            position: "relative",
+            maxWidth: "100%",
+            overflowX: "hidden",
+          }}
+        >
           <M.Table
             stickyHeader
             sx={{
               maxHeight: "100%",
-              overflow: "auto",
+              overflow: "hidden",
               position: "relative",
               borderCollapse: "separate",
               borderSpacing: 0,
               tableLayout: "fixed",
               width: "100%",
+              minWidth: "auto",
               "& .resizer": {
                 position: "absolute",
                 right: -3,
