@@ -172,6 +172,56 @@ export default function Files(props: { sx?: M.SxProps }) {
   const setSearch = RR.useSearchParams()[1]
   const { selection, setSelection, updateTag } = MR.Files.useTable()
 
+  // Add debounce hook
+  const useDebounce = <T,>(value: T, delay: number): T => {
+    const [debouncedValue, setDebouncedValue] = R.useState<T>(value)
+
+    R.useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedValue(value)
+      }, delay)
+
+      return () => {
+        clearTimeout(handler)
+      }
+    }, [value, delay])
+
+    return debouncedValue
+  }
+
+  // Add state for path and tag inputs
+  const [pathInput, setPathInput] = R.useState(qs.path)
+  const [tagInput, setTagInput] = R.useState(qs.tag)
+
+  // Debounce the input values
+  const debouncedPath = useDebounce(pathInput, 1000)
+  const debouncedTag = useDebounce(tagInput, 1000)
+
+  // Update search params when debounced values change
+  R.useEffect(() => {
+    setState(
+      {
+        ...qs,
+        path: debouncedPath,
+        page: 1,
+        size: qs.size,
+      },
+      { replace: true }
+    )
+  }, [debouncedPath])
+
+  R.useEffect(() => {
+    setState(
+      {
+        ...qs,
+        tag: debouncedTag,
+        page: 1,
+        size: qs.size,
+      },
+      { replace: true }
+    )
+  }, [debouncedTag])
+
   function setState(value: LoaderData, options?: RR.NavigateOptions) {
     setSearch(
       {
@@ -295,35 +345,41 @@ export default function Files(props: { sx?: M.SxProps }) {
           />
           <M.TextField
             label="Path"
-            onChange={(e) =>
-              setState(
-                {
-                  ...qs,
-                  path: e.currentTarget.value,
-                  page: 1,
-                  size: qs.size,
-                },
-                { replace: true }
-              )
-            }
+            onChange={(e) => setPathInput(e.currentTarget.value)}
             placeholder="path/to/folder"
-            value={qs.path}
+            value={pathInput}
+            InputProps={{
+              endAdornment: pathInput ? (
+                <M.InputAdornment position="end">
+                  <M.IconButton
+                    size="small"
+                    onClick={() => setPathInput("")}
+                    title="Clear path"
+                  >
+                    <I.Clear />
+                  </M.IconButton>
+                </M.InputAdornment>
+              ) : null,
+            }}
           />
           <M.TextField
             label="Tag"
-            onChange={(e) =>
-              setState(
-                {
-                  ...qs,
-                  tag: e.currentTarget.value,
-                  page: 1,
-                  size: qs.size,
-                },
-                { replace: true }
-              )
-            }
+            onChange={(e) => setTagInput(e.currentTarget.value)}
             placeholder="my-tag"
-            value={qs.tag}
+            value={tagInput}
+            InputProps={{
+              endAdornment: tagInput ? (
+                <M.InputAdornment position="end">
+                  <M.IconButton
+                    size="small"
+                    onClick={() => setTagInput("")}
+                    title="Clear tag"
+                  >
+                    <I.Clear />
+                  </M.IconButton>
+                </M.InputAdornment>
+              ) : null,
+            }}
           />
           <MR.Picker
             label="Shared"
