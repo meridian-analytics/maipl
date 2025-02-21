@@ -7,12 +7,45 @@ import type * as R from "react"
 import * as RR from "react-router-dom"
 import { useMaipl } from "../context"
 import Menu from "./Menu"
+import {
+  MAIPL_ANNOTATION_FRONTEND,
+  MAIPL_FILE_FRONTEND,
+  MAIPL_METRICS_FRONTEND,
+  MAIPL_MODEL_RUNNER_FRONTEND,
+  MAIPL_MODEL_TRAINER_FRONTEND,
+  MAIPL_DOCUMENTATION_URL,
+} from "@maipl/constants"
+import React from "react"
 
 export default function Navbar(props: {
   children?: R.ReactNode
   sx?: M.AppBarProps["sx"]
 }) {
   const maipl = useMaipl()
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+  const open = Boolean(anchorEl)
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleClose = () => {
+    setAnchorEl(null)
+  }
+
+  const allQuickAccessItems = [
+    { name: "File Service", url: MAIPL_FILE_FRONTEND },
+    { name: "Annotation Tool", url: MAIPL_ANNOTATION_FRONTEND },
+    { name: "Model Runner", url: MAIPL_MODEL_RUNNER_FRONTEND },
+    { name: "Metrics Tool", url: MAIPL_METRICS_FRONTEND },
+    { name: "Model Trainer", url: MAIPL_MODEL_TRAINER_FRONTEND },
+  ]
+
+  // Filter out the current app
+  const quickAccessItems = allQuickAccessItems.filter(
+    (item) => !window.location.origin.startsWith(item.url)
+  )
+
   return (
     <M.AppBar
       color="default"
@@ -35,6 +68,31 @@ export default function Navbar(props: {
             <>
               {props.children ?? <M.Stack flexGrow={1} />}
               <Synchronizing />
+              <M.IconButton
+                onClick={handleClick}
+                size="small"
+                sx={{ ml: 2 }}
+                aria-controls={open ? "quick-access-menu" : undefined}
+                aria-haspopup="true"
+                aria-expanded={open ? "true" : undefined}
+              >
+                <I.Apps />
+              </M.IconButton>
+              <M.Menu
+                anchorEl={anchorEl}
+                id="quick-access-menu"
+                open={open}
+                onClose={handleClose}
+                onClick={handleClose}
+                transformOrigin={{ horizontal: "right", vertical: "top" }}
+                anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+              >
+                {quickAccessItems.map((item) => (
+                  <M.MenuItem key={item.name} component="a" href={item.url}>
+                    {item.name}
+                  </M.MenuItem>
+                ))}
+              </M.Menu>
               <UserMenu user={maipl.user} />
             </>
           )}
@@ -54,11 +112,20 @@ function GuestMenu() {
 
 function UserMenu(props: { user: User.t }) {
   const maipl = useMaipl()
+
   return (
     <Menu>
       <M.MenuItem children="Dashboard" component={RR.Link} to="/dashboard" />
       <M.MenuItem children="About" component={RR.Link} to="/about" />
       <M.MenuItem children="Profile" component={RR.Link} to="/profile" />
+      <M.MenuItem
+        component="a"
+        href={MAIPL_DOCUMENTATION_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Documentation
+      </M.MenuItem>
       <M.MenuItem
         children={`Signout: ${props.user.first_name || props.user.email}`}
         onClick={maipl.logout}
