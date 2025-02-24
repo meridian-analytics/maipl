@@ -42,9 +42,21 @@ export default function Navbar(props: {
   ]
 
   // Filter out the current app
-  const quickAccessItems = allQuickAccessItems.filter(
-    (item) => !window.location.origin.startsWith(item.url)
-  )
+  const quickAccessItems = allQuickAccessItems.filter((item) => {
+    try {
+      const itemUrl = new URL(item.url)
+
+      // Check if we're in development (localhost with port)
+      if (window.location.hostname === "localhost") {
+        return window.location.port !== itemUrl.port
+      }
+
+      // In production, compare the pathname
+      return !window.location.pathname.startsWith(itemUrl.pathname)
+    } catch (e) {
+      return true
+    }
+  })
 
   return (
     <M.AppBar
