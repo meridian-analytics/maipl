@@ -40,7 +40,7 @@ jobs:
             docker rm frontend-app || true
             docker run -d --name frontend-app \
               --restart unless-stopped \
-              -p 4000:4000 \
+              -p 80:80 \
               $REGISTRY_URL/maipl-frontend:dev || exit 1
             
             # Verify container is running
