@@ -222,13 +222,30 @@ class BatchCreateHandler:
         
         Raises:
             FileNotFoundError: If a file doesn't exist in the database
+            ValueError: If multiple accessible files exist with the same path
         """
         filenames = {annotation['filename'] for annotation in self.annotations}
         
         for filename in filenames:
             try:
-                file = File.objects.get(path=filename)
-                self.file_ids[filename] = file.id
+                # Get files that the user owns or has shared access to
+                accessible_files = File.objects.filter(
+                    path=filename
+                ).filter(
+                    Q(user_id=self.user) | Q(shared_to=self.user)
+                ).distinct()
+
+                if not accessible_files.exists():
+                    raise FileNotFoundError(f"File with path {filename} does not exist or you don't have access to it.")
+                
+                # Prioritize files owned by the user
+                user_owned_files = accessible_files.filter(user_id=self.user)
+                if user_owned_files.exists():
+                    self.file_ids[filename] = user_owned_files.first().id
+                else:
+                    # If user doesn't own any matching files, use the first shared file
+                    self.file_ids[filename] = accessible_files.first().id
+
             except File.DoesNotExist as exc:
                 raise FileNotFoundError(f"File with path {filename} does not exist.") from exc
 
