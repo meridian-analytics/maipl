@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import (ActivateAccount, CustomUserCreate, GroupList, LoginView,
                     RefreshTokenView, TokenView, UserDetail, UserList,
-                    UserProfile)
+                    UserProfile, UpdateUserProfileView)
 
 app_name = 'user'
 
@@ -15,5 +15,6 @@ urlpatterns = [
     path('user/<int:pk>/', UserDetail.as_view(), name='user'),
     path('user/', UserList.as_view(), name='users'),
     path('user/profile/', UserProfile.as_view(), name='profile'),
+    path('user/profile/update/', UpdateUserProfileView.as_view(), name='profile-update'),
     path('user/groups/', GroupList.as_view(), name='groups'),
 ]

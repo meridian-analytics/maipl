@@ -25,7 +25,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
-from .serializers import CustomUserSerializer, GroupSerializer, LoginSerializer
+from .serializers import CustomUserSerializer, GroupSerializer, LoginSerializer, UpdateUserProfileSerializer
 
 
 # A custom token generator for account activation. This class inherits from Django's built-in PasswordResetTokenGenerator.
@@ -329,3 +329,41 @@ class GroupList(generics.ListAPIView):
     required_scopes = ['groups']
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
+
+
+class UpdateUserProfileView(generics.UpdateAPIView):
+    serializer_class = UpdateUserProfileSerializer
+    
+    def get_object(self):
+        # Get the actual User instance from database instead of using TokenUser
+        return User.objects.get(id=self.request.user.id)
+
+    @swagger_auto_schema(
+        operation_description="Update the current user's profile. To change password, current_password must be provided.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'email': openapi.Schema(type=openapi.TYPE_STRING, description='User email address'),
+                'first_name': openapi.Schema(type=openapi.TYPE_STRING, description='User first name'),
+                'last_name': openapi.Schema(type=openapi.TYPE_STRING, description='User last name'),
+                'password': openapi.Schema(type=openapi.TYPE_STRING, description='New password (min 8 characters)'),
+                'current_password': openapi.Schema(type=openapi.TYPE_STRING, description='Current password (required for password change)'),
+            },
+        ),
+        responses={
+            200: UpdateUserProfileSerializer(),
+            400: "Bad Request - Validation error",
+            401: "Unauthorized - Not authenticated",
+        },
+    )
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def patch(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
