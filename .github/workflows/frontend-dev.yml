@@ -26,22 +26,22 @@ jobs:
         run: |
           echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin
 
-      - name: build and push image
+      - name: build and push image for staging
         run: |
           cd frontend
-          source ./scripts/build.sh
+          source ./scripts/build.sh staging
 
       - name: Deploy to staging
         run: |
           if ! ssh ubuntu@$STAGING_HOST "
             docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password $REGISTRY_PASSWORD || exit 1
-            docker pull $REGISTRY_URL/maipl-frontend:dev || exit 1
+            docker pull $REGISTRY_URL/maipl-frontend:staging || exit 1  
             docker stop frontend-app || true
             docker rm frontend-app || true
             docker run -d --name frontend-app \
               --restart unless-stopped \
               -p 80:80 \
-              $REGISTRY_URL/maipl-frontend:dev || exit 1
+              $REGISTRY_URL/maipl-frontend:staging || exit 1
             
             # Verify container is running
             sleep 5
