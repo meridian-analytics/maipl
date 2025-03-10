@@ -18,16 +18,16 @@ resource "openstack_compute_instance_v2" "minio" {
   }
 }
 
-# Create volumes for each instance
+# Create volumes for each instance based on volume_count
 resource "openstack_blockstorage_volume_v3" "minio_data" {
-  count = var.instance_config.count
+  count = var.instance_config.volume_count
   name  = "${var.project_name}-minio-data-${var.environment}-${count.index + 1}"
   size  = var.instance_config.volume_size
 }
 
 # Attach volumes to instances
 resource "openstack_compute_volume_attach_v2" "minio_data_attach" {
-  count       = var.instance_config.count
-  instance_id = openstack_compute_instance_v2.minio[count.index].id
+  count       = var.instance_config.volume_count
+  instance_id = openstack_compute_instance_v2.minio[count.index % var.instance_config.count].id
   volume_id   = openstack_blockstorage_volume_v3.minio_data[count.index].id
 }

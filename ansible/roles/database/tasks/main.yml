@@ -1,0 +1,14 @@
+---
+# tasks file for roles/database
+
+- name: Include volume setup tasks
+  import_tasks: volume.yml
+
+- name: Include Docker installation tasks
+  import_tasks: docker.yml
+
+- name: Include PostgreSQL deployment tasks
+  import_tasks: deploy.yml
+
+- name: Include Verify tasks
+  import_tasks: verify.yml

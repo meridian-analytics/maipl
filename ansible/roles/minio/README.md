@@ -1,12 +1,11 @@
-
 # Minio Role
 
-This role deploys and configures Minio object storage with monitoring integration.
+This role deploys and configures Minio object storage with monitoring integration. It supports multiple data volumes for enhanced storage capacity and performance.
 
 ## Features
 
 - Minio deployment using Docker
-- Volume management for persistent storage
+- Multiple volume management for persistent storage
 - Prometheus metrics integration
 - Loki logging integration
 - Grafana dashboard for monitoring
@@ -34,8 +33,9 @@ roles/minio/
 ## Configuration Steps
 
 ### 1. Volume Setup
-- Creates and formats volume for Minio data
-- Mounts volume at configured location
+- Creates and formats multiple volumes for Minio data
+- Mounts volumes at configured locations
+- Supports distributed storage with multiple volumes
 
 ### 2. Docker Installation
 - Installs Docker and dependencies
@@ -67,8 +67,16 @@ The following variables can be configured to customize the Minio deployment:
 
 ```yaml
 # Volume configuration
-minio_volume_device: /dev/vdb
-minio_data_dir: /data/minio
+minio_volume_devices:
+  - /dev/vdb
+  - /dev/vdc
+  - /dev/vdd
+  - /dev/vde
+minio_data_dirs:
+  - /data/minio/disk1
+  - /data/minio/disk2
+  - /data/minio/disk3
+  - /data/minio/disk4
 minio_config_dir: /etc/minio
 
 # Docker configuration
@@ -115,7 +123,16 @@ ansible-playbook -i inventory/dynamic/minio_dev.py playbooks/deploy_minio.yml --
 curl http://<minio-ip>:9000/minio/health
 ```
 
-### 2. Verify Metrics
+### 2. Verify Volumes
+```bash
+# Check mounted volumes
+df -h | grep minio
+
+# Verify Minio is using all volumes
+docker exec minio ls -la /data
+```
+
+### 3. Verify Metrics
 ```bash
 # Check Prometheus targets
 curl http://192.168.239.67:9090/api/v1/targets
@@ -124,7 +141,7 @@ curl http://192.168.239.67:9090/api/v1/targets
 curl http://192.168.239.67:9090/api/v1/query?query=minio_cluster_capacity_usable_total_bytes
 ```
 
-### 3. Access Dashboards
+### 4. Access Dashboards
 - Grafana: http://192.168.239.67:3000
 - Prometheus: http://192.168.239.67:9090
 
@@ -135,7 +152,12 @@ curl http://192.168.239.67:9090/api/v1/query?query=minio_cluster_capacity_usable
 - Check Minio metrics endpoint
 - Validate Prometheus configuration
 
-### 2. Log Collection Issues
+### 2. Volume Issues
+- Check if all volumes are properly mounted
+- Verify permissions on data directories
+- Ensure volumes are properly formatted
+
+### 3. Log Collection Issues
 - Check Loki plugin status
 - Verify log driver configuration
 - Check Promtail status

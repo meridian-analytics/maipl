@@ -19,7 +19,7 @@ rule_files:
 scrape_configs:
   - job_name: "prometheus"
     static_configs:
-      - targets: ["localhost:{{ monitoring.prometheus.port }}"]
+      - targets: ["localhost:{{ prometheus_port }}"]
   
   - job_name: "node_exporter"
     static_configs:

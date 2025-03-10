@@ -1,7 +1,0 @@
-resources:
-  - deployments/ccm-deployment.yaml
-
-secretGenerator:
-  - name: cloud-config
-    files:
-      - cloud-config/cloud.conf

@@ -1,0 +1,15 @@
+---
+# Volume configuration
+postgresql_data_dir: /data/postgresql
+
+# PostgreSQL configuration
+postgresql_version: "14"
+postgresql_port: 5432
+
+# Docker configuration
+docker_compose_version: "2.17.2"
+
+# pgAdmin configuration (override these in vault)
+pgadmin_port: 5050
+
+

@@ -1,4 +1,0 @@
----
-- name: setup k8s staging
-  import_tasks: setup_k8s_staging.yml
-

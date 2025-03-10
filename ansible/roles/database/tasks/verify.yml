@@ -1,0 +1,41 @@
+---
+- name: Show container status
+  community.docker.docker_container_info:
+    name: postgres
+  register: postgres_container
+
+- name: Display container status
+  debug:
+    var: postgres_container.container.State
+
+- name: Wait for PostgreSQL to be ready
+  community.docker.docker_container_exec:
+    container: postgres
+    command: pg_isready -U {{ postgres_user | default('postgres') }}
+  register: pg_ready
+  until: pg_ready.rc == 0
+  retries: 30
+  delay: 2
+
+- name: Show PostgreSQL readiness
+  debug:
+    var: pg_ready.stdout
+
+- name: Check PostgreSQL connection
+  community.docker.docker_container_exec:
+    container: postgres
+    command: psql -U {{ postgres_user | default('postgres') }} -c "\l"
+  register: db_list
+
+- name: Show database list
+  debug:
+    var: db_list.stdout_lines
+
+- name: Check PostgreSQL data directory
+  stat:
+    path: "{{ postgresql_data_dir }}/data"
+  register: data_dir
+
+- name: Show data directory status
+  debug:
+    msg: "PostgreSQL data directory exists: {{ data_dir.stat.exists }}, is directory: {{ data_dir.stat.isdir | default(false) }}"

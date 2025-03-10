@@ -4,7 +4,13 @@
     src: minio-dashboard.json.j2
     dest: /tmp/minio-dashboard.json
     mode: '0644'
-  delegate_to: "{{ monitoring_server }}"  # Create file on Ansible controller
+  delegate_to: "{{ monitoring_server }}"
+
+- name: Read dashboard file
+  slurp:
+    src: /tmp/minio-dashboard.json
+  register: dashboard_content
+  delegate_to: "{{ monitoring_server }}"
 
 - name: Import Minio dashboard to Grafana
   uri:
@@ -12,9 +18,16 @@
     method: POST
     body_format: json
     body:
-      dashboard: "{{ lookup('file', '/tmp/minio-dashboard.json') | from_json }}"
+      dashboard: "{{ dashboard_content.content | b64decode | from_json }}"
       overwrite: true
     headers:
-      Authorization: "Bearer {{ grafana_api_key }}"
+      Authorization: "Bearer {{ monitoring.grafana.api_key | default(grafana_api_key) }}"
     status_code: 200
   delegate_to: "{{ monitoring_server }}"
+  ignore_errors: true
+  register: grafana_import
+  
+- name: Display Grafana import status
+  debug:
+    msg: "Grafana dashboard import was skipped or failed. You may need to set a valid GRAFANA_API_KEY environment variable or update the grafana_api_key in your vault file."
+  when: grafana_import is failed

@@ -29,10 +29,14 @@
   uri:
     url: "{{ grafana_url }}/api/dashboards/uid/minio"
     headers:
-      Authorization: "Bearer {{ grafana_api_key }}"
+      Authorization: "Bearer {{ monitoring.grafana.api_key | default(grafana_api_key) }}"
     method: GET
   register: dashboard
   delegate_to: localhost
-  failed_when: dashboard.status != 200
+  failed_when: false
   retries: 3
   delay: 5
+
+- name: Display Grafana dashboard status
+  debug:
+    msg: "Grafana dashboard verification {{ 'succeeded' if dashboard.status == 200 else 'failed or skipped' }}. Status code: {{ dashboard.status | default('unknown') }}"

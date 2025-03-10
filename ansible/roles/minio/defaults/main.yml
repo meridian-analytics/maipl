@@ -1,7 +1,15 @@
 ---
 # Volume configuration
-minio_volume_device: /dev/vdb
-minio_data_dir: /data/minio
+minio_volume_devices:
+  - /dev/vdb
+  - /dev/vdc
+  - /dev/vdd
+  - /dev/vde
+minio_data_dirs:
+  - /data/minio/disk1
+  - /data/minio/disk2
+  - /data/minio/disk3
+  - /data/minio/disk4
 minio_config_dir: /etc/minio
 
 # Docker configuration
@@ -11,25 +19,21 @@ docker_compose_version: "2.17.2"
 minio_api_port: 9000
 minio_console_port: 9001
 
-monitoring:
-  server_ip: "192.168.239.67"
-  grafana:
-    port: 3000
-  prometheus:
-    port: 9090
-  loki:
-    port: 3100
+# Monitoring configuration - Simple flat structure
+monitoring_server: "192.168.239.67"
+grafana_port: 3000
+prometheus_port: 9090
+loki_port: 3100
+grafana_api_key: "{{ lookup('ansible.builtin.env', 'GRAFANA_API_KEY', default='eyJrIjoiWW91U2hvdWxkQ2hhbmdlVGhpc0luVmF1bHQiLCJuIjoibWluaW8iLCJpZCI6MX0=') }}"
 
-# Full URLs constructed from components
-monitoring_urls:
-  grafana: "http://{{ monitoring.server_ip }}:{{ monitoring.grafana.port }}"
-  prometheus: "http://{{ monitoring.server_ip }}:{{ monitoring.prometheus.port }}"
-  loki: "http://{{ monitoring.server_ip }}:{{ monitoring.loki.port }}"
+# Full URLs using the flat variables
+grafana_url: "http://{{ monitoring_server }}:{{ grafana_port }}"
+prometheus_url: "http://{{ monitoring_server }}:{{ prometheus_port }}"
+loki_url: "http://{{ monitoring_server }}:{{ loki_port }}"
 
-# Monitoring configuration
+# Prometheus configuration
 prometheus_config_dir: /etc/prometheus
 prometheus_conf_d_dir: "{{ prometheus_config_dir }}/conf.d"
-monitoring_server: "{{ monitoring.server_ip }}"
-grafana_url: "{{ monitoring_urls.grafana }}"
-prometheus_url: "{{ monitoring_urls.prometheus }}"
-loki_url: "{{ monitoring_urls.loki }}"
+
+# Environment
+environment: "prod"

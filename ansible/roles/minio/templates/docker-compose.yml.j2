@@ -2,7 +2,7 @@ services:
   minio:
     image: minio/minio:latest
     container_name: minio
-    command: server /data --console-address ":9001"
+    command: server {% for dir in minio_data_dirs %}/data{{ loop.index }}{% if not loop.last %} {% endif %}{% endfor %} --console-address ":9001"
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -11,7 +11,9 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_PROMETHEUS_AUTH_TYPE: "public" 
     volumes:
-      - {{ minio_data_dir }}:/data
+{% for dir in minio_data_dirs %}
+      - {{ dir }}:/data{{ loop.index }}
+{% endfor %}
     restart: unless-stopped
     logging:
       driver: loki

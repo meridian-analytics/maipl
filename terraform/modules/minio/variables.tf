@@ -13,6 +13,7 @@ variable "instance_config" {
   type = object({
     count       = number        # Number of instances
     flavor_id   = string        # Instance flavor
+    volume_count = number        # Number of volumes
     volume_size = number        # Volume size in GB
     image_id    = string        # OS image
     key_pair    = string        # SSH key pair

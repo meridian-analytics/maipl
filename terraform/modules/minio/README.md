@@ -1,11 +1,12 @@
 # MinIO Terraform Module
 
-This Terraform module deploys MinIO instances on OpenStack infrastructure. It creates multiple MinIO instances with attached storage volumes, configurable networking, and security groups.
+This Terraform module deploys MinIO instances on OpenStack infrastructure. It creates MinIO instances with attached storage volumes, configurable networking, and security groups. The module supports multiple data volumes per instance, allowing for distributed storage configurations.
 
 ## Features
 
-- Creates multiple MinIO instances with configurable specifications
-- Provisions and attaches storage volumes to each instance
+- Creates MinIO instances with configurable specifications
+- Provisions and attaches multiple storage volumes to each instance
+- Supports configurations with more volumes than instances (e.g., 1 server with 4 data volumes)
 - Configurable security groups and networking
 - Supports different environments and project naming
 
@@ -35,7 +36,8 @@ The `instance_config` variable expects an object with the following structure:
 |-------|-------------|------|
 | count | Number of MinIO instances to create | number |
 | flavor_id | Instance flavor/size ID | string |
-| volume_size | Size of attached storage volume in GB | number |
+| volume_count | Number of data volumes to create | number |
+| volume_size | Size of each storage volume in GB | number |
 | image_id | OS image ID to use for instances | string |
 | key_pair | SSH key pair name | string |
 
@@ -51,6 +53,8 @@ The `instance_config` variable expects an object with the following structure:
 
 - Each instance will be named in the format: `{project_name}-minio-{environment}-{index}`
 - Each volume will be named in the format: `{project_name}-minio-data-{environment}-{index}`
+- Volumes are distributed across instances using a modulo operation when there are more volumes than instances
+- For example, with 1 instance and 4 volumes, all 4 volumes will be attached to the single instance
 - Instances are tagged with metadata including environment, role, and cluster name
 - Make sure the security groups allow necessary MinIO ports (typically 9000 for API and 9001 for Console)
 

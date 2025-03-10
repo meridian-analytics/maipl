@@ -1,25 +1,31 @@
 ---
-- name: Check if volume is formatted
-  command: blkid {{ minio_volume_device }}
+- name: Check if volumes are formatted
+  command: blkid {{ item }}
   register: blkid_output
   failed_when: false
   changed_when: false
+  loop: "{{ minio_volume_devices }}"
 
-- name: Format volume if needed
+- name: Format volumes if needed
   filesystem:
     fstype: ext4
-    dev: "{{ minio_volume_device }}"
-  when: blkid_output.rc != 0
+    dev: "{{ item.item }}"
+  when: item.rc != 0
+  loop: "{{ blkid_output.results }}"
 
-- name: Ensure mount point exists
+- name: Ensure mount points exist
   file:
-    path: "{{ minio_data_dir }}"
+    path: "{{ item }}"
     state: directory
     mode: '0755'
+  loop: "{{ minio_data_dirs }}"
 
-- name: Mount volume
+- name: Mount volumes
   mount:
-    path: "{{ minio_data_dir }}"
-    src: "{{ minio_volume_device }}"
+    path: "{{ minio_data_dirs[index] }}"
+    src: "{{ item }}"
     fstype: ext4
     state: mounted
+  loop: "{{ minio_volume_devices }}"
+  loop_control:
+    index_var: index
