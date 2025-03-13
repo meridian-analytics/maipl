@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
             name='ProcessedAudio',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('audio', models.FileField(storage=django_minio_backend.models.MinioBackend(bucket_name='audio'), upload_to='')),
+                ('audio', models.FileField(storage=django_minio_backend.models.MinioBackend(), upload_to='')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
             ],
         ),
@@ -45,7 +45,7 @@ class Migration(migrations.Migration):
             name='ProcessedImage',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('image', models.FileField(storage=django_minio_backend.models.MinioBackend(bucket_name='image'), upload_to='')),
+                ('image', models.FileField(storage=django_minio_backend.models.MinioBackend(), upload_to='')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
             ],
         ),

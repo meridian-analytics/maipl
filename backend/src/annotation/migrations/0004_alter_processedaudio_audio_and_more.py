@@ -14,11 +14,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='processedaudio',
             name='audio',
-            field=models.FileField(storage=django_minio_backend.models.MinioBackend(bucket_name='audio', replace_existing=True), upload_to=''),
+            field=models.FileField(storage=django_minio_backend.models.MinioBackend(replace_existing=True), upload_to=''),
         ),
         migrations.AlterField(
             model_name='processedimage',
             name='image',
-            field=models.FileField(storage=django_minio_backend.models.MinioBackend(bucket_name='image', replace_existing=True), upload_to=''),
+            field=models.FileField(storage=django_minio_backend.models.MinioBackend(replace_existing=True), upload_to=''),
         ),
     ]

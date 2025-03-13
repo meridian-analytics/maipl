@@ -9,6 +9,7 @@ from .spectrogram.frequency_axis import compute_frequency_axis
 from file.models import File
 from user.models import User
 
+from api.settings import MINIO_BUCKET_NAME
 
 def isOwner(user, obj):
     return obj.user_id.id == user.id
@@ -159,6 +160,9 @@ class Annotation(models.Model):
         )
 
 
+def upload_to_image(instance, filename):
+    return f"images/batch-{instance.batch_id.id}/segment-{instance.segment_id.id}/user-{instance.user_id.id}/{filename}"
+
 class ProcessedImage(models.Model):
 
     def delete(self, *args, **kwargs):
@@ -181,7 +185,8 @@ class ProcessedImage(models.Model):
         on_delete=models.CASCADE,
     )
     image = models.FileField(
-        storage=MinioBackend(bucket_name="image", replace_existing=True),
+        upload_to=upload_to_image,
+        storage=MinioBackend(bucket_name=MINIO_BUCKET_NAME, replace_existing=True),
         max_length=255
     )
 
@@ -192,6 +197,9 @@ class ProcessedImage(models.Model):
     def __str__(self):
         return self.image.name
 
+
+def upload_to_audio(instance, filename):
+    return f"audio/batch-{instance.batch_id.id}/segment-{instance.segment_id.id}/user-{instance.user_id.id}/{filename}"
 
 class ProcessedAudio(models.Model):
 
@@ -215,7 +223,8 @@ class ProcessedAudio(models.Model):
         on_delete=models.CASCADE,
     )
     audio = models.FileField(
-        storage=MinioBackend(bucket_name="audio", replace_existing=True),
+        upload_to=upload_to_audio,
+        storage=MinioBackend(bucket_name=MINIO_BUCKET_NAME, replace_existing=True),
         max_length=255
     )
 

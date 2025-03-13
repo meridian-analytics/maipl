@@ -9,9 +9,11 @@ from rest_framework.exceptions import ValidationError
 
 from user.models import User
 
+from api.settings import MINIO_BUCKET_NAME
+
 def upload_to(instance, filename):
     user = User.objects.get(id=instance.user_id.id)
-    return f"{user.email}/{instance.maipl_folder}/{instance.path}"
+    return f"files/{user.email}/{instance.maipl_folder}/{instance.path}"
 
 
 class File(models.Model):
@@ -52,7 +54,7 @@ class File(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     file = models.FileField(
         upload_to=upload_to,
-        storage=MinioBackend(bucket_name="files", replace_existing=True),
+        storage=MinioBackend(bucket_name=MINIO_BUCKET_NAME, replace_existing=True),
         max_length=255
     )
     maipl_folder = models.CharField(max_length=255)

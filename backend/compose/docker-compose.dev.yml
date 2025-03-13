@@ -1,19 +1,6 @@
 version: '3'
 
 services:
-
-  # Database
-  db:
-    image: "postgres:13"
-    container_name: maipl_db
-    env_file:
-      - ../config/.env
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    restart: unless-stopped
-
   # Redis, file cache management
   redis:
     image: "redis:latest"
@@ -24,20 +11,6 @@ services:
     ports:
       - "6379:6379"
     restart: unless-stopped
-
-  # Minio, file storage
-  minio:
-    image: minio/minio
-    command: server /data --address :9000 --console-address :9001
-    env_file:
-      - ../config/.env
-    ports:
-      - "${MINIO_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
-    volumes:
-      - /mnt/minio-data:/data
-    restart: unless-stopped
-    container_name: maipl_files_minio
 
   # RabbitMQ, message broker
   rabbit:
@@ -72,9 +45,7 @@ services:
     command: /backend/entrypoint.backend.sh
     restart: unless-stopped
     depends_on:
-      - minio
       - rabbit
-      - db
       - redis
 
   # Celery worker
@@ -93,15 +64,10 @@ services:
       - ../config/.env
     container_name: maipl_ketos_worker
     depends_on:
-      - minio
       - rabbit
       - backend
-      - db
       - redis
 
 volumes:
-  db_data:
-    name: backend_db_data
   redis_data:
     name: redis_data
-

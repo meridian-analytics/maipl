@@ -17,6 +17,8 @@ def getenvlist(key, default=[]):
     s = getenv(key, "")
     return s.split(",") if s else default
 
+DJANGO_ENV = getenv("DJANGO_ENV", "dev")
+DEBUG = getenvbool("DEBUG", DJANGO_ENV == "dev")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,8 +30,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 SECRET_KEY = getenv("DJANGO_SECRET_KEY", "tempkeyfordev")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DJANGO_ENV = getenv("DJANGO_ENV", "development")
-DEBUG = getenvbool("DEBUG", DJANGO_ENV == "development")
+
+
 
 # Allowed hosts
 # https://docs.djangoproject.com/en/4.2/ref/settings/#allowed-hosts
@@ -284,7 +286,7 @@ AUTH_FRONTEND_URL = getenv("AUTH_FRONTEND_URL", "http://localhost:3000")
 STORAGES = {
     "default": {
         "BACKEND": "django_minio_backend.MinioBackend",
-        "OPTIONS": {"bucket_name": "files"},
+        "OPTIONS": {"bucket_name": getenv("MINIO_PRIVATE_BUCKETS", "maipl-dev")},
     },
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
@@ -294,26 +296,29 @@ STORAGES = {
 
 # django_minio_backend
 # https://github.com/theriverman/django-minio-backend
-MINIO_ACCESS_KEY = getenv("MINIO_ACCESS_KEY", "minio-unset-access-key")
-MINIO_BUCKET_CHECK_ON_SAVE = True
-MINIO_CONSISTENCY_CHECK_ON_START = True
 MINIO_ENDPOINT = getenv("MINIO_ENDPOINT", "play.min.io")
 MINIO_EXTERNAL_ENDPOINT = getenv("MINIO_EXTERNAL_ENDPOINT", MINIO_ENDPOINT)
+MINIO_ACCESS_KEY = getenv("MINIO_ACCESS_KEY", "minio-unset-access-key")
+MINIO_SECRET_KEY = getenv("MINIO_SECRET_KEY", "minio-unset-secret-key")
 MINIO_EXTERNAL_ENDPOINT_USE_HTTPS = getenvbool(
     "MINIO_EXTERNAL_ENDPOINT_USE_HTTPS", True
 )
-MINIO_MEDIA_FILES_BUCKET = "media"
+MINIO_BUCKET_NAME = getenv("MINIO_BUCKET_NAME", "maipl-dev")
+MINIO_PRIVATE_BUCKETS = getenvlist("MINIO_PRIVATE_BUCKETS", [MINIO_BUCKET_NAME])
+MINIO_CONSISTENCY_CHECK_ON_START = getenvbool("MINIO_CONSISTENCY_CHECK_ON_START", True)
+MINIO_BUCKET_CHECK_ON_SAVE = getenvbool("MINIO_BUCKET_CHECK_ON_SAVE", True)
 MINIO_POLICY_HOOKS = []
-MINIO_PRIVATE_BUCKETS = ["files", "media", "static", "image", "audio"]
-MINIO_PUBLIC_BUCKETS = []
-MINIO_SECRET_KEY = getenv("MINIO_SECRET_KEY", "minio-unset-secret-key")
-MINIO_STATIC_FILES_BUCKET = "static"
+MINIO_PUBLIC_BUCKETS = getenvlist("MINIO_PUBLIC_BUCKETS", [])
+MINIO_STATIC_FILES_BUCKET = getenv("MINIO_STATIC_FILES_BUCKET", "static")
 MINIO_URL_EXPIRY_HOURS = timedelta(days=7)
 MINIO_USE_HTTPS = getenvbool("MINIO_USE_HTTPS", True)
 MINIO_USE_HTTPS_FOR_INTERNAL = getenvbool(
     "MINIO_USE_HTTPS_FOR_INTERNAL", False)
+# Disable auto bucket creation - this prevents the plugin from creating buckets automatically
+MINIO_AUTO_CREATE_MEDIA_BUCKET = False
+MINIO_AUTO_CREATE_STATIC_BUCKET = False
 
-
+# Swagger settings
 SWAGGER_SETTINGS = {
     "DEFAULT_PAGINATOR_INSPECTORS": ["common.pagination.MaiplPaginatorInspector"],
 }

@@ -78,7 +78,7 @@ def process_segment(segment):
         print(f"Generating image: {img_output.name}")
         try:
             generate_image(local_path, img_output.name, parameters, start, end)
-            image_file_name = f"batch-{batch.id}-segment-{segment.id}-user-{user.id}-{basename}-[{start}-{end}].png"
+            image_file_name = f"{basename}-[{start}-{end}].png"
             with DjangoFile(open(img_output.name, 'rb'), name=image_file_name) as image_file:
                 # Delete existing image if it exists, and create or update new image
                 existing_image = ProcessedImage.objects.filter(segment_id=segment, batch_id=batch, user_id=user)
@@ -99,7 +99,7 @@ def process_segment(segment):
         print(f"Generating audio: {audio_output.name}")
         try:
             generate_audio(local_path, audio_output.name, parameters, start, end)
-            audio_file_name = f"batch-{batch.id}-segment-{segment.id}-user-{user.id}-{basename}-[{start}-{end}].flac"
+            audio_file_name = f"{basename}-[{start}-{end}].flac"
             with DjangoFile(open(audio_output.name, 'rb'), name=audio_file_name) as audio_file:
                 # Delete existing audio if it exists, and create or update new audio
                 existing_audio = ProcessedAudio.objects.filter(segment_id=segment, batch_id=batch, user_id=user)
