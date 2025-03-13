@@ -20,6 +20,9 @@ def getenvlist(key, default=[]):
 DJANGO_ENV = getenv("DJANGO_ENV", "dev")
 DEBUG = getenvbool("DEBUG", DJANGO_ENV == "dev")
 
+# Demo environment flag - determines whether this instance is a demo environment
+IS_DEMO_ENVIRONMENT = getenvbool("IS_DEMO_ENVIRONMENT", False)
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,9 +31,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = getenv("DJANGO_SECRET_KEY", "tempkeyfordev")
-
-# SECURITY WARNING: don't run with debug turned on in production!
-
 
 
 # Allowed hosts
@@ -107,6 +107,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "api.middleware.DemoEnvironmentMiddleware",  # Demo environment middleware
 ]
 
 ROOT_URLCONF = "api.urls"
