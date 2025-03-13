@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('file', models.FileField(storage=django_minio_backend.models.MinioBackend(bucket_name='files'), upload_to=file.models.upload_to)),
+                ('file', models.FileField(storage=django_minio_backend.models.MinioBackend(), upload_to=file.models.upload_to)),
                 ('maipl_folder', models.CharField(max_length=255)),
                 ('meta', models.JSONField()),
                 ('path', models.CharField(max_length=255)),

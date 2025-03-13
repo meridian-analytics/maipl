@@ -16,6 +16,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='file',
             name='file',
-            field=models.FileField(storage=django_minio_backend.models.MinioBackend(bucket_name='files', replace_existing=True), upload_to=file.models.upload_to),
+            field=models.FileField(storage=django_minio_backend.models.MinioBackend(replace_existing=True), upload_to=file.models.upload_to),
         ),
     ]

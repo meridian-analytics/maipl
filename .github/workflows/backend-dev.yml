@@ -15,7 +15,6 @@ jobs:
       REGISTRY_URL: ${{ vars.REGISTRY_URL }}
       BACKEND_HOST: ${{ vars.BACKEND_STAGING_HOST }}
       WORKER_HOST: ${{ vars.WORKER_STAGING_HOST }}
-      DEMO_HOST: ${{ vars.DEMO_HOST }}
       REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
       REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
 
@@ -58,25 +57,6 @@ jobs:
             docker system prune -f"
 
           ssh ubuntu@$WORKER_HOST "cd ~/worker && \
-            docker compose pull && \
-            docker compose down --remove-orphans && \
-            docker compose up -d && \
-            docker system prune -f"
-
-      - name: Deploy demo
-        run: |
-          # Create directory if it doesn't exist
-          ssh ubuntu@$DEMO_HOST "mkdir -p ~/demo"
-
-          # Create .env file directly from the secret
-          echo "${{ secrets.DEMO_ENV_FILE }}" > backend/.env
-
-          # Copy compose file
-          scp backend/compose/docker-compose.demo.yml ubuntu@$DEMO_HOST:~/demo/docker-compose.yml
-          scp backend/.env ubuntu@$DEMO_HOST:~/demo/.env
-
-          # Deploy
-          ssh ubuntu@$DEMO_HOST "cd ~/demo && \
             docker compose pull && \
             docker compose down --remove-orphans && \
             docker compose up -d && \
