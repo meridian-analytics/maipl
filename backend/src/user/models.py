@@ -43,6 +43,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     created_at = models.DateTimeField(default=timezone.now)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
+    is_demo = models.BooleanField(default=False)
 
     objects = CustomAccountManager()
 
