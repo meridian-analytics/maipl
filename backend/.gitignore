@@ -87,9 +87,14 @@ __pycache__/
 local_settings.py
 static/
 
+# Environment files
 .env
 .env.stage
+.env.local
+.env.*.local
 db.sqlite3
+config/secrets.*.sh
+!config/secrets.template.sh
 
 .vscode
 .cursorrules

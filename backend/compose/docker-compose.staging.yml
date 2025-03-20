@@ -1,0 +1,41 @@
+services:
+
+  backend:
+    image: registry.maipl-dev.com/maipl-backend/ketos-backend:dev
+    container_name: backend-staging
+    ports:
+      - "${DJANGO_PORT:-8000}:8000"
+    volumes:
+      - /data/logs:/logs
+      - /data/file_cache:/cache
+      - /data/tasks:/tasks  
+    command: /backend/entrypoint.backend.sh
+    env_file:
+      - .env
+    
+    worker:
+      image: registry.maipl-dev.com/maipl-backend/ketos-worker:dev
+      container_name: worker-staging
+      command: /backend/entrypoint.worker.sh
+      volumes:
+        - /data/logs:/logs
+        - /data/file_cache:/cache
+        - /data/tasks:/tasks
+      env_file:
+        - .env
+    
+    rabbit:
+      image: "rabbitmq:3-management"
+      hostname: "rabbit"
+      container_name: rabbit-staging
+      environment:
+        RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
+        RABBITMQ_DEFAULT_USER: "rabbitmq"
+        RABBITMQ_DEFAULT_PASS: "rabbitmq"
+        RABBITMQ_DEFAULT_VHOST: "/"
+      ports:
+        - "15672:15672"
+        - "5672:5672"
+      restart: unless-stopped
+        
+        
