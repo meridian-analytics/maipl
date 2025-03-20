@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='file',
             name='file',
-            field=models.FileField(max_length=255, storage=django_minio_backend.models.MinioBackend(bucket_name='maipl-dev', replace_existing=True), upload_to=file.models.upload_to),
+            field=models.FileField(max_length=255, storage=django_minio_backend.models.MinioBackend(), upload_to=file.models.upload_to),
         ),
     ]

@@ -11,6 +11,9 @@ from user.models import User
 
 from api.settings import MINIO_BUCKET_NAME
 
+def get_storage():
+    return MinioBackend(bucket_name=MINIO_BUCKET_NAME, replace_existing=True)
+
 def isOwner(user, obj):
     return obj.user_id.id == user.id
 
@@ -186,7 +189,7 @@ class ProcessedImage(models.Model):
     )
     image = models.FileField(
         upload_to=upload_to_image,
-        storage=MinioBackend(bucket_name=MINIO_BUCKET_NAME, replace_existing=True),
+        storage=get_storage,
         max_length=255
     )
 
@@ -224,7 +227,7 @@ class ProcessedAudio(models.Model):
     )
     audio = models.FileField(
         upload_to=upload_to_audio,
-        storage=MinioBackend(bucket_name=MINIO_BUCKET_NAME, replace_existing=True),
+        storage=get_storage,
         max_length=255
     )
 
