@@ -134,6 +134,9 @@ jobs:
           # Create directory if it doesn't exist
           ssh ubuntu@$STAGING_HOST "mkdir -p ~/backend"
 
+          # Create /data/logs, /data/file_cache and /data/tasks directories
+          ssh ubuntu@$STAGING_HOST "sudo mkdir -p /data/logs /data/file_cache /data/tasks"
+
           # Copy compose files and environment file
           scp backend/compose/docker-compose.staging.yml ubuntu@$STAGING_HOST:~/backend/docker-compose.yml
           scp backend/.env ubuntu@$STAGING_HOST:~/backend/.env
