@@ -140,6 +140,7 @@ jobs:
 
           # Deploy
           ssh ubuntu@$STAGING_HOST "cd ~/backend && \
+            echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
             docker compose up -d && \
