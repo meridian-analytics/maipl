@@ -3,17 +3,17 @@ name: Frontend Build & Deploy
 on:
   push:
     branches:
-      - frontend-dev
+      - frontend-demo
     paths:
       - "frontend/**"
-      - ".github/workflows/frontend-dev.yml"
+      - ".github/workflows/frontend-demo.yml"
 
 jobs:
   build-and-deploy:
     runs-on: self-hosted
     env:
       REGISTRY_URL: ${{ vars.REGISTRY_URL }}
-      STAGING_HOST: ${{ vars.STAGING_HOST }}
+      DEMO_HOST: ${{ vars.DEMO_HOST }}
       REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
       REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
     steps:
@@ -27,22 +27,22 @@ jobs:
         run: |
           echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin
 
-      - name: build and push image for staging
+      - name: build and push image for demo
         run: |
           cd frontend
-          source ./scripts/build.sh staging
+          source ./scripts/build.sh demo
 
-      - name: Deploy to staging
+      - name: Deploy to demo
         run: |
-          if ! ssh ubuntu@$STAGING_HOST "
+          if ! ssh ubuntu@$DEMO_HOST "
             docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password $REGISTRY_PASSWORD || exit 1
-            docker pull $REGISTRY_URL/maipl-frontend:staging || exit 1  
+            docker pull $REGISTRY_URL/maipl-frontend:demo || exit 1  
             docker stop frontend-app || true
             docker rm frontend-app || true
             docker run -d --name frontend-app \
               --restart unless-stopped \
               -p 80:80 \
-              $REGISTRY_URL/maipl-frontend:staging || exit 1
+              $REGISTRY_URL/maipl-frontend:demo || exit 1
             
             # Verify container is running
             sleep 5
