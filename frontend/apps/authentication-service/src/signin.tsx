@@ -6,6 +6,7 @@ import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
+import { Box } from "@mui/material"
 
 export default function Signin() {
   const notify = MR.useNotify()
@@ -29,11 +30,25 @@ export default function Signin() {
     }
   }
 
+  const demoLogin = (event: R.MouseEvent) => {
+    event.preventDefault()
+    if (loginMutation.isIdle) {
+      return loginMutation.mutateAsync([
+        {
+          email: import.meta.env.MAIPL_DEMO_USER_EMAIL,
+          password: import.meta.env.MAIPL_DEMO_USER_PASSWORD,
+          next: next!, // validated by invariant
+          challenge: challenge!, // validated by invariant
+        },
+      ])
+    }
+  }
+
   const loginMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Auth.login>) => {
       JS.invariant(next, "redirect url not found")
       JS.invariant(challenge, "pkce challenge not found")
-      return Auth.login(...vars).then(auth => {
+      return Auth.login(...vars).then((auth) => {
         try {
           const redirect = new URL(next)
           redirect.searchParams.set("code", auth.code)
@@ -44,7 +59,7 @@ export default function Signin() {
       })
     },
     onError: (err, vars) => {
-      notify(onClose => (
+      notify((onClose) => (
         <M.Alert onClose={onClose} severity="error">
           Error: Could not login
         </M.Alert>
@@ -56,7 +71,7 @@ export default function Signin() {
     onSettled: () => {
       loginMutation.reset()
     },
-    onSuccess: redirect => {
+    onSuccess: (redirect) => {
       window.location.replace(redirect)
     },
   })
@@ -70,14 +85,78 @@ export default function Signin() {
         md={6}
         sx={{
           backgroundRepeat: "no-repeat",
-          backgroundColor: t =>
+          backgroundColor: (t) =>
             t.palette.mode === "light"
               ? t.palette.grey[50]
               : t.palette.grey[900],
           backgroundSize: "cover",
           backgroundPosition: "center",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          padding: 4,
         }}
-      />
+      >
+        <M.Typography
+          variant="h3"
+          component="h2"
+          sx={{ mb: 3, fontWeight: "bold" }}
+        >
+          <Box component="span" color="primary.main">
+            Welcome to{" "}
+          </Box>
+          <Box component="span" color="#B22222">
+            Maipl
+          </Box>
+        </M.Typography>
+        <M.Typography
+          variant="h5"
+          sx={{ mb: 4, color: (t) => t.palette.text.secondary }}
+        >
+          Complete Platform for Machine Learning Operations
+        </M.Typography>
+        <M.Box sx={{ mb: 4 }}>
+          <M.Typography
+            variant="body1"
+            paragraph
+            sx={{ display: "flex", alignItems: "center", gap: 1 }}
+          >
+            <I.ModelTraining fontSize="small" /> Train and Deploy ML Models with
+            Ease
+          </M.Typography>
+          <M.Typography
+            variant="body1"
+            paragraph
+            sx={{ display: "flex", alignItems: "center", gap: 1 }}
+          >
+            <I.DataObject fontSize="small" /> Efficient Data Annotation Tools
+          </M.Typography>
+          <M.Typography
+            variant="body1"
+            paragraph
+            sx={{ display: "flex", alignItems: "center", gap: 1 }}
+          >
+            <I.Assessment fontSize="small" /> Real-time Model Performance
+            Metrics
+          </M.Typography>
+          <M.Typography
+            variant="body1"
+            paragraph
+            sx={{ display: "flex", alignItems: "center", gap: 1 }}
+          >
+            <I.CloudUpload fontSize="small" /> Integrated File Management System
+          </M.Typography>
+        </M.Box>
+        <M.Typography
+          variant="subtitle1"
+          sx={{
+            color: "primary.main",
+            fontStyle: "italic",
+          }}
+        >
+          "Streamline your ML workflow from data to deployment"
+        </M.Typography>
+      </M.Grid>
       <M.Grid
         item
         xs={12}
@@ -110,7 +189,7 @@ export default function Signin() {
               name="email"
               autoComplete="email"
               autoFocus
-              onChange={e => setEmail(e.currentTarget.value)}
+              onChange={(e) => setEmail(e.currentTarget.value)}
             />
             <M.TextField
               margin="normal"
@@ -121,7 +200,7 @@ export default function Signin() {
               type="password"
               id="password"
               autoComplete="current-password"
-              onChange={e => setPassword(e.currentTarget.value)}
+              onChange={(e) => setPassword(e.currentTarget.value)}
             />
             <M.FormControlLabel
               control={<M.Checkbox value="remember" color="primary" />}
@@ -137,9 +216,15 @@ export default function Signin() {
               sx={{ mt: 3, mb: 2 }}
               children="Sign in"
             />
-            <M.Grid container>
-              <M.Grid item xs>
-                <M.Link href="#" variant="body2" children="Forgot password?" />
+            <M.Grid container justifyContent="center">
+              <M.Grid item>
+                <M.Link
+                  onClick={demoLogin}
+                  variant="body2"
+                  sx={{ cursor: "pointer" }}
+                >
+                  Try our demo
+                </M.Link>
               </M.Grid>
             </M.Grid>
           </M.Box>

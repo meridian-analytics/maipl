@@ -8,7 +8,7 @@ function safeNumber(value: string, orElse: number): number {
 
 // https://vitejs.dev/config/
 // https://vitejs.dev/guide/env-and-mode.html
-export default V.defineConfig(config => {
+export default V.defineConfig((config) => {
   const env = V.loadEnv(config.mode, "./")
   return {
     base: env["VITE_BASE_URL"] || "/",

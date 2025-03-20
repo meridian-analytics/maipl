@@ -12,8 +12,7 @@ jobs:
     runs-on: self-hosted
     env:
       REGISTRY_URL: ${{ vars.REGISTRY_URL }}
-      STAGING_HOST: ${{ vars.FRONTEND_STAGING_HOST }}
-      DEMO_HOST: ${{ vars.DEMO_HOST }}
+      STAGING_HOST: ${{ vars.STAGING_HOST }}
       REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
       REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
     steps:
