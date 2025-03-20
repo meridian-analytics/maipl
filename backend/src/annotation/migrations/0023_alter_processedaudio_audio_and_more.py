@@ -15,11 +15,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='processedaudio',
             name='audio',
-            field=models.FileField(max_length=255, storage=django_minio_backend.models.MinioBackend(bucket_name='maipl-dev', replace_existing=True), upload_to=annotation.models.upload_to_audio),
+            field=models.FileField(max_length=255, storage=django_minio_backend.models.MinioBackend(replace_existing=True), upload_to=annotation.models.upload_to_audio),
         ),
         migrations.AlterField(
             model_name='processedimage',
             name='image',
-            field=models.FileField(max_length=255, storage=django_minio_backend.models.MinioBackend(bucket_name='maipl-dev', replace_existing=True), upload_to=annotation.models.upload_to_image),
+            field=models.FileField(max_length=255, storage=django_minio_backend.models.MinioBackend(replace_existing=True), upload_to=annotation.models.upload_to_image),
         ),
     ]
