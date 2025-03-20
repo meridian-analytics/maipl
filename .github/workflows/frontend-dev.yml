@@ -30,7 +30,6 @@ jobs:
         run: |
           cd frontend
           source ./scripts/build.sh staging
-          source ./scripts/build.sh demo
 
       - name: Deploy to staging
         run: |
@@ -44,29 +43,6 @@ jobs:
               -p 80:80 \
               $REGISTRY_URL/maipl-frontend:staging || exit 1
             
-            # Verify container is running
-            sleep 5
-            if ! docker ps | grep -q frontend-app; then
-              echo 'Container failed to start' >&2
-              exit 1
-            fi
-          "; then
-            echo 'Deployment failed' >&2
-            exit 1
-          fi
-
-      - name: Deploy to demo
-        run: |
-          if ! ssh ubuntu@$DEMO_HOST "
-            docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password $REGISTRY_PASSWORD || exit 1
-            docker pull $REGISTRY_URL/maipl-frontend:demo || exit 1
-            docker stop frontend-app || true
-            docker rm frontend-app || true
-            docker run -d --name frontend-app \
-              --restart unless-stopped \
-              -p 80:80 \
-              $REGISTRY_URL/maipl-frontend:demo || exit 1
-
             # Verify container is running
             sleep 5
             if ! docker ps | grep -q frontend-app; then
