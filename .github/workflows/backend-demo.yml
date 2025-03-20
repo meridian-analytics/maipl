@@ -66,7 +66,11 @@ jobs:
 
       - name: Build backend and worker
         working-directory: backend/compose
-        run: docker compose -f docker-compose.build.yml build
+        run: |
+          docker compose -f docker-compose.build.yml build
+          # Tag the built images for demo
+          docker tag $REGISTRY_URL/maipl-backend/ketos-backend:dev $REGISTRY_URL/maipl-backend/ketos-backend:demo
+          docker tag $REGISTRY_URL/maipl-backend/ketos-worker:dev $REGISTRY_URL/maipl-backend/ketos-worker:demo
 
       - name: Push backend and worker to registry
         run: |
