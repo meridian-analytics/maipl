@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - backend-main
     paths:
       - backend/**
       - .github/workflows/backend-prod.yml
@@ -14,7 +15,11 @@ jobs:
     env:
       # Infrastructure variables
       REGISTRY_URL: ${{ vars.REGISTRY_URL }}
-      BACKEND_HOST: ${{ vars.PROD_BACKEND_HOST }}
+      BACKEND_HOST_A: ${{ vars.PROD_BACKEND_HOST_A }}
+      BACKEND_HOST_B: ${{ vars.PROD_BACKEND_HOST_B }}
+      WORKER_HOST_A: ${{ vars.PROD_WORKER_HOST_A }}
+      WORKER_HOST_B: ${{ vars.PROD_WORKER_HOST_B }}
+      WORKER_HOST_C: ${{ vars.PROD_WORKER_HOST_C }}
       REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
       REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
 
@@ -27,14 +32,11 @@ jobs:
 
       # Redis variables
       REDIS_HOST: ${{ vars.REDIS_HOST }}
-      REDIS_PORT: ${{ vars.REDIS_PORT }}
 
       # Celery broker variables
-      CELERY_BROKER_URL_PROTOCOL: ${{ vars.CELERY_BROKER_URL_PROTOCOL }}
-      CELERY_BROKER_URL_USER: ${{ vars.CELERY_BROKER_URL_USER }}
-      CELERY_BROKER_URL_PASSWORD: ${{ vars.CELERY_BROKER_URL_PASSWORD }}
+      CELERY_BROKER_URL_USER: ${{ secrets.CELERY_BROKER_URL_USER }}
+      CELERY_BROKER_URL_PASSWORD: ${{ secrets.CELERY_BROKER_URL_PASSWORD }}
       CELERY_BROKER_URL_HOST: ${{ vars.CELERY_BROKER_URL_HOST }}
-      CELERY_BROKER_URL_PORT: ${{ vars.CELERY_BROKER_URL_PORT }}
 
       # minio variables
       MINIO_ENDPOINT: ${{ vars.MINIO_ENDPOINT }}
@@ -76,6 +78,11 @@ jobs:
       - name: Build backend and worker
         working-directory: backend/compose
         run: docker compose -f docker-compose.build.yml build
+
+      - name: Tag backend and worker
+        run: |
+          docker tag $REGISTRY_URL/maipl-backend/ketos-backend:dev $REGISTRY_URL/maipl-backend/ketos-backend:prod
+          docker tag $REGISTRY_URL/maipl-backend/ketos-worker:dev $REGISTRY_URL/maipl-backend/ketos-worker:prod
 
       - name: Push backend and worker to registry
         run: |
@@ -126,7 +133,7 @@ jobs:
           EMAIL_USE_SSL=True
           
           # Other configuration
-          ALLOWED_REDIRECT_URLS=${ALLOWED_REDIRECT_URLS:-maipl.com}
+          ALLOWED_REDIRECT_URLS=${ALLOWED_REDIRECT_URLS}
           
           # File cache
           FILE_CACHE_LOCATION=${FILE_CACHE_LOCATION:-/mnt/file_cache}
@@ -134,37 +141,72 @@ jobs:
           
           # Redis
           REDIS_HOST=${REDIS_HOST:-maipl-redis} 
-          REDIS_PORT=${REDIS_PORT:-6379}
-          REDIS_DB=${REDIS_DB:-0}
+          REDIS_DB=${REDIS_DB:-2}
 
           # Celery broker
-          CELERY_BROKER_URL_PROTOCOL=${CELERY_BROKER_URL_PROTOCOL:-amqp}
-          CELERY_BROKER_URL_USER=${CELERY_BROKER_URL_USER:-rabbitmq}
-          CELERY_BROKER_URL_PASSWORD=${CELERY_BROKER_URL_PASSWORD:-rabbitmq}
-          CELERY_BROKER_URL_HOST=${CELERY_BROKER_URL_HOST:-rabbit}
-          CELERY_BROKER_URL_PORT=${CELERY_BROKER_URL_PORT:-5672}
+          CELERY_BROKER_URL_PASSWORD=${CELERY_BROKER_URL_PASSWORD}
+          CELERY_BROKER_URL_HOST=${CELERY_BROKER_URL_HOST}
           EOL
 
-      - name: Deploy backend and worker
+      - name: Deploy backends
         run: |
           # Create directory if it doesn't exist
-          ssh ubuntu@$BACKEND_HOST "mkdir -p ~/backend"
-          ssh ubuntu@$WORKER_HOST "mkdir -p ~/worker"
+          ssh ubuntu@$BACKEND_HOST_A "mkdir -p ~/backend"
+          ssh ubuntu@$BACKEND_HOST_B "mkdir -p ~/backend"
 
           # Copy compose files and environment file
-          scp backend/compose/docker-compose.backend.yml ubuntu@$BACKEND_HOST:~/backend/docker-compose.yml
-          scp backend/.env ubuntu@$BACKEND_HOST:~/backend/.env
-          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST:~/worker/docker-compose.yml
-          scp backend/.env ubuntu@$WORKER_HOST:~/worker/.env
+          scp backend/compose/docker-compose.backend.yml ubuntu@$BACKEND_HOST_A:~/backend/docker-compose.yml
+          scp backend/compose/docker-compose.backend.yml ubuntu@$BACKEND_HOST_B:~/backend/docker-compose.yml
+          scp backend/.env ubuntu@$BACKEND_HOST_A:~/backend/.env
+          scp backend/.env ubuntu@$BACKEND_HOST_B:~/backend/.env
 
           # Deploy
-          ssh ubuntu@$BACKEND_HOST "cd ~/backend && \
+          ssh ubuntu@$BACKEND_HOST_A "cd ~/backend && \
+            echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
             docker compose up -d && \
             docker system prune -f"
 
-          ssh ubuntu@$WORKER_HOST "cd ~/worker && \
+          ssh ubuntu@$BACKEND_HOST_B "cd ~/backend && \
+            echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
+            docker compose pull && \
+            docker compose down --remove-orphans && \
+            docker compose up -d && \
+            docker system prune -f"
+
+      - name: Deploy workers
+        run: |
+          # Create directory if it doesn't exist
+          ssh ubuntu@$WORKER_HOST_A "mkdir -p ~/worker"
+          ssh ubuntu@$WORKER_HOST_B "mkdir -p ~/worker"
+          ssh ubuntu@$WORKER_HOST_C "mkdir -p ~/worker"
+          
+          # Copy compose files and environment file
+          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST_A:~/worker/docker-compose.yml
+          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST_B:~/worker/docker-compose.yml
+          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST_C:~/worker/docker-compose.yml
+          scp backend/.env ubuntu@$WORKER_HOST_A:~/worker/.env
+          scp backend/.env ubuntu@$WORKER_HOST_B:~/worker/.env
+          scp backend/.env ubuntu@$WORKER_HOST_C:~/worker/.env
+
+          # Deploy
+          ssh ubuntu@$WORKER_HOST_A "cd ~/worker && \
+            echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
+            docker compose pull && \
+            docker compose down --remove-orphans && \
+            docker compose up -d && \
+            docker system prune -f"
+
+          ssh ubuntu@$WORKER_HOST_B "cd ~/worker && \
+            echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
+            docker compose pull && \
+            docker compose down --remove-orphans && \
+            docker compose up -d && \
+            docker system prune -f"
+
+          ssh ubuntu@$WORKER_HOST_C "cd ~/worker && \
+            echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
             docker compose up -d && \
