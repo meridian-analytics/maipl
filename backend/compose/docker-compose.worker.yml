@@ -1,6 +1,6 @@
 services:
   worker:
-    image: registry.maipl-dev.com/maipl-backend/ketos-worker:dev
+    image: registry.maipl-dev.com/maipl-backend/ketos-worker:prod
     container_name: ketos-worker
     volumes:
       - ../logs:/logs
@@ -13,9 +13,9 @@ services:
       resources:
         reservations:
           devices:
-          - driver: nvidia
-            count: all
-            capabilities: [utility, compute, video]
+            - driver: nvidia
+              count: all
+              capabilities: [ utility, compute, video ]
   portainer-agent:
     image: portainer/agent:2.21.2
     container_name: portainer-agent-worker

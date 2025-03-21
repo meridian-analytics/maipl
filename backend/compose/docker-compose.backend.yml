@@ -3,7 +3,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.backend
-    image: registry.maipl-dev.com/maipl-backend/ketos-backend:dev
+    image: registry.maipl-dev.com/maipl-backend/ketos-backend:prod
     container_name: ketos-backend
     ports:
       - "${DJANGO_PORT:-8000}:8000"
