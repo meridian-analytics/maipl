@@ -14,6 +14,7 @@ import {
   MAIPL_MODEL_RUNNER_FRONTEND,
   MAIPL_MODEL_TRAINER_FRONTEND,
   MAIPL_DOCUMENTATION_URL,
+  MAIPL_DATABASE_FRONTEND,
 } from "@maipl/constants"
 import React from "react"
 
@@ -39,10 +40,14 @@ export default function Navbar(props: {
     { name: "Model Runner", url: MAIPL_MODEL_RUNNER_FRONTEND },
     { name: "Metrics Tool", url: MAIPL_METRICS_FRONTEND },
     { name: "Model Trainer", url: MAIPL_MODEL_TRAINER_FRONTEND },
+    { name: "Database Tool", url: MAIPL_DATABASE_FRONTEND },
   ]
 
-  // Filter out the current app
+  // Filter out the current app and items with null URLs
   const quickAccessItems = allQuickAccessItems.filter((item) => {
+    // First check if URL is null or undefined
+    if (!item.url) return false
+
     try {
       const itemUrl = new URL(item.url)
 

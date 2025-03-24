@@ -5,17 +5,26 @@ import * as M from "@mui/material"
 function NavButton(props: {
   icon: typeof M.SvgIcon
   label: string
-  to: string
+  to: string | null | undefined
 }) {
   const { icon: Icon } = props
+  const isDisabled = !props.to
+
   return (
     <M.Stack
       component={M.Button}
-      sx={{ height: 200, width: 200 }}
-      onClick={() => {
-        // todo: useNavigate if same-origin
-        window.location.href = props.to
+      sx={{
+        height: 200,
+        width: 200,
+        opacity: isDisabled ? 0.7 : 1,
+        cursor: isDisabled ? "not-allowed" : "pointer",
       }}
+      onClick={() => {
+        if (!isDisabled) {
+          window.location.href = props.to
+        }
+      }}
+      disabled={isDisabled}
     >
       <Icon sx={{ fontSize: 100 }} />
       <M.Typography>{props.label}</M.Typography>
@@ -56,6 +65,7 @@ export default function Dashboard() {
           label="Model Trainer"
           to={K.MAIPL_MODEL_TRAINER_FRONTEND}
         />
+        <NavButton icon={I.Storage} label="Database Tool" to={null} />
       </M.Stack>
     </M.Stack>
   )

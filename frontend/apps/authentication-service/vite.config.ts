@@ -23,5 +23,8 @@ export default V.defineConfig((config) => {
     server: {
       port: safeNumber(env["VITE_PORT"], 3000),
     },
+    optimizeDeps: {
+      exclude: ["@maipl/api", "@maipl/js", "@maipl/react"],
+    },
   }
 })
