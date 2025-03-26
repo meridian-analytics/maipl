@@ -38,8 +38,8 @@ class CustomAccountManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(unique=True)
-    first_name = models.CharField(max_length=150, unique=True)
-    last_name = models.CharField(max_length=150, unique=True)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
     created_at = models.DateTimeField(default=timezone.now)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
