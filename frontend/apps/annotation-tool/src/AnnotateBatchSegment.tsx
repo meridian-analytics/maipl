@@ -42,7 +42,7 @@ type LoaderData = {
 const AnnotateBatchSegmentQuery = (
   maipl: MR.t_context,
   batchId: number,
-  segmentId: number,
+  segmentId: number
 ) => ({
   queryKey: ["annotate-batch-segment", batchId, segmentId],
   queryFn: async (): Promise<LoaderData> => {
@@ -60,10 +60,10 @@ const AnnotateBatchSegmentQuery = (
 
     const [audio, image, segments, annotations] = await Promise.all([
       Batch.audios(maipl.client, batchId).then(
-        audios => new Map(audios.map(a => [a.segment_id, a])),
+        (audios) => new Map(audios.map((a) => [a.segment_id, a]))
       ),
       Batch.images(maipl.client, batchId).then(
-        images => new Map(images.map(i => [i.segment_id, i])),
+        (images) => new Map(images.map((i) => [i.segment_id, i]))
       ),
       Batch.segments(maipl.client, batchId),
       Annotation.readSegment(maipl.client, batchId, segmentId),
@@ -71,7 +71,7 @@ const AnnotateBatchSegmentQuery = (
 
     const activeAudio = audio.get(segmentId)
     const activeImage = image.get(segmentId)
-    const activeSegment = segments.find(s => s.id == segmentId)
+    const activeSegment = segments.find((s) => s.id == segmentId)
 
     if (activeAudio == null) throw Error(`audio not found: ${segmentId}`)
     if (activeImage == null) throw Error(`image not found: ${segmentId}`)
@@ -123,10 +123,10 @@ export const loader2 = (maipl: MR.t_context) =>
 
     const [audio, image, segments, annotations] = await Promise.all([
       Batch.audios(maipl.client, batchId).then(
-        audios => new Map(audios.map(a => [a.segment_id, a])),
+        (audios) => new Map(audios.map((a) => [a.segment_id, a]))
       ),
       Batch.images(maipl.client, batchId).then(
-        images => new Map(images.map(i => [i.segment_id, i])),
+        (images) => new Map(images.map((i) => [i.segment_id, i]))
       ),
       Batch.segments(maipl.client, batchId),
       Annotation.readSegment(maipl.client, batchId, segmentId),
@@ -134,7 +134,7 @@ export const loader2 = (maipl: MR.t_context) =>
 
     const activeAudio = audio.get(segmentId)
     const activeImage = image.get(segmentId)
-    const activeSegment = segments.find(s => s.id == segmentId)
+    const activeSegment = segments.find((s) => s.id == segmentId)
 
     if (activeAudio == null) throw Error(`audio not found: ${segmentId}`)
     if (activeImage == null) throw Error(`image not found: ${segmentId}`)
@@ -228,7 +228,7 @@ function NoteProvider(props: { children: R.ReactNode }) {
   }, [loaderData.role])
   const canDelete: Specviz.Note.Context<AppContext.UserData>["canDelete"] =
     R.useCallback(
-      region => {
+      (region) => {
         switch (loaderData.role) {
           case Batch.t_role_code.unassigned:
           case Batch.t_role_code.viewer:
@@ -240,11 +240,11 @@ function NoteProvider(props: { children: R.ReactNode }) {
             return true
         }
       },
-      [loaderData.role, maipl.user?.id],
+      [loaderData.role, maipl.user?.id]
     )
   const canRead: Specviz.Note.Context<AppContext.UserData>["canRead"] =
     R.useCallback(
-      region => {
+      (region) => {
         switch (loaderData.role) {
           case Batch.t_role_code.unassigned:
             return false
@@ -259,11 +259,11 @@ function NoteProvider(props: { children: R.ReactNode }) {
             return true
         }
       },
-      [loaderData.role, loaderData.batch.user_id, maipl.user?.id],
+      [loaderData.role, loaderData.batch.user_id, maipl.user?.id]
     )
   const canUpdate: Specviz.Note.Context<AppContext.UserData>["canUpdate"] =
     R.useCallback(
-      region => {
+      (region) => {
         switch (loaderData.role) {
           case Batch.t_role_code.unassigned:
           case Batch.t_role_code.viewer:
@@ -275,12 +275,12 @@ function NoteProvider(props: { children: R.ReactNode }) {
             return true
         }
       },
-      [loaderData.role, maipl.user?.id],
+      [loaderData.role, maipl.user?.id]
     )
 
   const initRegions = R.useMemo(() => {
     return new Map(
-      loaderData.annotations.map(a => [a.id, supportOpenRegions(a.region)]),
+      loaderData.annotations.map((a) => [a.id, supportOpenRegions(a.region)])
     )
   }, [loaderData.annotations])
 
@@ -326,20 +326,18 @@ function LoadRegionsEffect() {
   R.useEffect(() => {
     note.reset(
       new Map(
-        loaderData.annotations.map(a => [a.id, supportOpenRegions(a.region)]),
-      ),
+        loaderData.annotations.map((a) => [a.id, supportOpenRegions(a.region)])
+      )
     )
   }, [loaderData.annotations, note.reset])
   return <></>
 }
 
-function FxProvider(props: {
-  children: React.ReactNode
-}) {
+function FxProvider(props: { children: React.ReactNode }) {
   const app = AppContext.useContext()
   const note = Specviz.Note.useContext()
   const fn: Specviz.Audio.TransformFxProps["fn"] = R.useCallback(
-    fxContext => {
+    (fxContext) => {
       const target = app.focus ? note.regions.get(app.focus) ?? null : null
       return target == null
         ? fxContext
@@ -350,7 +348,7 @@ function FxProvider(props: {
             loop: [target.x, target.x + target.width],
           }
     },
-    [app.focus, note.regions],
+    [app.focus, note.regions]
   )
   return <Specviz.Audio.TransformFx children={props.children} fn={fn} />
 }
@@ -362,7 +360,7 @@ function BaseToolProvider(props: { children: R.ReactNode }) {
       // todo: bug if zoomed, when clicking in navigator, gives relative time
       audio.transport.seek(unit.x - xaxis.min)
     },
-    [audio.transport.seek],
+    [audio.transport.seek]
   )
   return (
     <Specviz.Action.Provider
@@ -382,7 +380,7 @@ function HorizontalAxisToolProvider(props: { children: R.ReactNode }) {
         viewport.zoomScroll(-dy, 0)
       }
     },
-    [viewport.zoomScroll],
+    [viewport.zoomScroll]
   )
   return <Specviz.Action.Provider children={props.children} onWheel={onWheel} />
 }
@@ -397,7 +395,7 @@ function VerticalAxisToolProvider(props: { children: R.ReactNode }) {
         viewport.zoomScroll(0, -dy)
       }
     },
-    [viewport.zoomScroll],
+    [viewport.zoomScroll]
   )
   return <Specviz.Action.Provider children={props.children} onWheel={onWheel} />
 }
@@ -427,13 +425,13 @@ function NavigatorToolProvider(props: { children: R.ReactNode }) {
       viewport.scrollTo,
       viewport.state.zoom.x,
       viewport.state.zoom.y,
-    ],
+    ]
   )
   const onDrag: Specviz.Action.Handler["onDrag"] = R.useCallback(
     ({ dx, dy, event }) => {
       viewport.scroll(dx * viewport.state.zoom.x, dy * viewport.state.zoom.y)
     },
-    [viewport.scroll, viewport.state.zoom.x, viewport.state.zoom.y],
+    [viewport.scroll, viewport.state.zoom.x, viewport.state.zoom.y]
   )
   const onWheel: Specviz.Action.Handler["onWheel"] = R.useCallback(
     ({ dx, dy, event }) => {
@@ -443,7 +441,7 @@ function NavigatorToolProvider(props: { children: R.ReactNode }) {
         viewport.scroll(-dx, -dy)
       }
     },
-    [viewport.zoomScroll, viewport.scroll],
+    [viewport.zoomScroll, viewport.scroll]
   )
   return (
     <Specviz.Action.Provider
@@ -455,9 +453,7 @@ function NavigatorToolProvider(props: { children: R.ReactNode }) {
   )
 }
 
-function VisualizationToolProvider(props: {
-  children: R.ReactNode
-}) {
+function VisualizationToolProvider(props: { children: R.ReactNode }) {
   const schema = SchemaContext.useContext()
   const app = AppContext.useContext()
   const maipl = MR.useMaipl()
@@ -471,7 +467,7 @@ function VisualizationToolProvider(props: {
         viewport.scroll(dx, dy)
       }
     },
-    [viewport.zoomScroll, viewport.scroll],
+    [viewport.zoomScroll, viewport.scroll]
   )
   const action: Specviz.Action.Context = R.useMemo(() => {
     switch (app.tool) {
@@ -482,7 +478,7 @@ function VisualizationToolProvider(props: {
               abs,
               Specviz.Note.selectionMode(event),
               xaxis,
-              yaxis,
+              yaxis
             )
           },
           onRect: ({ unit, rel, abs, xaxis, yaxis, event }) => {
@@ -508,7 +504,7 @@ function VisualizationToolProvider(props: {
                   user_id: maipl.user?.id,
                 },
               },
-              { autoSelect: true },
+              { autoSelect: true }
             )
           },
           onWheel,
@@ -520,7 +516,7 @@ function VisualizationToolProvider(props: {
               abs,
               Specviz.Note.selectionMode(event),
               xaxis,
-              yaxis,
+              yaxis
             )
           },
           onRect: ({ unit, rel, abs, xaxis, yaxis, event }) => {
@@ -528,7 +524,7 @@ function VisualizationToolProvider(props: {
               abs,
               Specviz.Note.selectionMode(event),
               xaxis,
-              yaxis,
+              yaxis
             )
           },
           onWheel,
@@ -540,7 +536,7 @@ function VisualizationToolProvider(props: {
               abs,
               event.ctrlKey || event.metaKey
                 ? Specviz.Viewport.ZoomDirection.out
-                : Specviz.Viewport.ZoomDirection.in,
+                : Specviz.Viewport.ZoomDirection.in
             )
           },
           onRect: ({ unit, rel, abs, xaxis, yaxis, event }) => {
@@ -556,14 +552,14 @@ function VisualizationToolProvider(props: {
             } else {
               note.move(
                 note.selection,
-                rect =>
+                (rect) =>
                   Rect.move(
                     rect,
                     dx / viewport.state.zoom.x,
-                    dy / viewport.state.zoom.y,
+                    dy / viewport.state.zoom.y
                   ),
                 xaxis,
-                yaxis,
+                yaxis
               )
             }
           },
@@ -591,7 +587,7 @@ function VisualizationToolProvider(props: {
 
 export function Component() {
   const loaderData = RR.useLoaderData() as LoaderData
-  const panelStyle: M.SxProps = { height: "35vh", overflow: "auto" }
+  const panelStyle: M.SxProps = { height: "40vh", overflow: "auto" }
   const [showFilters, setShowFilters] = R.useState(false)
   return (
     <Provider>
@@ -603,32 +599,41 @@ export function Component() {
         }}
       >
         <Grid xs={12}>
-          <M.Stack direction="row">
+          <M.Stack direction="row" spacing={2}>
             <M.Typography variant="h5">
               {loaderData.batch.batch_name}
             </M.Typography>
             <M.Stack flexGrow={5} />
-            <CopyPasteContext.Provider>
-              <CopyButton />
-              <PasteButton />
-              <PasteConfigButton />
-              <DeleteButton />
-            </CopyPasteContext.Provider>
-            <M.Stack flexGrow={1} />
-            <UndoButton />
-            <RedoButton />
-            <SaveButton />
+
+            {/* View & Navigation Group */}
+            <M.Stack direction="row" spacing={1}>
+              <ShortcutsMenu />
+              <ToolPalette direction="row" />
+              <AudioControls direction="row" />
+            </M.Stack>
+            <M.Divider orientation="vertical" flexItem />
+
+            {/* Annotation Management Group */}
+            <M.Stack direction="row" spacing={1}>
+              <CopyPasteContext.Provider>
+                <CopyButton />
+                <PasteButton />
+                <PasteConfigButton />
+                <DeleteButton />
+              </CopyPasteContext.Provider>
+            </M.Stack>
+            <M.Divider orientation="vertical" flexItem />
+
+            {/* History & Save Group */}
+            <M.Stack direction="row" spacing={1}>
+              <UndoButton />
+              <RedoButton />
+              <SaveButton />
+            </M.Stack>
           </M.Stack>
         </Grid>
         <Grid xs={12}>
           <VisualizationTool />
-        </Grid>
-        <Grid xs={12}>
-          <M.Stack direction="row" flexShrink={0}>
-            <AudioControls direction="row" />
-            <M.Stack flexGrow={1} />
-            <ToolPalette direction="row" />
-          </M.Stack>
         </Grid>
         <Grid xs={4}>
           <SegmentList sx={panelStyle} />
@@ -707,9 +712,7 @@ function VisualizationTool() {
   )
 }
 
-function SegmentList(props: {
-  sx?: M.SxProps
-}) {
+function SegmentList(props: { sx?: M.SxProps }) {
   const loaderData = RR.useLoaderData() as LoaderData
   return (
     <Panel
@@ -717,7 +720,7 @@ function SegmentList(props: {
       sx={props.sx}
       contents={
         <M.List disablePadding>
-          {loaderData.segments.map(s => (
+          {loaderData.segments.map((s) => (
             <M.ListItem disablePadding key={s.id}>
               <M.ListItemButton
                 component={RR.Link}
@@ -738,7 +741,7 @@ function SegmentList(props: {
 }
 
 function MyAnnotationSvg(
-  props: Specviz.Note.AnnotationProps<AppContext.UserData>,
+  props: Specviz.Note.AnnotationProps<AppContext.UserData>
 ) {
   const lines = props.selected
     ? [
@@ -746,11 +749,11 @@ function MyAnnotationSvg(
           props.region?.properties?.score ?? 0
         }`,
         `${Format.timestamp(props.region.x)} - ${Format.timestamp(
-          props.region.x + props.region.width,
+          props.region.x + props.region.width
         )}`,
         props.region.yunit == "hertz"
           ? `${Format.hz(props.region.y)} - ${Format.hz(
-              props.region.y + props.region.height,
+              props.region.y + props.region.height
             )}`
           : "",
       ]
@@ -871,7 +874,7 @@ function SaveButton() {
     mutationFn: (vars: Parameters<typeof Annotation.updateSegment>) =>
       Annotation.updateSegment(...vars),
     onError: (err, vars) => {
-      notify(onClose => (
+      notify((onClose) => (
         <M.Alert onClose={onClose} severity="error">
           Error: Could not save annotations
         </M.Alert>
@@ -883,8 +886,8 @@ function SaveButton() {
     onSettled: () => {
       saveMutation.reset()
     },
-    onSuccess: segments => {
-      notify(onClose => (
+    onSuccess: (segments) => {
+      notify((onClose) => (
         <M.Alert onClose={onClose} severity="success">
           Success: Saved {segments.length} annotations
         </M.Alert>
@@ -908,7 +911,7 @@ function SaveButton() {
       maipl.client,
       loaderData.batch.id,
       loaderData.active.segment.id,
-      Array.from(note.regions.values(), r => ({
+      Array.from(note.regions.values(), (r) => ({
         id: r.id,
         created_at: new Date(),
         region: r,
@@ -922,6 +925,118 @@ function SaveButton() {
       onClick={() => onSave()}
       title="Save Batch"
     />
+  )
+}
+
+function ShortcutsMenu() {
+  const [anchorEl, setAnchorEl] = R.useState<null | HTMLElement>(null)
+  const open = Boolean(anchorEl)
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleClose = () => {
+    setAnchorEl(null)
+  }
+
+  return (
+    <>
+      <MR.ActionButton
+        children={<I.Keyboard />}
+        onClick={handleClick}
+        title="Keyboard Shortcuts"
+      />
+      <M.Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        onClick={handleClose}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+      >
+        <M.MenuItem>
+          <M.Typography variant="subtitle2" color="primary">
+            Tool Selection
+          </M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>A - Annotate</M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>S - Select</M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>D - Zoom</M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>F - Move</M.Typography>
+        </M.MenuItem>
+        <M.Divider />
+        <M.MenuItem>
+          <M.Typography variant="subtitle2" color="primary">
+            Annotation Movement
+          </M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>← - Move Left</M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>→ - Move Right</M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>↑ - Move Up</M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>↓ - Move Down</M.Typography>
+        </M.MenuItem>
+        <M.Divider />
+        <M.MenuItem>
+          <M.Typography variant="subtitle2" color="primary">
+            Audio Controls
+          </M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>Z - Seek to Start</M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>X - Play</M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>C - Stop</M.Typography>
+        </M.MenuItem>
+        <M.Divider />
+        <M.MenuItem>
+          <M.Typography variant="subtitle2" color="primary">
+            General
+          </M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>Esc - Deselect</M.Typography>
+        </M.MenuItem>
+        <M.Divider />
+        <M.MenuItem>
+          <M.Typography variant="subtitle2" color="primary">
+            Mouse Controls
+          </M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>Alt + Mouse Wheel - Zoom</M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>Ctrl/Cmd + Click - Zoom Out</M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>Click - Zoom In</M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>Drag - Pan/Move</M.Typography>
+        </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>Right Click - Seek to Position</M.Typography>
+        </M.MenuItem>
+      </M.Menu>
+    </>
   )
 }
 

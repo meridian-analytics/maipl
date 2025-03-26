@@ -1,24 +1,28 @@
 import * as Audio from "@meridian-analytics/specviz/audio"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
+import * as MR from "@maipl/react"
 
 export default function AudioControls(props: M.StackProps) {
   const audio = Audio.useContext()
   return (
     <M.Stack {...props}>
-      <M.Button
-        onClick={_ => audio.transport.seek(0)}
+      <MR.ActionButton
+        onClick={(_) => audio.transport.seek(0)}
         children={<I.SkipPrevious />}
+        title="Seek to Start (Z)"
       />
-      <M.Button
-        onClick={_ => audio.transport.play()}
+      <MR.ActionButton
+        onClick={(_) => audio.transport.play()}
         className={audio.state.pause ? "" : "active"}
         children={<I.PlayArrow />}
+        title="Play (X)"
       />
-      <M.Button
-        onClick={_ => audio.transport.stop()}
+      <MR.ActionButton
+        onClick={(_) => audio.transport.stop()}
         className={audio.state.pause ? "active" : ""}
         children={<I.Stop />}
+        title="Stop (C)"
       />
     </M.Stack>
   )
