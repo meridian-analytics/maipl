@@ -16,6 +16,7 @@ import {
   MelSpectrogramSchema,
   MelSpectrogramUiSchema,
 } from "./schema/BatchParametersSchema"
+import * as I from "@mui/icons-material"
 
 export enum Tab {
   files = "files",
@@ -87,35 +88,29 @@ export default function ShowBatch(props: ShowBatchProps) {
   const [_searchParams, setSearchParams] = RR.useSearchParams()
 
   // field: name
-  const [name, setName] = R.useState(props.batch.batch_name)
+  const [name] = R.useState(props.batch.batch_name)
 
   // field: created_at
-  const [description, setDescription] = R.useState(props.batch.description)
+  const [description] = R.useState(props.batch.description)
 
   // field: parameters (for spectrogram)
-  const [parameters, setParameters] = R.useState(props.batch.parameters)
-  const [spectrogramType, setSpectrogramType] = R.useState<
-    "MagSpectrogram" | "MelSpectrogram"
-  >(
+  const [parameters] = R.useState(props.batch.parameters)
+  const [spectrogramType] = R.useState<"MagSpectrogram" | "MelSpectrogram">(
     () =>
       (props.batch.parameters as { type: "MagSpectrogram" | "MelSpectrogram" })
         .type
   )
 
   // field: annotation_file
-  const [annotationFile, _setAnnotationFile] = R.useState<null | number>(
+  const [annotationFile] = R.useState<null | number>(
     props.batch.annotation_file
   )
 
   // field: segment_parameters
-  const [segmentParameters, setSegmentParameters] = R.useState(
-    props.batch.segment_parameters
-  )
+  const [segmentParameters] = R.useState(props.batch.segment_parameters)
 
   // field: share_to
-  const [shareTo, setShareTo] = R.useState<Map<number, Batch.t_role_code>>(
-    () => new Map()
-  )
+  const [shareTo] = R.useState<Map<number, Batch.t_role_code>>(() => new Map())
 
   const table = MR.Files.useTable({
     selection: R.useMemo(
@@ -135,87 +130,40 @@ export default function ShowBatch(props: ShowBatchProps) {
     size: table.pagination.pageSize,
   })
 
-  const updateMutation = RQ.useMutation({
-    mutationFn: (vars: Parameters<typeof Batch.patch>) => Batch.patch(...vars),
-    onError: (err, vars) => {
-      notify((onClose) => (
-        <M.Alert onClose={onClose} severity="error">
-          Error: Could not update batch
-        </M.Alert>
-      ))
-      if (import.meta.env["DEV"]) {
-        console.error("ShowBatch update error", err, vars)
-      }
-    },
-    onSettled: () => {
-      updateMutation.reset()
-    },
-    onSuccess: () => {
-      notify((onClose) => (
-        <M.Alert onClose={onClose} severity="success">
-          Success: updated batch{" "}
-          {
-            <M.Link
-              component={RR.Link}
-              to={`/batches/${props.batch.id}`}
-              children={`#${props.batch.id}`}
-            />
-          }
-        </M.Alert>
-      ))
-      queryClient.refetchQueries({ queryKey: ["batches"] })
-      props.onClose()
-    },
-  })
-
-  const onUpdate = () => {
-    if (updateMutation.isIdle) {
-      return updateMutation.mutateAsync([
-        maipl.client,
-        {
-          id: props.batch.id,
-          batch_name: name,
-          description,
-          filelist: Array.from(table.selection.keys()),
-          parameters,
-          segment_parameters: segmentParameters,
-          shared_to: Array.from(shareTo.entries()),
-        },
-      ])
-    }
-  }
-
   return (
-    <MR.Modal onClose={props.onClose} sx={{ minWidth: 700 }}>
-      <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
-        <M.Typography variant="h6">
-          {props.batch == null ? "Create new batch ..." : name}
-        </M.Typography>
+    <MR.Modal
+      onClose={props.onClose}
+      sx={{
+        width: "1000px",
+        maxWidth: "60vw",
+        height: "90vh",
+      }}
+    >
+      <M.Stack
+        sx={{
+          width: "100%",
+          height: "100%",
+          overflow: "hidden",
+        }}
+      >
+        <M.Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <M.Typography variant="h6">
+            {props.batch == null ? "Create new batch ..." : name}
+          </M.Typography>
+          <M.IconButton onClick={props.onClose} title="Close">
+            <I.Close />
+          </M.IconButton>
+        </M.Stack>
         <M.Stack component={M.Paper} padding={2}>
-          <M.TextField
-            label="Batch Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <M.TextField
-            label="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <M.TextField label="Batch Name" value={name} disabled />
+          <M.TextField label="Description" value={description} disabled />
           <M.FormControl fullWidth>
             <M.InputLabel>Spectrogram Type</M.InputLabel>
-            <M.Select
-              value={spectrogramType}
-              onChange={(e) => {
-                const newType = e.target.value as
-                  | "MagSpectrogram"
-                  | "MelSpectrogram"
-                setSpectrogramType(newType)
-                setParameters({ type: newType })
-              }}
-              label="Spectrogram Type"
-              disabled={(props.batch.allow_change_settings ?? true) === false}
-            >
+            <M.Select value={spectrogramType} disabled label="Spectrogram Type">
               <M.MenuItem value="MagSpectrogram">
                 Magnitude Spectrogram
               </M.MenuItem>
@@ -238,7 +186,7 @@ export default function ShowBatch(props: ShowBatchProps) {
             fullWidth
           />
         </M.Stack>
-        <M.Stack direction="row" flexGrow={1} justifyContent="center">
+        <M.Stack direction="row" justifyContent="center">
           <M.Tabs
             indicatorColor="primary"
             onChange={(_e, value) => setSearchParams({ tab: value })}
@@ -250,120 +198,149 @@ export default function ShowBatch(props: ShowBatchProps) {
             <M.Tab label="Share" value={Tab.share} />
           </M.Tabs>
         </M.Stack>
-        {props.tab == Tab.files && (
-          <M.Stack>
-            <M.Stack direction="row" alignItems="center">
-              <M.TextField
-                label="Path"
-                onChange={(e) => table.filter.set("path", e.target.value)}
-                placeholder="path/to/folder"
-                value={table.filter.get("path")}
-              />
-              <M.TextField
-                label="Tag"
-                onChange={(e) => table.filter.set("tag", e.target.value)}
-                placeholder="my-tag"
-                value={table.filter.get("tag")}
-              />
-              <M.Stack flexGrow={1} />
-            </M.Stack>
-            <MR.Files.Table
-              rows={files.data}
-              count={files.count}
-              pagination={table.pagination}
-              selection={table.selection}
-              setPagination={table.setPagination}
-              setSelection={table.setSelection}
-              visibility={{
-                basename: false,
-                dirname: false,
-                extname: false,
-                channels: false,
-                sample_rate: false,
-                created_at: true,
-              }}
-            />
-          </M.Stack>
-        )}
-        {props.tab == Tab.segments && (
-          <M.Stack>
-            <M.TextField
-              label="Length (seconds)"
-              onChange={(e) =>
-                setSegmentParameters((prev) => ({
-                  ...prev,
-                  length: Math.max(1, Number(e.target.value) || 60),
-                }))
-              }
-              type="number"
-              value={segmentParameters.length}
-            />
-            <M.TextField
-              label="Step (seconds)"
-              onChange={(e) =>
-                setSegmentParameters((prev) => ({
-                  ...prev,
-                  step:
-                    e.target.value == ""
-                      ? undefined
-                      : Math.max(1, Number(e.target.value) || 60),
-                }))
-              }
-              type="number"
-              value={segmentParameters.step ?? segmentParameters.length}
-            />
-            <MR.Switch
-              value={segmentParameters.pad}
-              setValue={(v) =>
-                setSegmentParameters((prev) => ({
-                  ...prev,
-                  pad: typeof v == "function" ? v(prev.pad) : v,
-                }))
-              }
-              label="Pad"
-            />
-          </M.Stack>
-        )}
-        {props.tab == Tab.spectrogram && (
-          <M.Stack
-            component={M.Paper}
+        <M.Box
+          sx={{
+            width: "100%",
+            flexGrow: 1,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0, // This is important for flex child to respect parent height
+          }}
+        >
+          <M.Box
             sx={{
+              width: "100%",
               flexGrow: 1,
-              overflowY: "auto",
-              overflowX: "hidden",
-              paddingX: 2,
+              overflow: "auto",
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0, // This is important for flex child to respect parent height
             }}
           >
-            <Form
-              children=" "
-              formData={parameters}
-              onChange={(e) =>
-                setParameters({ ...e.formData, type: spectrogramType })
-              }
-              readonly={(props.batch.allow_change_settings ?? true) === false}
-              schema={
-                spectrogramType === "MagSpectrogram"
-                  ? MagSpectrogramSchema
-                  : MelSpectrogramSchema
-              }
-              uiSchema={
-                spectrogramType === "MagSpectrogram"
-                  ? MagSpectrogramUiSchema
-                  : MelSpectrogramUiSchema
-              }
-              validator={validator}
-            />
-          </M.Stack>
-        )}
-        {props.tab == Tab.share && (
-          <BatchShare
-            batch={props.batch}
-            shareTo={shareTo}
-            setShareTo={setShareTo}
-            users={props.users}
-          />
-        )}
-        <M.Stack direction="row">
+            {props.tab == Tab.files && (
+              <M.Stack sx={{ flexGrow: 1, width: "100%", overflow: "hidden" }}>
+                <M.Stack direction="row" alignItems="center">
+                  <M.TextField
+                    label="Path"
+                    disabled
+                    placeholder="path/to/folder"
+                    value={table.filter.get("path")}
+                  />
+                  <M.TextField
+                    label="Tag"
+                    disabled
+                    placeholder="my-tag"
+                    value={table.filter.get("tag")}
+                  />
+                  <M.Stack flexGrow={1} />
+                </M.Stack>
+                <M.Box sx={{ width: "100%", overflow: "auto" }}>
+                  <MR.Files.Table
+                    rows={files.data}
+                    count={files.count}
+                    pagination={table.pagination}
+                    selection={table.selection}
+                    setPagination={table.setPagination}
+                    setSelection={table.setSelection}
+                    visibility={{
+                      basename: false,
+                      dirname: false,
+                      extname: false,
+                      channels: false,
+                      sample_rate: false,
+                      created_at: true,
+                    }}
+                  />
+                </M.Box>
+              </M.Stack>
+            )}
+            {props.tab == Tab.segments && (
+              <M.Stack
+                component={M.Paper}
+                sx={{
+                  flexGrow: 1,
+                  width: "100%",
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  padding: 2,
+                }}
+              >
+                <M.TextField
+                  label="Length (seconds)"
+                  disabled
+                  type="number"
+                  value={segmentParameters.length}
+                />
+                <M.TextField
+                  label="Step (seconds)"
+                  disabled
+                  type="number"
+                  value={segmentParameters.step ?? segmentParameters.length}
+                />
+                <MR.Switch value={segmentParameters.pad} disabled label="Pad" />
+              </M.Stack>
+            )}
+            {props.tab == Tab.spectrogram && (
+              <M.Stack
+                component={M.Paper}
+                sx={{
+                  flexGrow: 1,
+                  width: "100%",
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  padding: 2,
+                }}
+              >
+                <Form
+                  children=" "
+                  formData={parameters}
+                  readonly={true}
+                  schema={
+                    spectrogramType === "MagSpectrogram"
+                      ? MagSpectrogramSchema
+                      : MelSpectrogramSchema
+                  }
+                  uiSchema={
+                    spectrogramType === "MagSpectrogram"
+                      ? MagSpectrogramUiSchema
+                      : MelSpectrogramUiSchema
+                  }
+                  validator={validator}
+                />
+              </M.Stack>
+            )}
+            {props.tab == Tab.share && (
+              <M.Stack
+                component={M.Paper}
+                sx={{
+                  flexGrow: 1,
+                  width: "100%",
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  padding: 2,
+                }}
+              >
+                <BatchShare
+                  batch={props.batch}
+                  shareTo={shareTo}
+                  setShareTo={() => {}}
+                  users={props.users}
+                  readOnly
+                />
+              </M.Stack>
+            )}
+          </M.Box>
+        </M.Box>
+        <M.Stack
+          direction="row"
+          sx={{
+            mt: 2,
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexShrink: 0, // Prevent the footer from shrinking
+          }}
+        >
           <M.Typography>
             Selection: {table.selection.size} files (
             {F.filesize(
@@ -374,14 +351,6 @@ export default function ShowBatch(props: ShowBatchProps) {
             )}
             )
           </M.Typography>
-          <M.Stack flexGrow={1} />
-          <M.Button children="Close" onClick={props.onClose} />
-          <M.Button
-            children="Save"
-            disabled={updateMutation.isPending}
-            onClick={onUpdate}
-            variant="contained"
-          />
         </M.Stack>
       </M.Stack>
     </MR.Modal>

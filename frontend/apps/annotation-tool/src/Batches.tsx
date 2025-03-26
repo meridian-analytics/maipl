@@ -136,7 +136,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
       />
       <M.Divider />
       <M.MenuItem
-        children="Settings"
+        children="View Settings"
         component={RR.Link}
         disabled={props.batch.user_id != maipl.user?.id} // todo: batchpermissions
         to={`/batches/${props.batch.id}`}
