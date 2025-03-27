@@ -8,6 +8,8 @@ import type * as Specviz from "@meridian-analytics/specviz"
 import * as JSF from "@rjsf/utils"
 import * as R from "react"
 import * as Z from "zod"
+import * as M from "@mui/material"
+import * as MR from "@maipl/react"
 
 export const OptionsSchema = Z.array(
   Z.object({
@@ -158,7 +160,11 @@ export function Provider(props: ProviderProps) {
       return MaiplSchemaFromJson.parse(props.jsonSchema)
     } catch (err) {
       if (import.meta.env["DEV"]) {
-        console.warn("SchemaContext parse error. Using default schema", err)
+        if (err instanceof Z.ZodError) {
+          console.warn("Schema validation errors:", err.errors)
+        } else {
+          console.warn("Schema parse error:", err)
+        }
       }
       return {
         schema: defaultContext.schema,
@@ -166,6 +172,7 @@ export function Provider(props: ProviderProps) {
       }
     }
   }, [props.jsonSchema])
+
   const defaults = R.useMemo<Context["defaults"]>(() => {
     const res: Context["defaults"] = new Map()
     for (const [key, field] of Object.entries(schema.properties)) {
@@ -173,6 +180,7 @@ export function Provider(props: ProviderProps) {
     }
     return res
   }, [schema.properties])
+
   const labels: Context["labels"] = R.useMemo(
     () =>
       new Map(
@@ -201,6 +209,148 @@ export function Provider(props: ProviderProps) {
     },
     [labels, uiSchema]
   )
+
+  // Show notification if using default schema
+  const notify = MR.useNotify()
+  const hasShownNotification = R.useRef(false)
+
+  R.useEffect(() => {
+    if (schema === defaultContext.schema && !hasShownNotification.current) {
+      hasShownNotification.current = true
+      try {
+        // Try to parse the schema to get validation errors
+        MaiplSchemaFromJson.parse(props.jsonSchema)
+      } catch (err) {
+        if (err instanceof Z.ZodError) {
+          notify(
+            (onClose) => (
+              <M.Alert
+                severity="warning"
+                onClose={onClose}
+                sx={{
+                  "& .MuiAlert-message": {
+                    width: "100%",
+                  },
+                }}
+                action={
+                  <M.Button color="inherit" size="small" onClick={onClose}>
+                    Dismiss
+                  </M.Button>
+                }
+              >
+                <M.Typography variant="subtitle1" gutterBottom>
+                  Invalid Schema Configuration
+                </M.Typography>
+                <M.Typography variant="body2" paragraph>
+                  The provided schema did not pass validation. The system is
+                  using the default schema. Here are the validation errors:
+                </M.Typography>
+                <M.List dense>
+                  {err.errors.map((error, index) => (
+                    <M.ListItem key={index}>
+                      <M.ListItemText
+                        primary={error.path.join(".")}
+                        secondary={error.message}
+                      />
+                    </M.ListItem>
+                  ))}
+                </M.List>
+                <M.Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 2 }}
+                >
+                  Using default schema with the following fields:
+                </M.Typography>
+                <M.List dense>
+                  <M.ListItem>
+                    <M.ListItemText
+                      primary="label"
+                      secondary="String field with options: Zero, One"
+                    />
+                  </M.ListItem>
+                  <M.ListItem>
+                    <M.ListItemText
+                      primary="score"
+                      secondary="Number field (read-only) with range: 0 to 1"
+                    />
+                  </M.ListItem>
+                </M.List>
+                <M.Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 2 }}
+                >
+                  Please check the schema documentation for valid configuration
+                  options.
+                </M.Typography>
+              </M.Alert>
+            ),
+            { autoHideDuration: 30000 }
+          )
+        } else {
+          // Handle non-Zod errors
+          notify(
+            (onClose) => (
+              <M.Alert
+                severity="warning"
+                onClose={onClose}
+                sx={{
+                  "& .MuiAlert-message": {
+                    width: "100%",
+                  },
+                }}
+                action={
+                  <M.Button color="inherit" size="small" onClick={onClose}>
+                    Dismiss
+                  </M.Button>
+                }
+              >
+                <M.Typography variant="subtitle1" gutterBottom>
+                  Schema Configuration Error
+                </M.Typography>
+                <M.Typography variant="body2" paragraph>
+                  There was an error parsing the schema configuration. The
+                  system is using the default schema.
+                </M.Typography>
+                <M.Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 2 }}
+                >
+                  Using default schema with the following fields:
+                </M.Typography>
+                <M.List dense>
+                  <M.ListItem>
+                    <M.ListItemText
+                      primary="label"
+                      secondary="String field with options: Zero, One"
+                    />
+                  </M.ListItem>
+                  <M.ListItem>
+                    <M.ListItemText
+                      primary="score"
+                      secondary="Number field (read-only) with range: 0 to 1"
+                    />
+                  </M.ListItem>
+                </M.List>
+                <M.Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 2 }}
+                >
+                  Please check the schema documentation for valid configuration
+                  options.
+                </M.Typography>
+              </M.Alert>
+            ),
+            { autoHideDuration: 30000 }
+          )
+        }
+      }
+    }
+  }, [schema, notify, props.jsonSchema])
+
   return (
     <Context.Provider
       children={props.children}
