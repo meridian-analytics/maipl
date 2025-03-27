@@ -22,7 +22,7 @@ type t_context = {
 
 type t_router = (
   context: t_context,
-  queryClient: RQ.QueryClient,
+  queryClient: RQ.QueryClient
 ) => Array<RR.RouteObject>
 
 const MaiplContext = R.createContext<t_context>({
@@ -40,6 +40,10 @@ function MaiplProvider(props: {
   basename?: string
   poolSize?: number
   router: t_router
+  future?: {
+    v7_startTransition: boolean
+    v7_relativeSplatPath: boolean
+  }
 }) {
   return (
     <MaiplRootProvider>
@@ -47,6 +51,7 @@ function MaiplProvider(props: {
         basename={props.basename}
         poolSize={props.poolSize}
         router={props.router}
+        future={props.future}
       />
     </MaiplRootProvider>
   )
@@ -75,11 +80,15 @@ function MaiplContextProvider(props: {
   basename?: string
   poolSize?: number
   router: t_router
+  future?: {
+    v7_startTransition: boolean
+    v7_relativeSplatPath: boolean
+  }
 }) {
   // tokens
   const [access, setAccess] = R.useState(() => localStorage.getItem("access"))
   const [refresh, setRefresh] = R.useState(() =>
-    localStorage.getItem("refresh"),
+    localStorage.getItem("refresh")
   )
 
   // client refresh and retry
@@ -115,7 +124,7 @@ function MaiplContextProvider(props: {
         return undefined as R
       }
     },
-    [refresh],
+    [refresh]
   )
 
   // client
@@ -129,7 +138,7 @@ function MaiplContextProvider(props: {
             },
             onError: refreshAndRetry,
           }),
-    [access, refreshAndRetry],
+    [access, refreshAndRetry]
   )
 
   // user
@@ -181,13 +190,14 @@ function MaiplContextProvider(props: {
         ],
     {
       basename: props.basename || import.meta.env["BASE_URL"] || "/",
-    },
+      future: props.future,
+    }
   )
 
   // provider
   return (
     <MaiplContext.Provider value={context}>
-      <RR.RouterProvider router={router} />
+      <RR.RouterProvider router={router} future={props.future} />
       {K.MAIPL_REACT_QUERY_DEVTOOLS && (
         <ReactQueryDevtools buttonPosition="bottom-left" />
       )}
@@ -214,8 +224,8 @@ function BeginAuthFlow() {
           next: RR.useHref(RR.useLocation()),
         })}`,
       }),
-      window.location.href,
-    ),
+      window.location.href
+    )
   )
   R.useEffect(() => {
     async function redirect() {
@@ -230,7 +240,7 @@ function BeginAuthFlow() {
       })
       window.location.replace(`${K.MAIPL_AUTH_FRONTEND}/signin?${query}`)
     }
-    redirect().catch(err => {
+    redirect().catch((err) => {
       console.error("failed to redirect to login", err)
     })
   }, [next])
@@ -268,7 +278,7 @@ function CompleteAuthFlow() {
       // redirect
       window.location.replace(next)
     }
-    redirect().catch(err => {
+    redirect().catch((err) => {
       console.error("failed to redirect after login", err)
     })
   }, [next, code, verifier])

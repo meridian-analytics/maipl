@@ -8,7 +8,15 @@ import NewBatch from "./NewBatch"
 import * as ShowBatch from "./ShowBatch"
 
 export default function App() {
-  return <MR.MaiplProvider router={router} />
+  return (
+    <MR.MaiplProvider
+      router={router}
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    />
+  )
 }
 
 function Layout() {
