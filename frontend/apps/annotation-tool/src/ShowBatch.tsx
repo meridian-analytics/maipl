@@ -16,7 +16,6 @@ import {
   MelSpectrogramSchema,
   MelSpectrogramUiSchema,
 } from "./schema/BatchParametersSchema"
-import * as I from "@mui/icons-material"
 
 export enum Tab {
   files = "files",
@@ -131,33 +130,11 @@ export default function ShowBatch(props: ShowBatchProps) {
   })
 
   return (
-    <MR.Modal
-      onClose={props.onClose}
-      sx={{
-        width: "1000px",
-        maxWidth: "60vw",
-        height: "90vh",
-      }}
-    >
-      <M.Stack
-        sx={{
-          width: "100%",
-          height: "100%",
-          overflow: "hidden",
-        }}
-      >
-        <M.Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <M.Typography variant="h6">
-            {props.batch == null ? "Create new batch ..." : name}
-          </M.Typography>
-          <M.IconButton onClick={props.onClose} title="Close">
-            <I.Close />
-          </M.IconButton>
-        </M.Stack>
+    <MR.Modal onClose={props.onClose} sx={{ minWidth: 700 }}>
+      <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
+        <M.Typography variant="h6">
+          {props.batch == null ? "Create new batch ..." : name}
+        </M.Typography>
         <M.Stack component={M.Paper} padding={2}>
           <M.TextField label="Batch Name" value={name} disabled />
           <M.TextField label="Description" value={description} disabled />
@@ -186,7 +163,7 @@ export default function ShowBatch(props: ShowBatchProps) {
             fullWidth
           />
         </M.Stack>
-        <M.Stack direction="row" justifyContent="center">
+        <M.Stack direction="row" flexGrow={1} justifyContent="center">
           <M.Tabs
             indicatorColor="primary"
             onChange={(_e, value) => setSearchParams({ tab: value })}
@@ -198,149 +175,96 @@ export default function ShowBatch(props: ShowBatchProps) {
             <M.Tab label="Share" value={Tab.share} />
           </M.Tabs>
         </M.Stack>
-        <M.Box
-          sx={{
-            width: "100%",
-            flexGrow: 1,
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0, // This is important for flex child to respect parent height
-          }}
-        >
-          <M.Box
+        {props.tab == Tab.files && (
+          <M.Stack>
+            <M.Stack direction="row" alignItems="center">
+              <M.TextField
+                label="Path"
+                disabled
+                placeholder="path/to/folder"
+                value={table.filter.get("path")}
+              />
+              <M.TextField
+                label="Tag"
+                disabled
+                placeholder="my-tag"
+                value={table.filter.get("tag")}
+              />
+              <M.Stack flexGrow={1} />
+            </M.Stack>
+            <MR.Files.Table
+              rows={files.data}
+              count={files.count}
+              pagination={table.pagination}
+              selection={table.selection}
+              setPagination={table.setPagination}
+              setSelection={table.setSelection}
+              visibility={{
+                basename: false,
+                dirname: false,
+                extname: false,
+                channels: false,
+                sample_rate: false,
+                created_at: true,
+              }}
+            />
+          </M.Stack>
+        )}
+        {props.tab == Tab.segments && (
+          <M.Stack>
+            <M.TextField
+              label="Length (seconds)"
+              disabled
+              type="number"
+              value={segmentParameters.length}
+            />
+            <M.TextField
+              label="Step (seconds)"
+              disabled
+              type="number"
+              value={segmentParameters.step ?? segmentParameters.length}
+            />
+            <MR.Switch value={segmentParameters.pad} disabled label="Pad" />
+          </M.Stack>
+        )}
+        {props.tab == Tab.spectrogram && (
+          <M.Stack
+            component={M.Paper}
             sx={{
-              width: "100%",
               flexGrow: 1,
-              overflow: "auto",
-              display: "flex",
-              flexDirection: "column",
-              minHeight: 0, // This is important for flex child to respect parent height
+              overflowY: "auto",
+              overflowX: "hidden",
+              paddingX: 2,
             }}
           >
-            {props.tab == Tab.files && (
-              <M.Stack sx={{ flexGrow: 1, width: "100%", overflow: "hidden" }}>
-                <M.Stack direction="row" alignItems="center">
-                  <M.TextField
-                    label="Path"
-                    disabled
-                    placeholder="path/to/folder"
-                    value={table.filter.get("path")}
-                  />
-                  <M.TextField
-                    label="Tag"
-                    disabled
-                    placeholder="my-tag"
-                    value={table.filter.get("tag")}
-                  />
-                  <M.Stack flexGrow={1} />
-                </M.Stack>
-                <M.Box sx={{ width: "100%", overflow: "auto" }}>
-                  <MR.Files.Table
-                    rows={files.data}
-                    count={files.count}
-                    pagination={table.pagination}
-                    selection={table.selection}
-                    setPagination={table.setPagination}
-                    setSelection={table.setSelection}
-                    visibility={{
-                      basename: false,
-                      dirname: false,
-                      extname: false,
-                      channels: false,
-                      sample_rate: false,
-                      created_at: true,
-                    }}
-                  />
-                </M.Box>
-              </M.Stack>
-            )}
-            {props.tab == Tab.segments && (
-              <M.Stack
-                component={M.Paper}
-                sx={{
-                  flexGrow: 1,
-                  width: "100%",
-                  overflowY: "auto",
-                  overflowX: "hidden",
-                  padding: 2,
-                }}
-              >
-                <M.TextField
-                  label="Length (seconds)"
-                  disabled
-                  type="number"
-                  value={segmentParameters.length}
-                />
-                <M.TextField
-                  label="Step (seconds)"
-                  disabled
-                  type="number"
-                  value={segmentParameters.step ?? segmentParameters.length}
-                />
-                <MR.Switch value={segmentParameters.pad} disabled label="Pad" />
-              </M.Stack>
-            )}
-            {props.tab == Tab.spectrogram && (
-              <M.Stack
-                component={M.Paper}
-                sx={{
-                  flexGrow: 1,
-                  width: "100%",
-                  overflowY: "auto",
-                  overflowX: "hidden",
-                  padding: 2,
-                }}
-              >
-                <Form
-                  children=" "
-                  formData={parameters}
-                  readonly={true}
-                  schema={
-                    spectrogramType === "MagSpectrogram"
-                      ? MagSpectrogramSchema
-                      : MelSpectrogramSchema
-                  }
-                  uiSchema={
-                    spectrogramType === "MagSpectrogram"
-                      ? MagSpectrogramUiSchema
-                      : MelSpectrogramUiSchema
-                  }
-                  validator={validator}
-                />
-              </M.Stack>
-            )}
-            {props.tab == Tab.share && (
-              <M.Stack
-                component={M.Paper}
-                sx={{
-                  flexGrow: 1,
-                  width: "100%",
-                  overflowY: "auto",
-                  overflowX: "hidden",
-                  padding: 2,
-                }}
-              >
-                <BatchShare
-                  batch={props.batch}
-                  shareTo={shareTo}
-                  setShareTo={() => {}}
-                  users={props.users}
-                  readOnly
-                />
-              </M.Stack>
-            )}
-          </M.Box>
-        </M.Box>
-        <M.Stack
-          direction="row"
-          sx={{
-            mt: 2,
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexShrink: 0, // Prevent the footer from shrinking
-          }}
-        >
+            <Form
+              children=" "
+              formData={parameters}
+              readonly={true}
+              schema={
+                spectrogramType === "MagSpectrogram"
+                  ? MagSpectrogramSchema
+                  : MelSpectrogramSchema
+              }
+              uiSchema={
+                spectrogramType === "MagSpectrogram"
+                  ? MagSpectrogramUiSchema
+                  : MelSpectrogramUiSchema
+              }
+              validator={validator}
+            />
+          </M.Stack>
+        )}
+        {props.tab == Tab.share && (
+          <BatchShare
+            batch={props.batch}
+            shareTo={shareTo}
+            setShareTo={() => {}}
+            users={props.users}
+            readOnly
+          />
+        )}
+        <M.Stack direction="row">
           <M.Typography>
             Selection: {table.selection.size} files (
             {F.filesize(
@@ -351,6 +275,8 @@ export default function ShowBatch(props: ShowBatchProps) {
             )}
             )
           </M.Typography>
+          <M.Stack flexGrow={1} />
+          <M.Button children="Close" onClick={props.onClose} />
         </M.Stack>
       </M.Stack>
     </MR.Modal>
