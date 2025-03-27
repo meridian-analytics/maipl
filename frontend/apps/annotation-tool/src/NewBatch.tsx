@@ -236,8 +236,23 @@ function NewBatch(props: { onClose: () => void }) {
   }
 
   return (
-    <MR.Modal onClose={props.onClose} sx={{ minWidth: 600 }}>
-      <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
+    <MR.Modal
+      onClose={props.onClose}
+      sx={{
+        minWidth: 700,
+        width: "50vw",
+        height: "90vh",
+        maxWidth: 1200,
+        maxHeight: 900,
+      }}
+    >
+      <M.Stack
+        sx={{
+          maxHeight: "100%",
+          overflow: "hidden",
+          height: "100%",
+        }}
+      >
         <M.Typography variant="h6">Create new batch ...</M.Typography>
         <M.Stack component={M.Paper} padding={2}>
           <M.TextField
@@ -294,7 +309,15 @@ function NewBatch(props: { onClose: () => void }) {
         {tab == Tab.files &&
           selectionType == SelectionType.initial &&
           importFile == null && (
-            <M.Stack direction="row">
+            <M.Stack
+              direction="row"
+              sx={{
+                padding: 2,
+                height: "100%",
+                overflow: "hidden",
+                flexGrow: 1,
+              }}
+            >
               <M.Stack
                 component={M.Button}
                 flexGrow={1}
@@ -305,7 +328,7 @@ function NewBatch(props: { onClose: () => void }) {
                 <M.Typography>Select Files</M.Typography>
               </M.Stack>
 
-              <M.Stack sx={style.base} alignItems="center" flexGrow={1}>
+              <M.Stack sx={style.base} alignItems="center" flexGrow={3}>
                 <I.InsertDriveFileOutlined sx={{ fontSize: 50 }} />
                 <MR.Picker
                   label="IMPORT .CSV"
@@ -320,8 +343,8 @@ function NewBatch(props: { onClose: () => void }) {
         {tab == Tab.files &&
           selectionType == SelectionType.manual &&
           importFile == null && (
-            <>
-              <M.Stack direction="row" alignItems="center">
+            <M.Stack sx={{ height: "100%", overflow: "hidden", flexGrow: 2 }}>
+              <M.Stack direction="row" alignItems="center" sx={{ padding: 2 }}>
                 <M.TextField
                   label="Path"
                   onChange={(e) => table.filter.set("path", e.target.value)}
@@ -341,26 +364,32 @@ function NewBatch(props: { onClose: () => void }) {
                   onClick={() => setSelectionType(SelectionType.initial)}
                 />
               </M.Stack>
-              <MR.Files.Table
-                rows={files.data}
-                count={files.count}
-                pagination={table.pagination}
-                selection={table.selection}
-                setPagination={table.setPagination}
-                setSelection={table.setSelection}
-                visibility={{
-                  basename: false,
-                  dirname: false,
-                  extname: false,
-                  channels: false,
-                  sample_rate: false,
-                  created_at: true,
-                }}
-              />
-            </>
+              <M.Stack sx={{ flexGrow: 1, overflow: "auto", minHeight: 0 }}>
+                <MR.Files.Table
+                  rows={files.data}
+                  count={files.count}
+                  pagination={table.pagination}
+                  selection={table.selection}
+                  setPagination={table.setPagination}
+                  setSelection={table.setSelection}
+                  visibility={{
+                    basename: false,
+                    dirname: false,
+                    extname: false,
+                    channels: false,
+                    sample_rate: false,
+                    created_at: true,
+                  }}
+                />
+              </M.Stack>
+            </M.Stack>
           )}
         {tab == Tab.files && importFile && (
-          <M.Stack sx={style.base} direction="row" spacing={4}>
+          <M.Stack
+            sx={{ ...style.base, padding: 2 }}
+            direction="row"
+            spacing={4}
+          >
             <M.Stack alignItems="center">
               <I.InsertDriveFileOutlined sx={{ fontSize: 50 }} />
               <M.Typography>
@@ -382,125 +411,149 @@ function NewBatch(props: { onClose: () => void }) {
           </M.Stack>
         )}
         {tab == Tab.segments && (
-          <M.Stack>
-            <M.TextField
-              label="Length (seconds)"
-              onChange={(e) =>
-                setSegmentParameters((prev) => ({
-                  ...prev,
-                  length: Math.max(1, Number(e.target.value) || 60),
-                }))
-              }
-              type="number"
-              value={segmentParameters.length}
-            />
-            <M.TextField
-              label="Step (seconds)"
-              onChange={(e) =>
-                setSegmentParameters((prev) => ({
-                  ...prev,
-                  step:
-                    e.target.value == ""
-                      ? undefined
-                      : Math.max(1, Number(e.target.value) || 60),
-                }))
-              }
-              type="number"
-              value={segmentParameters.step ?? segmentParameters.length}
-            />
-            <MR.Switch
-              value={segmentParameters.pad}
-              setValue={(v) =>
-                setSegmentParameters((prev) => ({
-                  ...prev,
-                  pad: typeof v == "function" ? v(prev.pad) : v,
-                }))
-              }
-              label="Pad"
-            />
+          <M.Stack
+            component={M.Paper}
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+              overflowX: "hidden",
+              paddingX: 2,
+              maxHeight: "100%",
+              height: "100%",
+            }}
+          >
+            <M.Stack gap={2} sx={{ paddingTop: 4 }}>
+              <M.TextField
+                label="Length (seconds)"
+                onChange={(e) =>
+                  setSegmentParameters((prev) => ({
+                    ...prev,
+                    length: Math.max(1, Number(e.target.value) || 60),
+                  }))
+                }
+                type="number"
+                value={segmentParameters.length}
+              />
+              <M.TextField
+                label="Step (seconds)"
+                onChange={(e) =>
+                  setSegmentParameters((prev) => ({
+                    ...prev,
+                    step:
+                      e.target.value == ""
+                        ? undefined
+                        : Math.max(1, Number(e.target.value) || 60),
+                  }))
+                }
+                type="number"
+                value={segmentParameters.step ?? segmentParameters.length}
+              />
+              <MR.Switch
+                value={segmentParameters.pad}
+                setValue={(v) =>
+                  setSegmentParameters((prev) => ({
+                    ...prev,
+                    pad: typeof v == "function" ? v(prev.pad) : v,
+                  }))
+                }
+                label="Pad"
+              />
+            </M.Stack>
           </M.Stack>
         )}
         {tab === Tab.preview && (
-          <M.Box
+          <M.Stack
+            component={M.Paper}
             sx={{
               flexGrow: 1,
-              overflowY: "hidden",
-              overflowX: "auto",
+              overflowY: "auto",
+              overflowX: "hidden",
+              paddingX: 2,
+              maxHeight: "100%",
               height: "100%",
-              width: "100%",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
             }}
           >
-            {previewMutation.isPending ? (
-              <M.Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "100%",
-                }}
-              >
-                <M.CircularProgress />
-                <M.Typography variant="body2" sx={{ mt: 2 }}>
-                  Generating preview...
+            <M.Box
+              sx={{
+                height: "100%",
+                width: "100%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              {previewMutation.isPending ? (
+                <M.Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "100%",
+                  }}
+                >
+                  <M.CircularProgress />
+                  <M.Typography variant="body2" sx={{ mt: 2 }}>
+                    Generating preview...
+                  </M.Typography>
+                </M.Box>
+              ) : previewImage ? (
+                <M.Box
+                  component="img"
+                  src={previewImage}
+                  onError={(e) => {
+                    console.error("Image load error:", e)
+                    console.log("Image src:", e.target.src)
+                  }}
+                  sx={{
+                    height: "100%",
+                    width: "auto",
+                    objectFit: "contain",
+                    objectPosition: "left top",
+                  }}
+                />
+              ) : (
+                <M.Typography variant="body1">
+                  No preview available. Click the Preview button to generate
+                  one.
                 </M.Typography>
-              </M.Box>
-            ) : previewImage ? (
-              <M.Box
-                component="img"
-                src={previewImage}
-                onError={(e) => {
-                  console.error("Image load error:", e)
-                  console.log("Image src:", e.target.src)
-                }}
-                sx={{
-                  height: "100%",
-                  width: "auto",
-                  objectFit: "contain",
-                  objectPosition: "left top",
-                }}
-              />
-            ) : (
-              <M.Typography variant="body1">
-                No preview available. Click the Preview button to generate one.
-              </M.Typography>
-            )}
-          </M.Box>
+              )}
+            </M.Box>
+          </M.Stack>
         )}
-
-        <M.Stack
-          component={M.Paper}
-          sx={{
-            flexGrow: 1,
-            overflowY: "auto",
-            overflowX: "hidden",
-            paddingX: 2,
-            height: tab == Tab.parameters ? "auto" : 0,
-          }}
-        >
-          <Form
-            children=" "
-            formData={parameters}
-            onChange={(e) =>
-              setParameters({ ...e.formData, type: spectrogramType })
-            }
-            schema={
-              spectrogramType === "MagSpectrogram"
-                ? MagSpectrogramSchema
-                : MelSpectrogramSchema
-            }
-            uiSchema={
-              spectrogramType === "MagSpectrogram"
-                ? MagSpectrogramUiSchema
-                : MelSpectrogramUiSchema
-            }
-            validator={validator}
-          />
-        </M.Stack>
-        <M.Stack direction="row">
+        {tab == Tab.parameters && (
+          <M.Stack
+            component={M.Paper}
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+              overflowX: "hidden",
+              paddingX: 2,
+              maxHeight: "100%",
+              height: "100%",
+            }}
+          >
+            <Form
+              children=" "
+              formData={parameters}
+              onChange={(e) =>
+                setParameters({ ...e.formData, type: spectrogramType })
+              }
+              schema={
+                spectrogramType === "MagSpectrogram"
+                  ? MagSpectrogramSchema
+                  : MelSpectrogramSchema
+              }
+              uiSchema={
+                spectrogramType === "MagSpectrogram"
+                  ? MagSpectrogramUiSchema
+                  : MelSpectrogramUiSchema
+              }
+              validator={validator}
+            />
+          </M.Stack>
+        )}
+        <M.Stack direction="row" sx={{ padding: 2 }}>
           {selectionType == SelectionType.manual && (
             <M.Typography>
               Selection: {table.selection.size} files (
