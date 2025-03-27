@@ -13,7 +13,7 @@ export const OptionsSchema = Z.array(
   Z.object({
     const: Z.string(),
     title: Z.string(),
-  }),
+  })
 )
 
 export const EnumSchema = Z.object({
@@ -79,7 +79,7 @@ export const MaiplSchema = Z.object({
   uiSchema: UiSchema,
 })
 
-export const MaiplSchemaFromJson = Z.preprocess(json => {
+export const MaiplSchemaFromJson = Z.preprocess((json) => {
   try {
     return JSON.parse(String(json))
   } catch (err) {
@@ -179,25 +179,27 @@ export function Provider(props: ProviderProps) {
         Array.from(
           JSF.optionsList(
             schema.properties?.["label"] ?? {},
-            uiSchema?.["label"],
+            uiSchema?.["label"]
           ) ?? [],
-          o => [o.value, o.label],
-        ),
+          (o) => [o.value, o.label]
+        )
       ),
-    [schema, uiSchema],
+    [schema, uiSchema]
   )
   const getLabel = R.useCallback<Context["getLabel"]>(
-    key => {
+    (key) => {
       const ui = JSF.getUiOptions(uiSchema?.["label"])
       return Array.isArray(key)
         ? key.length == 0
           ? ui.placeholder ?? "(Unlabeled)"
-          : key.map(k => labels.get(k as string) ?? `(NoLabel ${k})`).join(", ")
+          : key
+              .map((k) => labels.get(k as string) ?? `(NoLabel ${k})`)
+              .join(", ")
         : key === undefined
-          ? ui.placeholder ?? "(Unlabeled)"
-          : labels.get(key as string) ?? `(NoLabel ${key})`
+        ? ui.placeholder ?? "(Unlabeled)"
+        : labels.get(key as string) ?? `(NoLabel ${key})`
     },
-    [labels, uiSchema],
+    [labels, uiSchema]
   )
   return (
     <Context.Provider
@@ -219,7 +221,7 @@ export function useContext() {
 
 export function deriveFilterUiSchema(
   schema: JsonSchema,
-  uiSchema: UiSchema,
+  uiSchema: UiSchema
 ): UiSchema {
   return {
     ...uiSchema,
@@ -257,7 +259,7 @@ export function deriveFilterUiSchema(
 
 export function deriveMonoFormUiSchema(
   schema: JsonSchema,
-  uiSchema: UiSchema,
+  uiSchema: UiSchema
 ): UiSchema {
   return {
     ...uiSchema,
@@ -270,7 +272,7 @@ export function deriveMonoFormUiSchema(
 
 export function derivePolyFormUiSchema(
   schema: JsonSchema,
-  uiSchema: UiSchema,
+  uiSchema: UiSchema
 ): UiSchema {
   return {
     ...uiSchema,
@@ -288,7 +290,7 @@ export function derivePolyFormUiSchema(
 export function derivePolyFormData(
   schema: JsonSchema,
   regions: Specviz.Note.RegionState,
-  selection: Specviz.Note.SelectionState,
+  selection: Specviz.Note.SelectionState
 ): Record<string, unknown> {
   const m: Map<string, unknown> = new Map()
   const undef = Symbol()
@@ -329,7 +331,7 @@ export function deriveSchemaWithoutDefaults({
           Object.entries(schema.properties).map(([key, field]) => [
             key,
             deriveSchemaWithoutDefaults(field as JSF.RJSFSchema),
-          ]),
+          ])
         ),
       }
     default:
@@ -339,7 +341,9 @@ export function deriveSchemaWithoutDefaults({
 
 function objectFlatMap<A, B>(
   object: Record<string, A>,
-  fn: (entry: [string, A]) => Array<[string, B]>,
+  fn: (entry: [string, A]) => Array<[string, B]>
 ): Record<string, B> {
-  return Object.fromEntries(Object.entries(object).flatMap(entry => fn(entry)))
+  return Object.fromEntries(
+    Object.entries(object).flatMap((entry) => fn(entry))
+  )
 }

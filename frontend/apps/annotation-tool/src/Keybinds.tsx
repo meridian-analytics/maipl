@@ -12,30 +12,30 @@ export default function Keybinds() {
       <Specviz.Keypress bind="Escape" onKeyDown={note.deselect} />
       <Specviz.Keypress
         bind="ArrowLeft"
-        onKeyDown={e => {
+        onKeyDown={(e) => {
           e.preventDefault()
-          note.move(note.selection, rect => Rect.move(rect, -0.01, 0))
+          note.move(note.selection, (rect) => Rect.move(rect, -0.01, 0))
         }}
       />
       <Specviz.Keypress
         bind="ArrowRight"
-        onKeyDown={e => {
+        onKeyDown={(e) => {
           e.preventDefault()
-          note.move(note.selection, rect => Rect.move(rect, 0.01, 0))
+          note.move(note.selection, (rect) => Rect.move(rect, 0.01, 0))
         }}
       />
       <Specviz.Keypress
         bind="ArrowUp"
-        onKeyDown={e => {
+        onKeyDown={(e) => {
           e.preventDefault()
-          note.move(note.selection, rect => Rect.move(rect, 0, -0.03))
+          note.move(note.selection, (rect) => Rect.move(rect, 0, -0.03))
         }}
       />
       <Specviz.Keypress
         bind="ArrowDown"
-        onKeyDown={e => {
+        onKeyDown={(e) => {
           e.preventDefault()
-          note.move(note.selection, rect => Rect.move(rect, 0, 0.03))
+          note.move(note.selection, (rect) => Rect.move(rect, 0, 0.03))
         }}
       />
       <Specviz.Keypress
