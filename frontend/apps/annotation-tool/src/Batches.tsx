@@ -11,6 +11,8 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
   const status = Batch.status(props.batch)
+  const [showLoading, setShowLoading] = R.useState(false)
+  const navigate = RR.useNavigate()
 
   const onDelete = () => {
     const message = `Are you sure you want to delete batch: ${props.batch.batch_name}?`
@@ -29,6 +31,11 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
     if (processMutation.isIdle) {
       return processMutation.mutateAsync([maipl.client, props.batch.id])
     }
+  }
+
+  const onCreateAnnotations = () => {
+    setShowLoading(true)
+    navigate(`/annotate/${props.batch.id}`)
   }
 
   const deleteMutation = RQ.useMutation({
@@ -123,48 +130,70 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
   }, [queryClient])
 
   return (
-    <MR.Menu icon={<I.Settings />}>
-      <M.MenuItem
-        children="Submit for processing..."
-        disabled={
-          processMutation.isPending ||
-          status == Batch.t_status.empty ||
-          status == Batch.t_status.processing ||
-          status == Batch.t_status.success
-        }
-        onClick={onProcess}
-      />
-      <M.Divider />
-      <M.MenuItem
-        children="View Settings"
-        component={RR.Link}
-        disabled={props.batch.user_id != maipl.user?.id} // todo: batchpermissions
-        to={`/batches/${props.batch.id}`}
-      />
-      <M.MenuItem
-        children="Share"
-        component={RR.Link}
-        disabled={props.batch.user_id != maipl.user?.id} // todo: batchpermissions
-        to={`/batches/${props.batch.id}?tab=share`}
-      />
-      <M.Divider />
-      <M.MenuItem
-        children="Create Annotations"
-        component={RR.Link}
-        to={`/annotate/${props.batch.id}`}
-      />
-      <M.MenuItem
-        children="Export Annotations"
-        disabled={exportMutation.isPending}
-        onClick={onExport}
-      />
-      <M.Divider />
-      <M.MenuItem
-        children="Delete"
-        disabled={deleteMutation.isPending}
-        onClick={onDelete}
-      />
-    </MR.Menu>
+    <>
+      <MR.Menu icon={<I.Settings />}>
+        <M.MenuItem
+          children="Submit for processing..."
+          disabled={
+            processMutation.isPending ||
+            status == Batch.t_status.empty ||
+            status == Batch.t_status.processing ||
+            status == Batch.t_status.success
+          }
+          onClick={onProcess}
+        />
+        <M.Divider />
+        <M.MenuItem
+          children="View Settings"
+          component={RR.Link}
+          disabled={props.batch.user_id != maipl.user?.id} // todo: batchpermissions
+          to={`/batches/${props.batch.id}`}
+        />
+        <M.MenuItem
+          children="Share"
+          component={RR.Link}
+          disabled={props.batch.user_id != maipl.user?.id} // todo: batchpermissions
+          to={`/batches/${props.batch.id}?tab=share`}
+        />
+        <M.Divider />
+        <M.MenuItem
+          children="Create Annotations"
+          onClick={onCreateAnnotations}
+        />
+        <M.MenuItem
+          children="Export Annotations"
+          disabled={exportMutation.isPending}
+          onClick={onExport}
+        />
+        <M.Divider />
+        <M.MenuItem
+          children="Delete"
+          disabled={deleteMutation.isPending}
+          onClick={onDelete}
+        />
+      </MR.Menu>
+
+      <M.Dialog
+        open={showLoading}
+        PaperProps={{
+          sx: {
+            p: 3,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2,
+          },
+        }}
+      >
+        <M.CircularProgress size={60} />
+        <M.Typography variant="h6" color="text.secondary">
+          Loading annotation panel...
+        </M.Typography>
+        <M.Typography variant="body2" color="text.secondary" align="center">
+          Please wait while we prepare the annotation interface
+        </M.Typography>
+      </M.Dialog>
+    </>
   )
 }
 
