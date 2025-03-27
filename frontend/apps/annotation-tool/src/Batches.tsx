@@ -158,6 +158,7 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
         <M.Divider />
         <M.MenuItem
           children="Create Annotations"
+          disabled={status !== Batch.t_status.success}
           onClick={onCreateAnnotations}
         />
         <M.MenuItem
