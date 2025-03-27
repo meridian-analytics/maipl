@@ -289,20 +289,15 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
                             height: "100%",
                             display: "flex",
                             alignItems: "center",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          <M.Typography
-                            noWrap
-                            sx={{
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            {RT.flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                          </M.Typography>
+                          {RT.flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                           {header.column.getCanResize() && (
                             <M.Box
                               className={`resizer ${
@@ -338,18 +333,18 @@ export default function BaseTable<T extends { id: TID }, TID = number>(
                         whiteSpace: "nowrap",
                       }}
                     >
-                      <M.Typography
-                        noWrap
+                      <M.Box
                         sx={{
                           overflow: "hidden",
                           textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
                       >
                         {RT.flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
                         )}
-                      </M.Typography>
+                      </M.Box>
                     </M.TableCell>
                   ))}
                 </M.TableRow>
