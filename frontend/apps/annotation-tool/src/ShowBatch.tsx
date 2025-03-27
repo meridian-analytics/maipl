@@ -130,8 +130,23 @@ export default function ShowBatch(props: ShowBatchProps) {
   })
 
   return (
-    <MR.Modal onClose={props.onClose} sx={{ minWidth: 700 }}>
-      <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
+    <MR.Modal
+      onClose={props.onClose}
+      sx={{
+        minWidth: 700,
+        width: "50vw",
+        height: "90vh",
+        maxWidth: 1200,
+        maxHeight: 900,
+      }}
+    >
+      <M.Stack
+        sx={{
+          maxHeight: "100%",
+          overflow: "hidden",
+          height: "100%",
+        }}
+      >
         <M.Typography variant="h6">
           {props.batch == null ? "Create new batch ..." : name}
         </M.Typography>
@@ -176,7 +191,12 @@ export default function ShowBatch(props: ShowBatchProps) {
           </M.Tabs>
         </M.Stack>
         {props.tab == Tab.files && (
-          <M.Stack>
+          <M.Stack
+            sx={{
+              height: "100%",
+              overflow: "hidden",
+            }}
+          >
             <M.Stack direction="row" alignItems="center">
               <M.TextField
                 label="Path"
@@ -192,39 +212,59 @@ export default function ShowBatch(props: ShowBatchProps) {
               />
               <M.Stack flexGrow={1} />
             </M.Stack>
-            <MR.Files.Table
-              rows={files.data}
-              count={files.count}
-              pagination={table.pagination}
-              selection={table.selection}
-              setPagination={table.setPagination}
-              setSelection={table.setSelection}
-              visibility={{
-                basename: false,
-                dirname: false,
-                extname: false,
-                channels: false,
-                sample_rate: false,
-                created_at: true,
+            <M.Stack
+              sx={{
+                flexGrow: 1,
+                overflow: "auto",
+                minHeight: 0, // This is important for proper scrolling
               }}
-            />
+            >
+              <MR.Files.Table
+                rows={files.data}
+                count={files.count}
+                pagination={table.pagination}
+                selection={table.selection}
+                setPagination={table.setPagination}
+                setSelection={table.setSelection}
+                visibility={{
+                  basename: false,
+                  dirname: false,
+                  extname: false,
+                  channels: false,
+                  sample_rate: false,
+                  created_at: true,
+                }}
+              />
+            </M.Stack>
           </M.Stack>
         )}
         {props.tab == Tab.segments && (
-          <M.Stack>
-            <M.TextField
-              label="Length (seconds)"
-              disabled
-              type="number"
-              value={segmentParameters.length}
-            />
-            <M.TextField
-              label="Step (seconds)"
-              disabled
-              type="number"
-              value={segmentParameters.step ?? segmentParameters.length}
-            />
-            <MR.Switch value={segmentParameters.pad} disabled label="Pad" />
+          <M.Stack
+            component={M.Paper}
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+              overflowX: "hidden",
+              paddingX: 2,
+              maxHeight: "100%",
+              height: "100%",
+            }}
+          >
+            <M.Stack gap={2} sx={{ paddingTop: 4 }}>
+              <M.TextField
+                label="Length (seconds)"
+                disabled
+                type="number"
+                value={segmentParameters.length}
+              />
+              <M.TextField
+                label="Step (seconds)"
+                disabled
+                type="number"
+                value={segmentParameters.step ?? segmentParameters.length}
+              />
+              <MR.Switch value={segmentParameters.pad} disabled label="Pad" />
+            </M.Stack>
           </M.Stack>
         )}
         {props.tab == Tab.spectrogram && (
@@ -256,13 +296,25 @@ export default function ShowBatch(props: ShowBatchProps) {
           </M.Stack>
         )}
         {props.tab == Tab.share && (
-          <BatchShare
-            batch={props.batch}
-            shareTo={shareTo}
-            setShareTo={() => {}}
-            users={props.users}
-            readOnly
-          />
+          <M.Stack
+            component={M.Paper}
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+              overflowX: "hidden",
+              paddingX: 2,
+              maxHeight: "100%",
+              height: "100%",
+            }}
+          >
+            <BatchShare
+              batch={props.batch}
+              shareTo={shareTo}
+              setShareTo={() => {}}
+              users={props.users}
+              readOnly
+            />
+          </M.Stack>
         )}
         <M.Stack direction="row">
           <M.Typography>
