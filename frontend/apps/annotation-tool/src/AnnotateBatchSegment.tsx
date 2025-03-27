@@ -743,6 +743,12 @@ function SegmentList(props: { sx?: M.SxProps }) {
 function MyAnnotationSvg(
   props: Specviz.Note.AnnotationProps<AppContext.UserData>
 ) {
+  const [mounted, setMounted] = R.useState(false)
+
+  R.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const lines = props.selected
     ? [
         `${props.region?.properties?.label ?? "?"} ${
@@ -763,13 +769,30 @@ function MyAnnotationSvg(
         }`,
       ]
   return (
-    <svg {...props.svgProps}>
-      <rect />
+    <svg {...props.svgProps} key={mounted ? 1 : 0}>
+      <rect
+        style={{
+          width: "100%",
+          height: "100%",
+          fill: "rgba(66, 66, 66, 0.66)",
+          stroke: "rgba(200, 200, 200, 0.66)",
+          strokeWidth: "1",
+          vectorEffect: "non-scaling-stroke",
+        }}
+      />
       {lines.map((line, lineno) => (
         <text
           key={String(lineno)}
           x="4"
           y={String(4 + 24 * lineno)}
+          style={{
+            fill: "rgba(200, 200, 200, 0.66)",
+            fontSize: "10pt",
+            textAnchor: "start",
+            alignmentBaseline: "hanging",
+            fontFamily: "monospace",
+            mixBlendMode: "difference",
+          }}
           children={line}
         />
       ))}
