@@ -1,16 +1,16 @@
 import * as R from "react"
 import * as RR from "react-router-dom"
-import * as AppContext from "../../AppContext"
-import * as SchemaContext from "../../SchemaContext"
+import * as AppContext from "../../../AppContext"
+import * as SchemaContext from "../../../SchemaContext"
 import * as Specviz from "@meridian-analytics/specviz"
 import * as Audio from "@meridian-analytics/specviz/audio"
-import * as FilterContext from "../../FilterContext"
+import * as FilterContext from "../../../FilterContext"
 import type { LoaderData } from "../types"
 import { AxisProvider } from "./AxisProvider"
 import { NoteProvider } from "./NoteProvider"
 import { FxProvider } from "./FxProvider"
 import { BaseToolProvider } from "./ToolProviders"
-import Keybinds from "../../Keybinds"
+import Keybinds from "../../../Keybinds"
 
 export function Provider(props: { children: R.ReactNode }) {
   const loaderData = RR.useLoaderData() as LoaderData

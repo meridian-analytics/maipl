@@ -3,60 +3,123 @@ import * as Audio from "@meridian-analytics/specviz/audio"
 import * as Rect from "@meridian-analytics/specviz/rect"
 import * as AppContext from "./AppContext"
 
+// Helper function to check if the event target is an input field
+function isInputField(event: KeyboardEvent): boolean {
+  const target = event.target as HTMLElement
+  return (
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.contentEditable === "true" ||
+    target.getAttribute("role") === "textbox"
+  )
+}
+
 export default function Keybinds() {
   const audio = Audio.useContext()
   const note = Specviz.Note.useContext()
   const app = AppContext.useContext()
   return (
     <Specviz.Bindings>
-      <Specviz.Keypress bind="Escape" onKeyDown={note.deselect} />
+      <Specviz.Keypress
+        bind="Escape"
+        onKeyDown={(e) => {
+          if (!isInputField(e)) {
+            note.deselect()
+          }
+        }}
+      />
       <Specviz.Keypress
         bind="ArrowLeft"
         onKeyDown={(e) => {
-          e.preventDefault()
-          note.move(note.selection, (rect) => Rect.move(rect, -0.01, 0))
+          if (!isInputField(e)) {
+            e.preventDefault()
+            note.move(note.selection, (rect) => Rect.move(rect, -0.01, 0))
+          }
         }}
       />
       <Specviz.Keypress
         bind="ArrowRight"
         onKeyDown={(e) => {
-          e.preventDefault()
-          note.move(note.selection, (rect) => Rect.move(rect, 0.01, 0))
+          if (!isInputField(e)) {
+            e.preventDefault()
+            note.move(note.selection, (rect) => Rect.move(rect, 0.01, 0))
+          }
         }}
       />
       <Specviz.Keypress
         bind="ArrowUp"
         onKeyDown={(e) => {
-          e.preventDefault()
-          note.move(note.selection, (rect) => Rect.move(rect, 0, -0.03))
+          if (!isInputField(e)) {
+            e.preventDefault()
+            note.move(note.selection, (rect) => Rect.move(rect, 0, -0.03))
+          }
         }}
       />
       <Specviz.Keypress
         bind="ArrowDown"
         onKeyDown={(e) => {
-          e.preventDefault()
-          note.move(note.selection, (rect) => Rect.move(rect, 0, 0.03))
+          if (!isInputField(e)) {
+            e.preventDefault()
+            note.move(note.selection, (rect) => Rect.move(rect, 0, 0.03))
+          }
         }}
       />
       <Specviz.Keypress
         bind="a"
-        onKeyDown={() => app.setTool(AppContext.Tool.Annotate)}
+        onKeyDown={(e) => {
+          if (!isInputField(e)) {
+            app.setTool(AppContext.Tool.Annotate)
+          }
+        }}
       />
       <Specviz.Keypress
         bind="s"
-        onKeyDown={() => app.setTool(AppContext.Tool.Select)}
+        onKeyDown={(e) => {
+          if (!isInputField(e)) {
+            app.setTool(AppContext.Tool.Select)
+          }
+        }}
       />
       <Specviz.Keypress
         bind="d"
-        onKeyDown={() => app.setTool(AppContext.Tool.Zoom)}
+        onKeyDown={(e) => {
+          if (!isInputField(e)) {
+            app.setTool(AppContext.Tool.Zoom)
+          }
+        }}
       />
       <Specviz.Keypress
         bind="f"
-        onKeyDown={() => app.setTool(AppContext.Tool.Move)}
+        onKeyDown={(e) => {
+          if (!isInputField(e)) {
+            app.setTool(AppContext.Tool.Move)
+          }
+        }}
       />
-      <Specviz.Keypress bind="z" onKeyDown={() => audio.transport.seek(0)} />
-      <Specviz.Keypress bind="x" onKeyDown={() => audio.transport.play()} />
-      <Specviz.Keypress bind="c" onKeyDown={() => audio.transport.stop()} />
+      <Specviz.Keypress
+        bind="z"
+        onKeyDown={(e) => {
+          if (!isInputField(e)) {
+            audio.transport.seek(0)
+          }
+        }}
+      />
+      <Specviz.Keypress
+        bind="x"
+        onKeyDown={(e) => {
+          if (!isInputField(e)) {
+            audio.transport.play()
+          }
+        }}
+      />
+      <Specviz.Keypress
+        bind="c"
+        onKeyDown={(e) => {
+          if (!isInputField(e)) {
+            audio.transport.stop()
+          }
+        }}
+      />
     </Specviz.Bindings>
   )
 }

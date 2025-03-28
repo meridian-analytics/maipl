@@ -1,9 +1,10 @@
 import * as I from "@mui/icons-material"
+import * as M from "@mui/material"
 import * as MR from "@maipl/react"
 import * as RQ from "@tanstack/react-query"
 import * as RR from "react-router-dom"
 import * as Specviz from "@meridian-analytics/specviz"
-import * as Annotation from "@maipl/api/Annotation"
+import { Annotation } from "@maipl/api"
 import type { LoaderData } from "../types"
 
 export function SaveButton() {

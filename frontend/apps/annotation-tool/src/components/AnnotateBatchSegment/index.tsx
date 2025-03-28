@@ -5,6 +5,7 @@ import Grid from "@mui/material/Unstable_Grid2"
 import * as Z from "zod"
 import * as MR from "@maipl/react"
 import * as RQ from "@tanstack/react-query"
+import * as I from "@mui/icons-material"
 import type { LoaderData } from "./types"
 import { AnnotateBatchSegmentQuery } from "./queries"
 import { Provider } from "./providers"
@@ -24,9 +25,15 @@ import AnnotationList from "../../AnnotationList"
 import AnnotationForm from "../../AnnotationForm"
 import ToolPalette from "../../ToolPalette"
 import AudioControls from "../../AudioControls"
+import { LoadingState } from "./components/LoadingState"
 
 export const loader = (maipl: MR.t_context, queryClient: RQ.QueryClient) =>
   (async ({ request, params }): Promise<LoaderData> => {
+    // If user data is not available, return null to trigger loading state
+    if (maipl.user == null) {
+      return null
+    }
+
     const batchId = Z.coerce.number().parse(params["batchId"])
     const segmentId = Z.coerce.number().parse(params["segmentId"])
     const query = AnnotateBatchSegmentQuery(maipl, batchId, segmentId)
@@ -34,9 +41,15 @@ export const loader = (maipl: MR.t_context, queryClient: RQ.QueryClient) =>
   }) satisfies RR.LoaderFunction
 
 export function Component() {
-  const loaderData = RR.useLoaderData() as LoaderData
+  const loaderData = RR.useLoaderData() as LoaderData | null
   const panelStyle: M.SxProps = { height: "40vh", overflow: "auto" }
   const [showFilters, setShowFilters] = R.useState(false)
+
+  // Show loading state while data is not available
+  if (loaderData == null) {
+    return <LoadingState />
+  }
+
   return (
     <Provider>
       <Grid

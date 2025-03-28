@@ -1,6 +1,6 @@
 import * as R from "react"
 import * as Specviz from "@meridian-analytics/specviz"
-import * as AppContext from "../../AppContext"
+import * as AppContext from "../../../AppContext"
 import * as SpecvizNote from "@meridian-analytics/specviz/note"
 
 export function FxProvider(props: { children: React.ReactNode }) {
