@@ -69,9 +69,9 @@ type t_parameters = {
   /** Minimum frequency in Hz */
   freq_min: number
   /** Low pass filter in Hz */
-  low_pass: number
+  low_pass?: number
   /** High pass filter in Hz */
-  high_pass: number
+  high_pass?: number
   /** Sampling rate */
   rate: number
   /** Window step size in seconds */

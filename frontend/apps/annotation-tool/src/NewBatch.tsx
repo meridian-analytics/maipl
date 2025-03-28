@@ -77,7 +77,19 @@ function NewBatch(props: { onClose: () => void }) {
   const [description, setDescription] = R.useState("")
 
   // field: parameters (for spectrogram)
-  const [parameters, setParameters] = R.useState({ type: "MagSpectrogram" })
+  const [parameters, setParameters] = R.useState(() => ({
+    type: "MagSpectrogram",
+    window_length: 0.051,
+    step_size: 0.01955,
+    freq_min: 0,
+    freq_max: 10000,
+    rate: 24000,
+    vmin: 0,
+    vmax: 1,
+    amplification: 1,
+    channel: 0,
+    color_map: "viridis",
+  }))
   const [spectrogramType, setSpectrogramType] = R.useState<
     "MagSpectrogram" | "MelSpectrogram"
   >("MagSpectrogram")
@@ -274,7 +286,40 @@ function NewBatch(props: { onClose: () => void }) {
                   | "MagSpectrogram"
                   | "MelSpectrogram"
                 setSpectrogramType(newType)
-                setParameters({ type: newType }) // Reset parameters but keep type
+                setParameters(
+                  newType === "MagSpectrogram"
+                    ? {
+                        type: "MagSpectrogram",
+                        window_length: 0.051,
+                        step_size: 0.01955,
+                        freq_min: 0,
+                        freq_max: 10000,
+                        rate: 24000,
+                        vmin: 0,
+                        vmax: 1,
+                        amplification: 1,
+                        channel: 0,
+                        color_map: "viridis",
+                      }
+                    : {
+                        type: "MelSpectrogram",
+                        window_length: 0.2,
+                        step_size: 0.01,
+                        freq_min: 0,
+                        freq_max: 12000,
+                        rate: 24000,
+                        vmin: 0,
+                        vmax: 1,
+                        amplification: 1,
+                        channel: 0,
+                        color_map: "viridis",
+                        window_func: "hamming",
+                        num_filters: 400,
+                        normalize_wav: false,
+                        resample_method: "scipy",
+                        smooth: 0.01,
+                      }
+                )
               }}
               label="Spectrogram Type"
             >

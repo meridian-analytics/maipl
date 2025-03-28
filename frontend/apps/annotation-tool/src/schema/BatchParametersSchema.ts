@@ -76,11 +76,13 @@ export const MagSpectrogramSchema: RJSFSchema = {
       title: "Low Pass(Hz)",
       description: "Low-pass filter cutoff frequency in Hz",
       type: "integer",
+      default: 0,
     },
     high_pass: {
       title: "High Pass(Hz)",
       description: "High-pass filter cutoff frequency in Hz",
       type: "integer",
+      default: 0,
     },
     color_map: {
       default: "viridis",
@@ -219,11 +221,13 @@ export const MelSpectrogramSchema: RJSFSchema = {
       title: "Low Pass(Hz)",
       description: "Low-pass filter cutoff frequency in Hz",
       type: "integer",
+      default: 0,
     },
     high_pass: {
       title: "High Pass(Hz)",
       description: "High-pass filter cutoff frequency in Hz",
       type: "integer",
+      default: 0,
     },
     color_map: {
       default: "viridis",
@@ -260,5 +264,5 @@ export const MelSpectrogramUiSchema: UiSchema = {
   },
   amplification: {
     "ui:widget": "range",
-  }
+  },
 }
