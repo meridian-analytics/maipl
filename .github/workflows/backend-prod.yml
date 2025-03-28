@@ -160,6 +160,8 @@ jobs:
           scp backend/compose/docker-compose.backend.yml ubuntu@$BACKEND_HOST_B:~/backend/docker-compose.yml
           scp backend/.env ubuntu@$BACKEND_HOST_A:~/backend/.env
           scp backend/.env ubuntu@$BACKEND_HOST_B:~/backend/.env
+          scp backend/compose/promtail-config.yml ubuntu@$BACKEND_HOST_A:~/backend/promtail-config.yml
+          scp backend/compose/promtail-config.yml ubuntu@$BACKEND_HOST_B:~/backend/promtail-config.yml
 
           # Deploy
           ssh ubuntu@$BACKEND_HOST_A "cd ~/backend && \
@@ -190,6 +192,9 @@ jobs:
           scp backend/.env ubuntu@$WORKER_HOST_A:~/worker/.env
           scp backend/.env ubuntu@$WORKER_HOST_B:~/worker/.env
           scp backend/.env ubuntu@$WORKER_HOST_C:~/worker/.env
+          scp backend/compose/promtail-config.yml ubuntu@$WORKER_HOST_A:~/worker/promtail-config.yml
+          scp backend/compose/promtail-config.yml ubuntu@$WORKER_HOST_B:~/worker/promtail-config.yml
+          scp backend/compose/promtail-config.yml ubuntu@$WORKER_HOST_C:~/worker/promtail-config.yml
 
           # Deploy
           ssh ubuntu@$WORKER_HOST_A "cd ~/worker && \

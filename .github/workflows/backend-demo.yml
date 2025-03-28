@@ -143,6 +143,7 @@ jobs:
           # Copy compose files and environment file
           scp backend/compose/docker-compose.demo.yml ubuntu@$DEMO_HOST:~/backend/docker-compose.yml
           scp backend/.env ubuntu@$DEMO_HOST:~/backend/.env
+          scp backend/compose/promtail-config.yml ubuntu@$DEMO_HOST:~/backend/promtail-config.yml
 
           # Deploy
           ssh ubuntu@$DEMO_HOST "cd ~/backend && \

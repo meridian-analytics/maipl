@@ -16,6 +16,18 @@ services:
             - driver: nvidia
               count: all
               capabilities: [ utility, compute, video ]
+
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: promtail-worker
+    volumes:
+      - ../logs:/logs
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=production
+
   portainer-agent:
     image: portainer/agent:2.21.2
     container_name: portainer-agent-worker

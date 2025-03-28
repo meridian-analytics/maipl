@@ -68,6 +68,18 @@ services:
       - backend
       - redis
 
+  # Promtail for log collection
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: promtail-dev
+    volumes:
+      - ../logs:/logs
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=development
+
 volumes:
   redis_data:
     name: redis_data
