@@ -155,6 +155,71 @@ function Synchronizing() {
   const isFetching = RQ.useIsFetching() > 0
   const isMutating = RQ.useIsMutating() > 0
   const isSynchronizing = MR.useDebounce(isFetching || isMutating, 1000) // debounce to prevent flickering
-  if (isSynchronizing) return <I.Sync sx={{ color: M.colors.green[400] }} />
-  return <I.Sync color="disabled" />
+
+  const boxSx = {
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+    borderRadius: 1,
+    px: 1,
+    py: 0.5,
+    width: "100px", // Fixed width
+    justifyContent: "center", // Center content
+  }
+
+  if (isSynchronizing) {
+    return (
+      <M.Tooltip title="Syncing with server...">
+        <M.Box
+          sx={{
+            ...boxSx,
+            backgroundColor: M.colors.green[50],
+            border: `1px solid ${M.colors.green[200]}`,
+          }}
+        >
+          <I.Sync
+            sx={{
+              color: M.colors.green[600],
+              animation: "spin 1s linear infinite",
+              "@keyframes spin": {
+                "0%": { transform: "rotate(0deg)" },
+                "100%": { transform: "rotate(360deg)" },
+              },
+            }}
+          />
+          <M.Typography
+            variant="caption"
+            sx={{
+              color: M.colors.green[700],
+              fontWeight: 500,
+            }}
+          >
+            Syncing
+          </M.Typography>
+        </M.Box>
+      </M.Tooltip>
+    )
+  }
+
+  return (
+    <M.Tooltip title="Idle">
+      <M.Box
+        sx={{
+          ...boxSx,
+          backgroundColor: M.colors.grey[50],
+          border: `1px solid ${M.colors.grey[200]}`,
+        }}
+      >
+        <I.Sync sx={{ color: M.colors.grey[400] }} />
+        <M.Typography
+          variant="caption"
+          sx={{
+            color: M.colors.grey[600],
+          }}
+        >
+          Idle
+        </M.Typography>
+      </M.Box>
+    </M.Tooltip>
+  )
 }
