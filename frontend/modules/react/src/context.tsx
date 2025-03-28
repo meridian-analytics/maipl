@@ -190,14 +190,25 @@ function MaiplContextProvider(props: {
         ],
     {
       basename: props.basename || import.meta.env["BASE_URL"] || "/",
-      future: props.future,
+      future: {
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+        ...props.future,
+      },
     }
   )
 
   // provider
   return (
     <MaiplContext.Provider value={context}>
-      <RR.RouterProvider router={router} future={props.future} />
+      <RR.RouterProvider
+        router={router}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+          ...props.future,
+        }}
+      />
       {K.MAIPL_REACT_QUERY_DEVTOOLS && (
         <ReactQueryDevtools buttonPosition="bottom-left" />
       )}
