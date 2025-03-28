@@ -620,6 +620,58 @@ export function Component() {
                 <PasteButton />
                 <PasteConfigButton />
                 <DeleteButton />
+                <MR.Menu icon={<I.HelpOutline />} title="Copy & Paste Help">
+                  <M.MenuItem>
+                    <M.Typography variant="subtitle2" color="primary">
+                      Copy & Paste Functions
+                    </M.Typography>
+                  </M.MenuItem>
+                  <M.Divider />
+                  <M.MenuItem>
+                    <M.Stack spacing={1}>
+                      <M.Typography variant="body2">
+                        <I.ContentCopy sx={{ fontSize: 16, mr: 1 }} />
+                        Copy Properties
+                      </M.Typography>
+                      <M.Typography variant="caption" color="text.secondary">
+                        Copy selected annotation properties for reuse
+                      </M.Typography>
+                    </M.Stack>
+                  </M.MenuItem>
+                  <M.MenuItem>
+                    <M.Stack spacing={1}>
+                      <M.Typography variant="body2">
+                        <I.ContentPaste sx={{ fontSize: 16, mr: 1 }} />
+                        Paste Properties
+                      </M.Typography>
+                      <M.Typography variant="caption" color="text.secondary">
+                        Apply copied properties to selected annotations
+                      </M.Typography>
+                    </M.Stack>
+                  </M.MenuItem>
+                  <M.MenuItem>
+                    <M.Stack spacing={1}>
+                      <M.Typography variant="body2">
+                        <I.Checklist sx={{ fontSize: 16, mr: 1 }} />
+                        Paste Configuration
+                      </M.Typography>
+                      <M.Typography variant="caption" color="text.secondary">
+                        Choose which properties to include when pasting
+                      </M.Typography>
+                    </M.Stack>
+                  </M.MenuItem>
+                  <M.MenuItem>
+                    <M.Stack spacing={1}>
+                      <M.Typography variant="body2">
+                        <I.Backspace sx={{ fontSize: 16, mr: 1 }} />
+                        Delete
+                      </M.Typography>
+                      <M.Typography variant="caption" color="text.secondary">
+                        Remove selected annotations
+                      </M.Typography>
+                    </M.Stack>
+                  </M.MenuItem>
+                </MR.Menu>
               </CopyPasteContext.Provider>
             </M.Stack>
             <M.Divider orientation="vertical" flexItem />
