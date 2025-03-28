@@ -16,7 +16,7 @@ scrape_configs:
         labels:
           job: application
           __path__: /logs/*.log
-          environment: ${ENVIRONMENT:-development}
+          environment: ${ENVIRONMENT}
 
     pipeline_stages:
       - regex:
