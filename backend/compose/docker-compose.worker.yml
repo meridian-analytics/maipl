@@ -20,6 +20,7 @@ services:
   promtail:
     image: grafana/promtail:2.9.2
     container_name: promtail-worker
+    hostname: ${HOSTNAME}
     volumes:
       - ../logs:/logs
       - ./promtail-config.yml:/etc/promtail/config.yml
