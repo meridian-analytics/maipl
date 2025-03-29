@@ -17,6 +17,7 @@ export function AxisProvider(props: { children: R.ReactNode }) {
         "hertz",
         Format.hz
       ),
+      percent: Specviz.Axis.linear(100, -100, "percent", (v) => `${v}%`),
     }
   }, [
     loaderData.active.segment.start,

@@ -24,23 +24,37 @@ export const AnnotateBatchSegmentQuery = (
     if (role == Batch.t_role_code.unassigned)
       throw Error(`not assigned to batch: ${batchId}`)
 
-    const [audio, image, segments, annotations] = await Promise.all([
+    const [audio, images, segments, annotations] = await Promise.all([
       Batch.audios(maipl.client, batchId).then(
         (audios) => new Map(audios.map((a) => [a.segment_id, a]))
       ),
-      Batch.images(maipl.client, batchId).then(
-        (images) => new Map(images.map((i) => [i.segment_id, i]))
-      ),
+      Batch.images(maipl.client, batchId).then((images) => {
+        const spectrograms = new Map()
+        const waveforms = new Map()
+
+        images.forEach((img) => {
+          if (img.image_type === "spectrogram") {
+            spectrograms.set(img.segment_id, img)
+          } else if (img.image_type === "waveform") {
+            waveforms.set(img.segment_id, img)
+          }
+        })
+
+        return { spectrograms, waveforms }
+      }),
       Batch.segments(maipl.client, batchId),
       Annotation.readSegment(maipl.client, batchId, segmentId),
     ])
 
     const activeAudio = audio.get(segmentId)
-    const activeImage = image.get(segmentId)
+    const activeSpectrogram = images.spectrograms.get(segmentId)
+    const activeWaveform = images.waveforms.get(segmentId)
     const activeSegment = segments.find((s) => s.id == segmentId)
 
     if (activeAudio == null) throw Error(`audio not found: ${segmentId}`)
-    if (activeImage == null) throw Error(`image not found: ${segmentId}`)
+    if (activeSpectrogram == null)
+      throw Error(`spectrogram not found: ${segmentId}`)
+    if (activeWaveform == null) throw Error(`waveform not found: ${segmentId}`)
     if (activeSegment == null) throw Error(`segment not found: ${segmentId}`)
 
     const audioBuffer = await Specviz.Audio.load(activeAudio.audio)
@@ -48,13 +62,14 @@ export const AnnotateBatchSegmentQuery = (
     return {
       batch,
       audio,
-      image,
+      images,
       segments,
       annotations,
       active: {
         audioBuffer,
         audio: activeAudio,
-        image: activeImage,
+        spectrogram: activeSpectrogram,
+        waveform: activeWaveform,
         segment: activeSegment,
       },
       role,
