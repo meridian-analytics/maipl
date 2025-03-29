@@ -11,11 +11,14 @@ import {
   VisualizationToolProvider,
 } from "../providers/ToolProviders"
 
-export function VisualizationTool() {
+interface VisualizationToolProps {
+  imageType: ImageType
+}
+
+export function VisualizationTool({ imageType }: VisualizationToolProps) {
   const loaderData = RR.useLoaderData() as LoaderData
   const app = AppContext.useContext()
   const showSelection = app.tool != AppContext.Tool.Move
-  const [imageType, setImageType] = R.useState<ImageType>("spectrogram")
 
   const activeImage =
     imageType === "spectrogram"
@@ -31,20 +34,6 @@ export function VisualizationTool() {
         resize: "horizontal",
       }}
     >
-      <M.Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <M.ToggleButtonGroup
-          value={imageType}
-          exclusive
-          onChange={(_, newValue) => {
-            if (newValue !== null) {
-              setImageType(newValue)
-            }
-          }}
-        >
-          <M.ToggleButton value="spectrogram">Spectrogram</M.ToggleButton>
-          <M.ToggleButton value="waveform">Waveform</M.ToggleButton>
-        </M.ToggleButtonGroup>
-      </M.Stack>
       <div
         style={{
           display: "grid",

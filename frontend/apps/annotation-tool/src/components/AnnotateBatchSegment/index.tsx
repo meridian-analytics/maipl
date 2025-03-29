@@ -19,6 +19,7 @@ import { PasteConfigButton } from "./buttons/PasteConfigButton"
 import { RedoButton } from "./buttons/RedoButton"
 import { UndoButton } from "./buttons/UndoButton"
 import { SaveButton } from "./buttons/SaveButton"
+import { VisualizationTypeToggle } from "./components/VisualizationTypeToggle"
 import * as CopyPasteContext from "../../CopyPasteContext"
 import AnnotationFilters from "../../AnnotationFilters"
 import AnnotationList from "../../AnnotationList"
@@ -44,6 +45,9 @@ export function Component() {
   const loaderData = RR.useLoaderData() as LoaderData | null
   const panelStyle: M.SxProps = { height: "40vh", overflow: "auto" }
   const [showFilters, setShowFilters] = R.useState(false)
+  const [imageType, setImageType] = R.useState<"spectrogram" | "waveform">(
+    "spectrogram"
+  )
 
   // Show loading state while data is not available
   if (loaderData == null) {
@@ -66,10 +70,24 @@ export function Component() {
             </M.Typography>
             <M.Stack flexGrow={5} />
 
+            {/* Visualization Type Group */}
+            <M.Stack direction="row" spacing={1}>
+              <VisualizationTypeToggle
+                value={imageType}
+                onChange={setImageType}
+              />
+            </M.Stack>
+            <M.Divider orientation="vertical" flexItem />
+
             {/* View & Navigation Group */}
             <M.Stack direction="row" spacing={1}>
               <ShortcutsMenu />
               <ToolPalette direction="row" />
+            </M.Stack>
+            <M.Divider orientation="vertical" flexItem />
+
+            {/* Audio Controls Group */}
+            <M.Stack direction="row" spacing={1}>
               <AudioControls direction="row" />
             </M.Stack>
             <M.Divider orientation="vertical" flexItem />
@@ -146,7 +164,7 @@ export function Component() {
           </M.Stack>
         </Grid>
         <Grid xs={12}>
-          <VisualizationTool />
+          <VisualizationTool imageType={imageType} />
         </Grid>
         <Grid xs={4}>
           <SegmentList sx={panelStyle} />
