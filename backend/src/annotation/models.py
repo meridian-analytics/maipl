@@ -192,7 +192,7 @@ class ProcessedImage(models.Model):
         storage=get_storage,
         max_length=255
     )
-
+    image_type = models.CharField(max_length=255, default="spectrogram")
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = models.Manager()
