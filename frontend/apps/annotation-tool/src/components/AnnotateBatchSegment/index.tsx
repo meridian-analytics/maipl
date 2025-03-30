@@ -164,7 +164,10 @@ export function Component() {
           </M.Stack>
         </Grid>
         <Grid xs={12}>
-          <VisualizationTool imageType={imageType} />
+          <VisualizationTool
+            key={loaderData.active.segment.id}
+            imageType={imageType}
+          />
         </Grid>
         <Grid xs={4}>
           <SegmentList sx={panelStyle} />
