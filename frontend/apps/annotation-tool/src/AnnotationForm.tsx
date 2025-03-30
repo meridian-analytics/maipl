@@ -10,9 +10,7 @@ import { ErrorBoundary } from "react-error-boundary"
 import * as AppContext from "./AppContext"
 import * as SchemaContext from "./SchemaContext"
 
-export default function AnnotationForm(props: {
-  sx?: M.SxProps
-}) {
+export default function AnnotationForm(props: { sx?: M.SxProps }) {
   const note = Specviz.Note.useContext()
   const ids = Array.from(note.selection)
   return (
@@ -52,10 +50,7 @@ function NullForm(props: { sx?: M.SxProps }) {
   )
 }
 
-function MonoForm(props: {
-  regionId: string
-  sx?: M.SxProps
-}) {
+function MonoForm(props: { regionId: string; sx?: M.SxProps }) {
   const app = AppContext.useContext()
   const audio = Audio.useContext()
   const note = Specviz.Note.useContext()
@@ -63,7 +58,7 @@ function MonoForm(props: {
   const schema = SchemaContext.useContext()
   const derivedUiSchema = React.useMemo(
     () => SchemaContext.deriveMonoFormUiSchema(schema.schema, schema.uiSchema),
-    [schema.schema, schema.uiSchema],
+    [schema.schema, schema.uiSchema]
   )
   if (region == null)
     return <p>Warning: Selected region is hidden by one or more filters</p>
@@ -106,9 +101,9 @@ function MonoForm(props: {
           <Form
             children=" "
             formData={region.properties}
-            onChange={e =>
-              note.updateProperties(new Set([region.id]), prev =>
-                updateProperties(prev ?? {}, schema.schema, e.formData),
+            onChange={(e) =>
+              note.updateProperties(new Set([region.id]), (prev) =>
+                updateProperties(prev ?? {}, schema.schema, e.formData)
               )
             }
             readonly={!note.canUpdate(region)}
@@ -135,7 +130,7 @@ function MonoForm(props: {
           <M.Box className="encoder">
             <Specviz.Encoder.Y2
               direction={-1}
-              format={v => (v / 1000).toFixed(3)}
+              format={(v) => (v / 1000).toFixed(3)}
               label="kHz"
               region={region}
             />
@@ -144,7 +139,7 @@ function MonoForm(props: {
           <M.Box className="encoder">
             <Specviz.Encoder.Y1
               direction={-1}
-              format={v => (v / 1000).toFixed(3)}
+              format={(v) => (v / 1000).toFixed(3)}
               label="kHz"
               region={region}
             />
@@ -156,27 +151,25 @@ function MonoForm(props: {
   )
 }
 
-function PolyForm(props: {
-  sx?: M.SxProps
-}) {
+function PolyForm(props: { sx?: M.SxProps }) {
   const note = Specviz.Note.useContext()
   const schema = SchemaContext.useContext()
   const derivedSchema = React.useMemo(
     () => SchemaContext.deriveSchemaWithoutDefaults(schema.schema),
-    [schema.schema],
+    [schema.schema]
   )
   const derivedUi = React.useMemo(
     () => SchemaContext.derivePolyFormUiSchema(schema.schema, schema.uiSchema),
-    [schema.schema, schema.uiSchema],
+    [schema.schema, schema.uiSchema]
   )
   const formData = React.useMemo(
     () =>
       SchemaContext.derivePolyFormData(
         schema.schema,
         note.regions,
-        note.selection,
+        note.selection
       ),
-    [note.regions, note.selection, schema.schema],
+    [note.regions, note.selection, schema.schema]
   )
   return (
     <MR.Panel
@@ -187,9 +180,9 @@ function PolyForm(props: {
           <Form
             children=" "
             formData={formData}
-            onChange={e => {
-              note.updateProperties(note.selection, prev =>
-                updateProperties(prev ?? {}, schema.schema, e.formData),
+            onChange={(e) => {
+              note.updateProperties(note.selection, (prev) =>
+                updateProperties(prev ?? {}, schema.schema, e.formData)
               )
             }}
             schema={derivedSchema}
@@ -205,7 +198,7 @@ function PolyForm(props: {
 function updateProperties(
   props: Record<string, unknown>,
   schema: SchemaContext.JsonSchema,
-  formData: Record<string, unknown>,
+  formData: Record<string, unknown>
 ) {
   const next = { ...props }
   let v: unknown
