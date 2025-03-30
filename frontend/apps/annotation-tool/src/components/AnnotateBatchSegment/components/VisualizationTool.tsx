@@ -24,22 +24,34 @@ export function VisualizationTool({ imageType }: VisualizationToolProps) {
   const note = Specviz.Note.useContext()
   const [showLoading, setShowLoading] = R.useState(true)
 
-  // Clean up regions only when segment changes
+  // Handle region reset and loading state
   R.useEffect(() => {
-    note.reset(new Map(loaderData.annotations.map((a) => [a.id, a.region])))
-  }, [loaderData.annotations, note.reset])
+    // Show loading state
+    setShowLoading(true)
 
-  // Show loading state for 0.5s when navigation starts or segment changes
-  R.useEffect(() => {
-    if (navigation.state === "loading") {
-      setShowLoading(true)
-    } else {
+    // Reset regions
+    note.reset(new Map(loaderData.annotations.map((a) => [a.id, a.region])))
+
+    // Only use timer for local data switches
+    if (navigation.state !== "loading") {
       const timer = setTimeout(() => {
         setShowLoading(false)
-      }, 200)
+      }, 100)
       return () => clearTimeout(timer)
     }
-  }, [navigation.state, loaderData.active.id])
+  }, [
+    loaderData.annotations,
+    note.reset,
+    loaderData.active.segment.id,
+    navigation.state,
+  ])
+
+  // Clear loading state when navigation is complete
+  R.useEffect(() => {
+    if (navigation.state === "idle") {
+      setShowLoading(false)
+    }
+  }, [navigation.state])
 
   // Show loading state during navigation or artificial delay
   if (showLoading) {

@@ -244,6 +244,7 @@ export function VisualizationToolProvider(props: { children: R.ReactNode }) {
     viewport.zoomPoint,
     loaderData.batch.parameters.freq_min,
     loaderData.batch.parameters.freq_max,
+    loaderData.active.segment.start,
   ])
   return <Specviz.Action.Provider children={props.children} {...action} />
 }

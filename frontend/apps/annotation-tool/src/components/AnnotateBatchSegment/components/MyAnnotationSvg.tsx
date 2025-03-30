@@ -2,15 +2,26 @@ import * as R from "react"
 import * as Specviz from "@meridian-analytics/specviz"
 import * as Format from "@meridian-analytics/specviz/format"
 import * as AppContext from "../../../AppContext"
+import * as RR from "react-router-dom"
+import type { LoaderData } from "../types"
 
 export function MyAnnotationSvg(
   props: Specviz.Note.AnnotationProps<AppContext.UserData>
 ) {
   const [mounted, setMounted] = R.useState(false)
+  const loaderData = RR.useLoaderData() as LoaderData
+  const navigation = RR.useNavigation()
 
   R.useEffect(() => {
-    setMounted(true)
-  }, [])
+    // Reset mounted state when navigation starts
+    if (navigation.state === "loading") {
+      setMounted(false)
+    }
+    // Set mounted state when navigation is complete and we have region data
+    else if (navigation.state === "idle" && props.region) {
+      setMounted(true)
+    }
+  }, [navigation.state, props.region])
 
   const lines = props.selected
     ? [
