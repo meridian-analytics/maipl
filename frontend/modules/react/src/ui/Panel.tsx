@@ -13,7 +13,14 @@ export default function Panel(props: {
       <M.Stack
         direction="row"
         alignItems="center"
-        sx={{ height: 48, padding: 2, flexShrink: 0 }}
+        sx={{
+          height: 48,
+          padding: 2,
+          flexShrink: 0,
+          bgcolor: "action.hover",
+          borderBottom: 1,
+          borderColor: "divider",
+        }}
       >
         <M.Typography variant="body2" children={props.title} />
         <M.Stack sx={{ flexGrow: 1 }} />

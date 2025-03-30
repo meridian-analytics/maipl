@@ -6,6 +6,8 @@ import * as RR from "react-router-dom"
 import * as Specviz from "@meridian-analytics/specviz"
 import { Annotation } from "@maipl/api"
 import type { LoaderData } from "../types"
+import { useSaveContext } from "../../../SaveContext"
+import * as R from "react"
 
 export function SaveButton() {
   const loaderData = RR.useLoaderData() as LoaderData
@@ -13,6 +15,7 @@ export function SaveButton() {
   const notify = MR.useNotify()
   const note = Specviz.Note.useContext()
   const queryClient = RQ.useQueryClient()
+  const { setHasUnsavedChanges } = useSaveContext()
   const saveMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Annotation.updateSegment>) =>
       Annotation.updateSegment(...vars),
@@ -43,8 +46,17 @@ export function SaveButton() {
         ],
       })
       note.reset(note.regions)
+      setHasUnsavedChanges(false)
     },
   })
+
+  // Update save status based on the same conditions that control the disabled state
+  const isDisabled =
+    note.undo == null || saveMutation.isPending || !note.canCreate
+  R.useEffect(() => {
+    setHasUnsavedChanges(!isDisabled)
+  }, [isDisabled, setHasUnsavedChanges])
+
   const onSave = () => {
     if (loaderData.active.segment == null) return
     if (!note.canCreate) return
@@ -64,7 +76,7 @@ export function SaveButton() {
   return (
     <MR.ActionButton
       children={<I.Save />}
-      disabled={note.undo == null || saveMutation.isPending || !note.canCreate}
+      disabled={isDisabled}
       onClick={() => onSave()}
       title="Save Batch"
     />

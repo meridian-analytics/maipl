@@ -6,16 +6,19 @@ import * as AnnotateBatchSegment from "./components/AnnotateBatchSegment"
 import Batches from "./Batches"
 import NewBatch from "./NewBatch"
 import * as ShowBatch from "./ShowBatch"
+import { SaveProvider } from "./SaveContext"
 
 export default function App() {
   return (
-    <MR.MaiplProvider
-      router={router}
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    />
+    <SaveProvider>
+      <MR.MaiplProvider
+        router={router}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      />
+    </SaveProvider>
   )
 }
 
