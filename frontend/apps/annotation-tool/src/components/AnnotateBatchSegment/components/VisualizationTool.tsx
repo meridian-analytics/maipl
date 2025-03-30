@@ -10,6 +10,7 @@ import {
   VerticalAxisToolProvider,
   VisualizationToolProvider,
 } from "../providers/ToolProviders"
+import { VisualizationLoadingState } from "./VisualizationLoadingState"
 
 interface VisualizationToolProps {
   imageType: ImageType
@@ -17,8 +18,14 @@ interface VisualizationToolProps {
 
 export function VisualizationTool({ imageType }: VisualizationToolProps) {
   const loaderData = RR.useLoaderData() as LoaderData
+  const navigation = RR.useNavigation()
   const app = AppContext.useContext()
   const showSelection = app.tool != AppContext.Tool.Move
+
+  // Show loading state during navigation
+  if (navigation.state === "loading") {
+    return <VisualizationLoadingState />
+  }
 
   const activeImage =
     imageType === "spectrogram"
