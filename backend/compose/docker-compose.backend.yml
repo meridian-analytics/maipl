@@ -26,6 +26,7 @@ services:
     restart: unless-stopped
     environment:
       - ENVIRONMENT=production
+      - HOSTNAME=${HOSTNAME}
 
   portainer-agent:
     image: portainer/agent:2.21.2
