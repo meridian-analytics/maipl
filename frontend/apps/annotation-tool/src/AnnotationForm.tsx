@@ -114,38 +114,81 @@ function MonoForm(props: { regionId: string; sx?: M.SxProps }) {
         </M.Box>
       }
       footer={
-        <M.Stack
-          sx={{ padding: 2 }}
-          direction="row"
-          justifyContent="space-between"
+        <M.Paper
+          sx={{
+            backgroundColor: "action.hover",
+            padding: 1,
+            position: "relative",
+          }}
         >
-          <M.Box className="encoder">
-            <Specviz.Encoder.X1 region={region} label="s" />
-            <M.Typography>Offset</M.Typography>
-          </M.Box>
-          <M.Box className="encoder">
-            <Specviz.Encoder.X2 region={region} label="s" />
-            <M.Typography>Duration</M.Typography>
-          </M.Box>
-          <M.Box className="encoder">
-            <Specviz.Encoder.Y2
-              direction={-1}
-              format={(v) => (v / 1000).toFixed(3)}
-              label="kHz"
-              region={region}
-            />
-            <M.Typography>Min</M.Typography>
-          </M.Box>
-          <M.Box className="encoder">
-            <Specviz.Encoder.Y1
-              direction={-1}
-              format={(v) => (v / 1000).toFixed(3)}
-              label="kHz"
-              region={region}
-            />
-            <M.Typography>Max</M.Typography>
-          </M.Box>
-        </M.Stack>
+          <M.Stack
+            sx={{ padding: 1 }}
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <M.Stack direction="row" spacing={2} flexGrow={1} width="100%">
+              <M.Box className="encoder" flexGrow={1}>
+                <Specviz.Encoder.X1 region={region} label="s" />
+                <M.Typography variant="caption">Offset</M.Typography>
+              </M.Box>
+              <M.Box className="encoder" flexGrow={1}>
+                <Specviz.Encoder.X2 region={region} label="s" />
+                <M.Typography variant="caption">Duration</M.Typography>
+              </M.Box>
+              <M.Box className="encoder" flexGrow={1}>
+                <Specviz.Encoder.Y2
+                  direction={-1}
+                  format={(v) => (v / 1000).toFixed(3)}
+                  label="kHz"
+                  region={region}
+                />
+                <M.Typography variant="caption">Min</M.Typography>
+              </M.Box>
+              <M.Box className="encoder" flexGrow={1}>
+                <Specviz.Encoder.Y1
+                  direction={-1}
+                  format={(v) => (v / 1000).toFixed(3)}
+                  label="kHz"
+                  region={region}
+                />
+                <M.Typography variant="caption">Max</M.Typography>
+              </M.Box>
+            </M.Stack>
+          </M.Stack>
+          <M.Tooltip
+            title={
+              <M.Box>
+                <M.Typography variant="body2">
+                  How to use encoders:
+                </M.Typography>
+                <M.Typography variant="caption">
+                  • Use mouse wheel to adjust values
+                  <br />
+                  • Hold Ctrl/Cmd for fine control
+                  <br />
+                  • Offset: Adjust start time
+                  <br />
+                  • Duration: Adjust region length
+                  <br />• Min/Max: Adjust frequency range
+                </M.Typography>
+              </M.Box>
+            }
+            arrow
+          >
+            <M.IconButton
+              size="small"
+              sx={{
+                position: "absolute",
+                bottom: 2,
+                right: 2,
+                padding: 0.5,
+              }}
+            >
+              <I.HelpOutline sx={{ fontSize: 16 }} />
+            </M.IconButton>
+          </M.Tooltip>
+        </M.Paper>
       }
     />
   )
