@@ -209,7 +209,7 @@ def generate_waveform(input_file_path, output_file_path, parameters, start, end)
         
         # Plot waveform with thinner line and no padding
         logger.info("Plotting waveform data...")
-        ax.plot(times, data, color='black', linewidth=0.5, solid_capstyle='butt')
+        ax.plot(times, data, color='black', linewidth=0.1, solid_capstyle='butt')
         
         # Set exact axis limits to remove padding
         ax.set_xlim(start_float, end_float)
