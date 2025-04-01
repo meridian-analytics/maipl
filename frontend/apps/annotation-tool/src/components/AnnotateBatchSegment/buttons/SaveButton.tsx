@@ -16,6 +16,7 @@ export function SaveButton() {
   const note = Specviz.Note.useContext()
   const queryClient = RQ.useQueryClient()
   const { setHasUnsavedChanges } = useSaveContext()
+  const [showProgress, setShowProgress] = R.useState(false)
   const saveMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof Annotation.updateSegment>) =>
       Annotation.updateSegment(...vars),
@@ -28,9 +29,11 @@ export function SaveButton() {
       if (import.meta.env["DEV"]) {
         console.error("AnnotationTool saveMutation error", err, vars)
       }
+      setShowProgress(false)
     },
     onSettled: () => {
       saveMutation.reset()
+      setShowProgress(false)
     },
     onSuccess: (segments) => {
       notify((onClose) => (
@@ -47,6 +50,7 @@ export function SaveButton() {
       })
       note.reset(note.regions)
       setHasUnsavedChanges(false)
+      setShowProgress(false)
     },
   })
 
@@ -61,6 +65,7 @@ export function SaveButton() {
     if (loaderData.active.segment == null) return
     if (!note.canCreate) return
     if (saveMutation.isPending) return
+    setShowProgress(true)
     // acl: todo: batch patch action to save only own annotations
     return saveMutation.mutateAsync([
       maipl.client,
@@ -73,12 +78,49 @@ export function SaveButton() {
       })),
     ])
   }
+
+  // Handle keyboard shortcut
+  R.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "h") {
+        if (!isDisabled) {
+          e.preventDefault()
+          onSave()
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [onSave])
+
   return (
-    <MR.ActionButton
-      children={<I.Save />}
-      disabled={isDisabled}
-      onClick={() => onSave()}
-      title="Save Batch"
-    />
+    <>
+      <MR.ActionButton
+        children={<I.Save />}
+        disabled={isDisabled}
+        onClick={() => onSave()}
+        title="Save Batch (⌘/Ctrl + H)"
+      />
+      <M.Dialog
+        open={showProgress}
+        PaperProps={{
+          sx: {
+            minWidth: 300,
+            p: 2,
+          },
+        }}
+      >
+        <M.DialogTitle>Saving Annotations</M.DialogTitle>
+        <M.DialogContent>
+          <M.Stack spacing={2} alignItems="center">
+            <M.CircularProgress />
+            <M.Typography>
+              Please wait while we save your annotations...
+            </M.Typography>
+          </M.Stack>
+        </M.DialogContent>
+      </M.Dialog>
+    </>
   )
 }
