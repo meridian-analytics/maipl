@@ -256,8 +256,8 @@ function MonoForm(props: {
     // if numValue is out of range, set it to the nearest valid value
     if (numValue < freq_axis_min) {
       numValue = freq_axis_min
-    } else if (numValue > freq_axis_max - region.height) {
-      numValue = freq_axis_max - region.height
+    } else if (numValue > freq_axis_max) {
+      numValue = freq_axis_max
     }
     const normalizedValue = Axis.computeUnitInverse(axis[region.yunit], numValue)
     const delta = normalizedValue - rect.y
