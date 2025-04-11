@@ -11,7 +11,7 @@ import * as SchemaContext from "./SchemaContext"
 const COLUMN_STYLES = {
   container: {
     display: "grid",
-    gridTemplateColumns: "1fr 160px",
+    gridTemplateColumns: "1fr 160px 160px",
     gap: 0,
     width: "100%",
     minHeight: "40px",
@@ -90,6 +90,12 @@ export default function AnnotationList(props: {
             >
               Duration
             </M.Typography>
+            <M.Typography
+              variant="subtitle2"
+              sx={{ ...COLUMN_STYLES.cell, ...COLUMN_STYLES.divider }}
+            >
+              Frequency Range
+            </M.Typography>
           </M.Box>
           <M.List disablePadding>
             {Array.from(note.regions.values())
@@ -118,6 +124,8 @@ export function AnnotationListItem(
     [props.properties?.comments, props.properties?.label, schema.getLabel]
   )
   const secondary = F.duration(props.x, props.x + props.width)
+  const frequencyRange = `${props.y.toFixed(0)} - ${(props.y + props.height).toFixed(0)} Hz`
+  
   return (
     <M.ListItem disablePadding key={props.id}>
       <M.ListItemButton
@@ -157,6 +165,15 @@ export function AnnotationListItem(
             sx={{ ...COLUMN_STYLES.cell, ...COLUMN_STYLES.divider }}
           >
             {secondary}
+          </M.Typography>
+        </M.Tooltip>
+        <M.Tooltip title={frequencyRange} placement="top">
+          <M.Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ ...COLUMN_STYLES.cell, ...COLUMN_STYLES.divider }}
+          >
+            {frequencyRange}
           </M.Typography>
         </M.Tooltip>
       </M.ListItemButton>
