@@ -10,7 +10,7 @@
     "@maipl/format": "workspace:^",
     "@maipl/js": "workspace:^",
     "@maipl/react": "workspace:^",
-    "@meridian-analytics/specviz": "1.0.0",
+    "@meridian-analytics/specviz": "1.0.1",
     "@mui/icons-material": "^5.15.14",
     "@mui/material": "^5.15.14",
     "@rjsf/core": "^5.23.2",

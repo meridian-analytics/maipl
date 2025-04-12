@@ -33,8 +33,8 @@ importers:
         specifier: workspace:^
         version: link:../../modules/react
       '@meridian-analytics/specviz':
-        specifier: 1.0.0
-        version: 1.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 1.0.1
+        version: 1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@mui/icons-material':
         specifier: ^5.15.14
         version: 5.16.13(@mui/material@5.16.13(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.18)(react@18.3.1)
@@ -912,14 +912,14 @@ packages:
   '@kurkle/color@0.3.4':
     resolution: {integrity: sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==}
 
-  '@meridian-analytics/specviz@1.0.0':
-    resolution: {integrity: sha512-TJL+Fg/ao0LZ91I/cDHW+gLLBCMNm8uOTOo05PazjUJLr9PeoW0lcHi1xpezEjvemq2kIm0OfLT5Q8O0PqOQ8A==}
+  '@meridian-analytics/specviz@1.0.0-beta':
+    resolution: {integrity: sha512-AgTfGKieap6ZNxamsEHxwX3ykWV9VY/G4OXz8KRZy/fR3dduXRjseg8IH7fhsERiRiyUkHK47bmFNFm8TFMLrQ==}
     peerDependencies:
       react: ^18.3.1
       react-dom: ^18.3.1
 
-  '@meridian-analytics/specviz@1.0.0-beta':
-    resolution: {integrity: sha512-AgTfGKieap6ZNxamsEHxwX3ykWV9VY/G4OXz8KRZy/fR3dduXRjseg8IH7fhsERiRiyUkHK47bmFNFm8TFMLrQ==}
+  '@meridian-analytics/specviz@1.0.1':
+    resolution: {integrity: sha512-9+yrduqo7OdXuS8S0EtFP5aQesCVnyyrPnZlPuXGDn9ixLQKxODnxloW7B9dp/8kWfp6qQj9ZyWv8MHc49ay1Q==}
     peerDependencies:
       react: ^18.3.1
       react-dom: ^18.3.1
@@ -2040,12 +2040,12 @@ snapshots:
 
   '@kurkle/color@0.3.4': {}
 
-  '@meridian-analytics/specviz@1.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@meridian-analytics/specviz@1.0.0-beta(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@meridian-analytics/specviz@1.0.0-beta(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@meridian-analytics/specviz@1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
