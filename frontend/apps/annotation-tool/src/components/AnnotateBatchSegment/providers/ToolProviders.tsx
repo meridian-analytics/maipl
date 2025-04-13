@@ -6,8 +6,6 @@ import * as SchemaContext from "../../../SchemaContext"
 import * as MR from "@maipl/react"
 import * as Format from "@meridian-analytics/specviz/format"
 import * as Rect from "@meridian-analytics/specviz/rect"
-import type { LoaderData } from "../types"
-import * as RR from "react-router-dom"
 
 export function BaseToolProvider(props: { children: R.ReactNode }) {
   const audio = Specviz.Audio.useContext()
@@ -109,12 +107,14 @@ export function NavigatorToolProvider(props: { children: R.ReactNode }) {
 }
 
 export function VisualizationToolProvider(props: { children: R.ReactNode }) {
-  const loaderData = RR.useLoaderData() as LoaderData
   const schema = SchemaContext.useContext()
   const app = AppContext.useContext()
   const maipl = MR.useMaipl()
   const note = Specviz.Note.useContext()
   const viewport = Specviz.Viewport.useContext()
+  const axis = Specviz.Axis.useContext()
+  const freqAxis = axis["hertz"]
+
   const onWheel: Specviz.Action.Handler["onWheel"] = R.useCallback(
     ({ dx, dy, event }) => {
       if (event.altKey) {
@@ -151,13 +151,12 @@ export function VisualizationToolProvider(props: { children: R.ReactNode }) {
                 y:
                   yaxis.unit == "hertz"
                     ? unit.y
-                    : loaderData.batch.parameters.freq_min,
+                    : freqAxis.min,
                 width,
                 height:
                   yaxis.unit == "hertz"
                     ? unit.height
-                    : loaderData.batch.parameters.freq_max -
-                      loaderData.batch.parameters.freq_min,
+                    : freqAxis.max - freqAxis.min,
                 xunit: xaxis.unit,
                 yunit: "hertz", // only use hertz for both spectrogram and waveform
                 properties: {
@@ -242,9 +241,8 @@ export function VisualizationToolProvider(props: { children: R.ReactNode }) {
     viewport.state.zoom.y,
     viewport.zoomArea,
     viewport.zoomPoint,
-    loaderData.batch.parameters.freq_min,
-    loaderData.batch.parameters.freq_max,
-    loaderData.active.segment.start,
+    freqAxis.min,
+    freqAxis.max,
   ])
   return <Specviz.Action.Provider children={props.children} {...action} />
 }
