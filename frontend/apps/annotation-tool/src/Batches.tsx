@@ -12,13 +12,22 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
   const notify = MR.useNotify()
   const status = Batch.status(props.batch)
   const [showLoading, setShowLoading] = R.useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = R.useState(false)
   const navigate = RR.useNavigate()
 
   const onDelete = () => {
-    const message = `Are you sure you want to delete batch: ${props.batch.batch_name}?`
-    if (deleteMutation.isIdle && confirm(message)) {
+    setShowDeleteDialog(true)
+  }
+
+  const handleDeleteConfirm = () => {
+    if (deleteMutation.isIdle) {
+      setShowDeleteDialog(false)
       return deleteMutation.mutateAsync([maipl.client, props.batch.id])
     }
+  }
+
+  const handleDeleteCancel = () => {
+    setShowDeleteDialog(false)
   }
 
   const onExport = () => {
@@ -172,6 +181,38 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
           onClick={onDelete}
         />
       </MR.Menu>
+
+      <M.Dialog
+        open={showDeleteDialog}
+        onClose={handleDeleteCancel}
+        PaperProps={{
+          sx: {
+            p: 3,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2,
+          },
+        }}
+      >
+        <M.DialogTitle>Delete Batch</M.DialogTitle>
+        <M.DialogContent>
+          <M.Typography>
+            Are you sure you want to delete batch: {props.batch.batch_name}?
+          </M.Typography>
+        </M.DialogContent>
+        <M.DialogActions>
+          <M.Button onClick={handleDeleteCancel}>Cancel</M.Button>
+          <M.Button 
+            onClick={handleDeleteConfirm} 
+            color="error"
+            variant="contained"
+            disabled={deleteMutation.isPending}
+          >
+            Delete
+          </M.Button>
+        </M.DialogActions>
+      </M.Dialog>
 
       <M.Dialog
         open={showLoading}
