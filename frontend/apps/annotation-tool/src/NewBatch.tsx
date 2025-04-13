@@ -268,7 +268,7 @@ function NewBatch(props: { onClose: () => void }) {
         <M.Typography variant="h6">Create new batch ...</M.Typography>
         <M.Stack component={M.Paper} padding={2}>
           <M.TextField
-            label="Batch Name"
+            label="Batch Name (required)"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -330,7 +330,7 @@ function NewBatch(props: { onClose: () => void }) {
             </M.Select>
           </M.FormControl>
           <MR.Picker
-            label="Annotation Configuration"
+            label="Annotation Configuration (required)"
             setValue={(value) => setAnnotationFile(Number(value))}
             value={annotationFile ? String(annotationFile) : ""}
             values={optionsForFiles(annotationFiles)}
@@ -431,11 +431,11 @@ function NewBatch(props: { onClose: () => void }) {
           )}
         {tab == Tab.files && importFile && (
           <M.Stack
-            sx={{ ...style.base, padding: 2 }}
+            sx={{ ...style.base, padding: 2, height: "100%" }}
             direction="row"
             spacing={4}
           >
-            <M.Stack alignItems="center">
+            <M.Stack alignItems="center" flexGrow={1}>
               <I.InsertDriveFileOutlined sx={{ fontSize: 50 }} />
               <M.Typography>
                 {importFiles.get(importFile)!.basename}
@@ -444,7 +444,7 @@ function NewBatch(props: { onClose: () => void }) {
                 {F.filesize(importFiles.get(importFile)!.size)}
               </M.Typography>
             </M.Stack>
-            <M.Stack padding={4}>
+            <M.Stack padding={4} flexGrow={1}>
               <M.Typography>
                 Files and annotations will be imported from this file.
               </M.Typography>
@@ -620,7 +620,7 @@ function NewBatch(props: { onClose: () => void }) {
           <M.Button children="Close" onClick={props.onClose} />
           <M.Button
             children="Create"
-            disabled={createMutation.isPending}
+            disabled={createMutation.isPending || !name || !annotationFile || (!importFile && table.selection.size === 0)}
             onClick={onCreate}
             variant="contained"
           />
