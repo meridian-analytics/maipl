@@ -57,70 +57,190 @@ function SelectionActions(props: {
   selection: Selection
   setSelection: SetSelection
 }) {
-  const { client } = MR.useMaipl()
+  const { client, user } = MR.useMaipl()
   const queryClient = RQ.useQueryClient()
   const fileContext = useContext()
+  const [showDeleteConfirm, setShowDeleteConfirm] = R.useState(false)
 
   const onDelete = async () => {
-    const message = [
-      `Are you sure you want to delete ${props.selection.size} files?`,
-      Tree.toString(
-        Tree.fromPaths(
-          Array.from(props.selection.values(), (file) => file.path)
-        )
-      ),
-    ]
+    const deletableFiles = Array.from(props.selection.entries()).filter(([_, file]) => 
+      file.owner.id === user?.id && !file.in_use
+    )
 
-    if (confirm(message.join("\n\n"))) {
-      await File.delete(client, Array.from(props.selection.keys()))
-      props.setSelection(new Map())
-      // bug: how to handle when deleting all items on last page?
-      // setPagination({ pageIndex: 0, pageSize: pagination.pageSize })
-      queryClient.refetchQueries({ queryKey: ["files"] })
+    if (deletableFiles.length === 0) {
+      setShowDeleteConfirm(false)
+      return
     }
+
+    await File.delete(client, deletableFiles.map(([id]) => id))
+    props.setSelection(new Map())
+    queryClient.refetchQueries({ queryKey: ["files"] })
+    setShowDeleteConfirm(false)
   }
 
+  const files = Array.from(props.selection.entries())
+  const nonDeletableFiles = files.filter(([_, file]) => 
+    file.owner.id !== user?.id || file.in_use
+  )
+  const deletableFiles = files.filter(([_, file]) => 
+    file.owner.id === user?.id && !file.in_use
+  )
+
   return (
-    <M.Stack direction="row">
-      <MR.ActionButton
-        children={<I.Share />}
-        component={RR.Link}
-        disabled={fileContext.selection.size == 0}
-        title="Share Files"
-        to={{
-          pathname: "share",
-          search: RR.useLocation().search,
-        }}
-      />
-      <MR.ActionButton
-        children={<I.DriveFolderUpload />}
-        component={RR.Link}
-        title="Upload Files"
-        to={{
-          pathname: "upload",
-          search: RR.useLocation().search,
-        }}
-      />
-      <MR.ActionButton
-        children={<I.NoteAdd />}
-        component={RR.Link}
-        title="Create new file"
-        to={{
-          pathname: "new",
-          search: RR.useLocation().search,
-        }}
-      />
-      <MR.ActionButton
-        children={<I.DeleteForever />}
-        disabled={props.selection.size == 0}
-        onClick={onDelete}
-        title={
-          props.selection.size == 0
-            ? "Delete"
-            : `Delete ${props.selection.size} files`
-        }
-      />
-    </M.Stack>
+    <>
+      <M.Stack direction="row">
+        <MR.ActionButton
+          children={<I.Share />}
+          component={RR.Link}
+          disabled={fileContext.selection.size == 0}
+          title="Share Files"
+          to={{
+            pathname: "share",
+            search: RR.useLocation().search,
+          }}
+        />
+        <MR.ActionButton
+          children={<I.DriveFolderUpload />}
+          component={RR.Link}
+          title="Upload Files"
+          to={{
+            pathname: "upload",
+            search: RR.useLocation().search,
+          }}
+        />
+        <MR.ActionButton
+          children={<I.NoteAdd />}
+          component={RR.Link}
+          title="Create new file"
+          to={{
+            pathname: "new",
+            search: RR.useLocation().search,
+          }}
+        />
+        <MR.ActionButton
+          children={<I.DeleteForever />}
+          disabled={props.selection.size == 0}
+          onClick={() => setShowDeleteConfirm(true)}
+          title={
+            props.selection.size == 0
+              ? "Delete"
+              : `Delete ${props.selection.size} files`
+          }
+        />
+      </M.Stack>
+
+      <M.Modal 
+        open={showDeleteConfirm} 
+        onClose={() => setShowDeleteConfirm(false)}
+        aria-labelledby="delete-confirmation-modal"
+      >
+        <M.Box sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 600,
+          bgcolor: 'background.paper',
+          boxShadow: 24,
+          p: 4,
+          maxHeight: '80vh',
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
+          <M.Stack spacing={2} sx={{ flex: 1, overflow: 'hidden' }}>
+            <M.Stack direction="row" justifyContent="space-between" alignItems="center">
+              <M.Typography variant="h6" id="delete-confirmation-modal">Delete Files</M.Typography>
+              <M.IconButton onClick={() => setShowDeleteConfirm(false)}>
+                <I.Close />
+              </M.IconButton>
+            </M.Stack>
+            <M.Divider />
+
+            <M.Box sx={{ overflow: 'auto', flex: 1 }}>
+              {nonDeletableFiles.length > 0 && (
+                <M.Stack spacing={1}>
+                  <M.Typography variant="subtitle2" color="error">
+                    Cannot Delete ({nonDeletableFiles.length})
+                  </M.Typography>
+                  <M.Box sx={{ pl: 2 }}>
+                    {nonDeletableFiles.map(([_, file], i) => {
+                      const isOwner = file.owner.id === user?.id
+                      const reason = isOwner ? "In use" : "Not owner"
+                      return (
+                        <M.Typography 
+                          key={i} 
+                          variant="body2" 
+                          color="text.secondary"
+                          sx={{ 
+                            fontFamily: "monospace",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1
+                          }}
+                        >
+                          {file.path}
+                          <M.Chip
+                            icon={<I.Cancel />}
+                            label={reason}
+                            color="error"
+                            size="small"
+                          />
+                        </M.Typography>
+                      )
+                    })}
+                  </M.Box>
+                </M.Stack>
+              )}
+
+              {deletableFiles.length > 0 && (
+                <M.Stack spacing={1}>
+                  <M.Typography variant="subtitle2" color="success.main">
+                    Can Delete ({deletableFiles.length})
+                  </M.Typography>
+                  <M.Box sx={{ pl: 2 }}>
+                    {deletableFiles.map(([_, file], i) => (
+                      <M.Typography 
+                        key={i} 
+                        variant="body2" 
+                        sx={{ 
+                          fontFamily: "monospace",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1
+                        }}
+                      >
+                        {file.path}
+                        <M.Chip
+                          icon={<I.CheckCircle />}
+                          label="Can be deleted"
+                          color="success"
+                          size="small"
+                        />
+                      </M.Typography>
+                    ))}
+                  </M.Box>
+                </M.Stack>
+              )}
+            </M.Box>
+
+            <M.Divider />
+            <M.Stack direction="row" spacing={2} justifyContent="flex-end">
+              <M.Button
+                onClick={() => setShowDeleteConfirm(false)}
+                children="Cancel"
+              />
+              <M.Button
+                onClick={onDelete}
+                variant="contained"
+                color="error"
+                disabled={deletableFiles.length === 0}
+                children="Delete Selected"
+              />
+            </M.Stack>
+          </M.Stack>
+        </M.Box>
+      </M.Modal>
+    </>
   )
 }
 
@@ -131,39 +251,168 @@ function FileActions(props: { file: File.t }) {
     props.file.extname != ".wav" &&
     props.file.extname != ".mp3" &&
     props.file.extname != ".ogg"
+  
+  const [showDetails, setShowDetails] = R.useState(false)
 
   return (
-    <MR.Menu icon={<I.Settings />}>
-      <M.MenuItem
-        children="Download"
-        component={M.Link}
-        download={props.file.basename}
-        href={props.file.file}
-        rel="noreferrer"
-        target="_blank"
-        underline="none"
-      />
-      <M.Divider />
-      <M.MenuItem
-        component={RR.Link}
-        disabled={!isEditable}
-        to={`${props.file.id}/edit`}
-        children="Edit"
-      />
-    </MR.Menu>
+    <>
+      <MR.Menu icon={<I.Settings />}>
+        <M.MenuItem
+          children="Download"
+          component={M.Link}
+          download={props.file.basename}
+          href={props.file.file}
+          rel="noreferrer"
+          target="_blank"
+          underline="none"
+        />
+        <M.Divider />
+        <M.MenuItem
+          component={RR.Link}
+          disabled={!isEditable}
+          to={`${props.file.id}/edit`}
+          children="Edit"
+        />
+        <M.MenuItem
+          onClick={() => setShowDetails(true)}
+          children="Details"
+        />
+      </MR.Menu>
+
+      <M.Modal 
+        open={showDetails} 
+        onClose={() => setShowDetails(false)}
+        aria-labelledby="file-details-modal"
+      >
+        <M.Box sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 600,
+          bgcolor: 'background.paper',
+          boxShadow: 24,
+          p: 4,
+          maxHeight: '80vh',
+          overflow: 'auto',
+        }}>
+          <M.Stack spacing={2}>
+            <M.Stack direction="row" justifyContent="space-between" alignItems="center">
+              <M.Typography variant="h6" id="file-details-modal">File Details</M.Typography>
+              <M.IconButton onClick={() => setShowDetails(false)}>
+                <I.Close />
+              </M.IconButton>
+            </M.Stack>
+            <M.Divider />
+            <M.Stack spacing={1}>
+              <M.Typography variant="subtitle2">Basic Information</M.Typography>
+              <M.Stack direction="row" spacing={2}>
+                <M.Typography variant="body2" color="text.secondary">Name:</M.Typography>
+                <M.Typography variant="body2">{props.file.basename}</M.Typography>
+              </M.Stack>
+              <M.Stack direction="row" spacing={2}>
+                <M.Typography variant="body2" color="text.secondary">Path:</M.Typography>
+                <M.Typography variant="body2">{props.file.path}</M.Typography>
+              </M.Stack>
+              <M.Stack direction="row" spacing={2}>
+                <M.Typography variant="body2" color="text.secondary">Size:</M.Typography>
+                <M.Typography variant="body2">{(props.file.size / (1024 * 1024)).toFixed(2)} MB</M.Typography>
+              </M.Stack>
+              <M.Stack direction="row" spacing={2}>
+                <M.Typography variant="body2" color="text.secondary">Created:</M.Typography>
+                <M.Typography variant="body2">{new Date(props.file.created_at).toLocaleString()}</M.Typography>
+              </M.Stack>
+              <M.Stack direction="row" spacing={2}>
+                <M.Typography variant="body2" color="text.secondary">Updated:</M.Typography>
+                <M.Typography variant="body2">{new Date(props.file.updated_at).toLocaleString()}</M.Typography>
+              </M.Stack>
+            </M.Stack>
+
+            <M.Stack spacing={1}>
+              <M.Typography variant="subtitle2">Audio Information</M.Typography>
+              <M.Stack direction="row" spacing={2}>
+                <M.Typography variant="body2" color="text.secondary">Duration:</M.Typography>
+                <M.Typography variant="body2">
+                  {File.safeMeta(props.file, "audio", "duration", 0)?.toFixed(2) ?? "-"} seconds
+                </M.Typography>
+              </M.Stack>
+              <M.Stack direction="row" spacing={2}>
+                <M.Typography variant="body2" color="text.secondary">Channels:</M.Typography>
+                <M.Typography variant="body2">
+                  {File.safeMeta(props.file, "audio", "channels", 0) ?? "-"}
+                </M.Typography>
+              </M.Stack>
+              <M.Stack direction="row" spacing={2}>
+                <M.Typography variant="body2" color="text.secondary">Sample Rate:</M.Typography>
+                <M.Typography variant="body2">
+                  {File.safeMeta(props.file, "audio", "sample_rate", 0) ? `${File.safeMeta(props.file, "audio", "sample_rate", 0)} Hz` : "-"}
+                </M.Typography>
+              </M.Stack>
+            </M.Stack>
+
+            <M.Stack spacing={1}>
+              <M.Typography variant="subtitle2">Sharing Information</M.Typography>
+              <M.Stack direction="row" spacing={2}>
+                <M.Typography variant="body2" color="text.secondary">Owner:</M.Typography>
+                <M.Typography variant="body2">{props.file.owner.first_name} {props.file.owner.last_name}</M.Typography>
+              </M.Stack>
+              <M.Stack direction="row" spacing={2}>
+                <M.Typography variant="body2" color="text.secondary">Shared With:</M.Typography>
+                <M.Typography variant="body2">
+                  {props.file.shared_to.length > 0 
+                    ? props.file.shared_to.map(user => `${user.first_name} ${user.last_name}`).join(", ")
+                    : "No one"}
+                </M.Typography>
+              </M.Stack>
+            </M.Stack>
+
+            <M.Stack spacing={1}>
+              <M.Typography variant="subtitle2">Technical Information</M.Typography>
+              <M.Stack direction="row" spacing={2}>
+                <M.Typography variant="body2" color="text.secondary">SHA256:</M.Typography>
+                <M.Typography variant="body2" sx={{ fontFamily: "monospace" }}>{props.file.sha256}</M.Typography>
+              </M.Stack>
+            </M.Stack>
+          </M.Stack>
+        </M.Box>
+      </M.Modal>
+    </>
   )
 }
 
 function ShareAvatars(props: { file: File.t }) {
   const maipl = MR.useMaipl()
+  const isOwner = props.file.user_id === maipl.user?.id
+  
   return (
-    <MR.UserAvatarGroup
-      users={
-        props.file.user_id != maipl.user?.id
-          ? [props.file.owner]
-          : props.file.shared_to
-      }
-    />
+    <M.Tooltip title={isOwner ? "You own this file" : "Shared with you"}>
+      <M.Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <MR.UserAvatarGroup
+          users={
+            isOwner
+              ? props.file.shared_to
+              : [props.file.owner]
+          }
+        />
+        {isOwner ? (
+          <M.Chip
+            icon={<I.Person />}
+            label="Owner"
+            size="small"
+            color="primary"
+            variant="outlined"
+          />
+        ) : (
+          <M.Chip
+            icon={<I.People />}
+            label="Shared"
+            size="small"
+            color="secondary"
+            variant="outlined"
+          />
+        )}
+      </M.Box>
+    </M.Tooltip>
   )
 }
 
@@ -273,13 +522,48 @@ export default function Files(props: { sx?: M.SxProps }) {
           }
         ),
         MR.Files.column.accessor("shared_to", {
-          header: "Share",
+          id: "shared_with",
+          header: "Shared With",
           cell: (info) => (
             <M.Box sx={{ display: "flex", justifyContent: "center" }}>
-              <ShareAvatars file={info.row.original} />
+              <MR.UserAvatarGroup users={info.getValue()} />
             </M.Box>
           ),
+          size: 100,
+        }),
+        MR.Files.column.accessor("user_id", {
+          id: "ownership",
+          header: "Ownership",
+          cell: (info) => {
+            const maipl = MR.useMaipl()
+            const isOwner = info.getValue() === maipl.user?.id
+            return (
+              <M.Box sx={{ display: "flex", justifyContent: "center" }}>
+                <M.Chip
+                  icon={isOwner ? <I.Person /> : <I.People />}
+                  label={isOwner ? "Owned" : "Shared"}
+                  size="small"
+                  color={isOwner ? "primary" : "secondary"}
+                  variant="outlined"
+                />
+              </M.Box>
+            )
+          },
           size: 50,
+        }),
+        MR.Files.column.accessor("in_use", {
+          id: "in_use",
+          header: "In Use",
+          cell: (info) => (
+            <M.Box sx={{ display: "flex", justifyContent: "center" }}>
+              {info.getValue() ? (
+                <I.CheckCircle color="success" />
+              ) : (
+                <I.Cancel color="error" />
+              )}
+            </M.Box>
+          ),
+          size: 30,
         }),
         MR.Files.column.display({
           id: "actions",
