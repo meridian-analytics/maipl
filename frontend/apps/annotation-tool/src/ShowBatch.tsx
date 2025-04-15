@@ -86,30 +86,62 @@ export default function ShowBatch(props: ShowBatchProps) {
   const queryClient = RQ.useQueryClient()
   const [_searchParams, setSearchParams] = RR.useSearchParams()
 
-  // field: name
-  const [name] = R.useState(props.batch.batch_name)
-
-  // field: created_at
-  const [description] = R.useState(props.batch.description)
-
-  // field: parameters (for spectrogram)
-  const [parameters] = R.useState(props.batch.parameters)
-  const [spectrogramType] = R.useState<"MagSpectrogram" | "MelSpectrogram">(
-    () =>
-      (props.batch.parameters as { type: "MagSpectrogram" | "MelSpectrogram" })
-        .type
-  )
-
-  // field: annotation_file
-  const [annotationFile] = R.useState<null | number>(
-    props.batch.annotation_file
-  )
-
-  // field: segment_parameters
-  const [segmentParameters] = R.useState(props.batch.segment_parameters)
+  // Get values directly from props.batch since they don't change
+  const name = props.batch.batch_name
+  const description = props.batch.description
+  const parameters = props.batch.parameters
+  const spectrogramType = (props.batch.parameters as { type: "MagSpectrogram" | "MelSpectrogram" }).type
+  const annotationFile = props.batch.annotation_file
+  const segmentParameters = props.batch.segment_parameters
 
   // field: share_to
-  const [shareTo] = R.useState<Map<number, Batch.t_role_code>>(() => new Map())
+  const [shareTo, setShareTo] = R.useState<Map<number, Batch.t_role_code>>(() => new Map())
+
+   const updateMutation = RQ.useMutation({
+     mutationFn: (vars: Parameters<typeof Batch.patch>) => Batch.patch(...vars),
+     onError: (err, vars) => {
+       notify((onClose) => (
+         <M.Alert onClose={onClose} severity="error">
+           Error: Could not update batch
+         </M.Alert>
+       ))
+       if (import.meta.env["DEV"]) {
+         console.error("ShowBatch update error", err, vars)
+       }
+     },
+     onSettled: () => {
+       updateMutation.reset()
+     },
+     onSuccess: () => {
+       notify((onClose) => (
+         <M.Alert onClose={onClose} severity="success">
+           Success: updated batch{" "}
+           {
+             <M.Link
+               component={RR.Link}
+               to={`/batches/${props.batch.id}`}
+               children={`#${props.batch.id}`}
+             />
+           }
+         </M.Alert>
+       ))
+       queryClient.refetchQueries({ queryKey: ["batches"] })
+       props.onClose()
+     },
+   })
+
+   const onUpdate = () => {
+     if (updateMutation.isIdle) {
+       return updateMutation.mutateAsync([
+         maipl.client,
+         {
+           id: props.batch.id,
+           shared_to: Array.from(shareTo.entries()),
+         },
+       ])
+     }
+   }
+ 
 
   const table = MR.Files.useTable({
     selection: R.useMemo(
@@ -119,6 +151,10 @@ export default function ShowBatch(props: ShowBatchProps) {
         ),
       [props.batch]
     ),
+    pagination: {
+      pageIndex: 0,
+      pageSize: 25,
+    },
   })
 
   const { data: files } = MR.Files.useQuery({
@@ -143,8 +179,10 @@ export default function ShowBatch(props: ShowBatchProps) {
       <M.Stack
         sx={{
           maxHeight: "100%",
-          overflow: "hidden",
+          overflow: "auto",
           height: "100%",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <M.Typography variant="h6">
@@ -234,6 +272,16 @@ export default function ShowBatch(props: ShowBatchProps) {
                   sample_rate: false,
                   created_at: true,
                 }}
+                sx={{
+                  "& .MuiTableCell-root": {
+                    color: "text.disabled"
+                  },
+                  "& .MuiCheckbox-root": {
+                    disabled: true,
+                    color: "action.disabled" 
+                  },
+                  pointerEvents: "none"
+                }}
               />
             </M.Stack>
           </M.Stack>
@@ -297,26 +345,21 @@ export default function ShowBatch(props: ShowBatchProps) {
         )}
         {props.tab == Tab.share && (
           <M.Stack
-            component={M.Paper}
             sx={{
               flexGrow: 1,
               overflowY: "auto",
               overflowX: "hidden",
-              paddingX: 2,
-              maxHeight: "100%",
-              height: "100%",
             }}
           >
             <BatchShare
               batch={props.batch}
               shareTo={shareTo}
-              setShareTo={() => {}}
+              setShareTo={setShareTo}
               users={props.users}
-              readOnly
             />
           </M.Stack>
         )}
-        <M.Stack direction="row">
+        <M.Stack direction="row" justifyContent="space-between" alignItems="center">
           <M.Typography>
             Selection: {table.selection.size} files (
             {F.filesize(
@@ -327,8 +370,15 @@ export default function ShowBatch(props: ShowBatchProps) {
             )}
             )
           </M.Typography>
-          <M.Stack flexGrow={1} />
-          <M.Button children="Close" onClick={props.onClose} />
+          <M.Stack direction="row" gap={1}>
+            <M.Button children="Close" onClick={props.onClose} />
+            <M.Button
+              children="Save"
+              disabled={updateMutation.isPending}
+              onClick={onUpdate}
+              variant="contained"
+            />
+          </M.Stack>
         </M.Stack>
       </M.Stack>
     </MR.Modal>
