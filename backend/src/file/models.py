@@ -38,10 +38,17 @@ class File(models.Model):
             else:
                 self.shared_to.remove(target_user_id)
 
-    def delete(self, *args, **kwargs):
+    def delete(self, *args, force=False, **kwargs):
         """
-        Delete must be overridden because the inherited delete method does not call `self.file.delete()`.
+        Override delete to prevent deletion of files that are in use,
+        unless force=True is specified.
         """
+        if not force and self.in_use:
+            raise ValidationError(
+                f"Cannot delete file '{self.basename}' as it is currently in use by other models. "
+                "Use force=True to override this protection."
+            )
+        
         try:
             self.file.delete()
         except Exception as e:
@@ -87,6 +94,60 @@ class File(models.Model):
     def extname(self):
         filename, extension = splitext(self.basename)
         return extension
+
+    @property
+    def in_use(self):
+        """
+        Check if the file is being used in any related models.
+        Returns True if the file is referenced by any other model, False otherwise.
+        """
+        # Import Batch here to avoid circular import
+        from annotation.models import Batch
+        
+        # Check ModelRunnerTask relationships
+        if (
+            self.model_file_tasks.exists() or  # model_file relationship
+            self.filelist_tasks.exists() or    # filelist relationship
+            self.detections_tasks.exists()      # detections relationship
+        ):
+            return True
+            
+        # Check Batch relationships
+        if (
+            self.batches.exists() or           # filelist relationship
+            Batch.objects.filter(annotation_file=self).exists() or
+            Batch.objects.filter(import_file=self).exists()
+        ):
+            return True
+            
+        # Check Segment relationship
+        if self.segment_set.exists():
+            return True
+            
+        # Check Annotation relationship
+        if self.annotation_set.exists():
+            return True
+            
+        # Check Detection relationship
+        if self.file_detections.exists():
+            return True
+            
+        # Check MetricsTask relationships
+        if (
+            self.audio_list_metrics_tasks.exists() or  # bg_audio_list relationship
+            self.output_files_metrics_tasks.exists()    # output_files relationship
+        ):
+            return True
+            
+        # Check TrainingTask relationships
+        if (
+            self.dataset_file_tasks.exists() or
+            self.recipe_file_tasks.exists() or
+            self.model_file_train_tasks.exists()
+        ):
+            return True
+            
+        return False
 
 
 @receiver(pre_save, sender=File)

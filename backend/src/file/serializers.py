@@ -36,6 +36,7 @@ class ReadSerializer(serializers.ModelSerializer):
             "user_id",
             'shared_to',
             'owner',
+            'in_use',
         ]
         extra_kwargs = {field: {"read_only": True} for field in fields}
 
