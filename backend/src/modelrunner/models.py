@@ -66,7 +66,9 @@ class ModelRunnerTask(models.Model):
 @receiver(pre_delete, sender=ModelRunnerTask)
 def delete_task_files(sender, instance, **kwargs):
     # delete the task directory
-    os.remove(os.path.join("/tasks", "runner", str(instance.id)))
+    import shutil
+    task_path = os.path.join("/tasks", "runner", str(instance.id))
+    shutil.rmtree(task_path, ignore_errors=True)
 
 
 
