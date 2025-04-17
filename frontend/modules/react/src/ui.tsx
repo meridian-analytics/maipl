@@ -9,8 +9,7 @@ export { default as Picker } from "./ui/Picker"
 export { default as Profile } from "./ui/Profile"
 export { default as Switch } from "./ui/Switch"
 export { default as theme } from "./ui/theme"
-export { default as Console } from "./ui/Console"
-export { default as Log } from "./ui/Log"
+export { default as Terminal } from "./ui/Terminal"
 export {
   type UserAvatarProps,
   default as UserAvatar,

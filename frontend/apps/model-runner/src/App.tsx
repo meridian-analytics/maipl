@@ -5,6 +5,8 @@ import Detections from "./Detections"
 import EditTask from "./EditTask"
 import ShowTask from "./ShowTask"
 import Tasks from "./Tasks"
+import ConsolePage from "./Console"
+import LogPage from "./Log"
 
 export default function App() {
   return <MR.MaiplProvider router={router} />
@@ -51,6 +53,14 @@ const router: MR.t_router = () => [
           {
             path: ":taskId",
             element: <ShowTask />,
+          },
+          {
+            path: ":taskId/console",
+            element: <ConsolePage />,
+          },
+          {
+            path: ":taskId/log",
+            element: <LogPage />,
           },
         ],
       },

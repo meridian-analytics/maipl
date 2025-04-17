@@ -2,7 +2,7 @@ import * as F from "@maipl/format"
 import * as MR from "@maipl/react"
 import * as RQ from "@tanstack/react-query"
 import * as RR from "react-router-dom"
-import { TrainerTask } from "@maipl/api"
+import { RunnerTask } from "@maipl/api"
 import { Terminal } from "@maipl/react"
 
 export default function LogLoader() {
@@ -17,13 +17,13 @@ export default function LogLoader() {
 
   const { data, error, isLoading, refetch } = RQ.useQuery({
     enabled: taskId != null,
-    queryKey: ["trainer-tasks-log", taskId],
+    queryKey: ["runner-tasks-log", taskId],
     queryFn: () => {
-      return TrainerTask.get_log(maipl.client, taskId!)
+      return RunnerTask.get_log(maipl.client, taskId!)
     },
   })
 
   const logOutput = typeof data === 'string' ? data : ''
 
-  return <Terminal consoleOutput={logOutput} onClose={onClose} onRefresh={refetch} />
+  return <Terminal consoleOutput={logOutput} onClose={onClose} onRefresh={refetch} isLoading={isLoading} error={error} />
 }

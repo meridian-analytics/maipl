@@ -51,6 +51,5 @@ export {
   theme,
   UserAvatar,
   UserAvatarGroup,
-  Console,
-  Log,
+  Terminal,
 } from "./ui"

@@ -3,7 +3,7 @@ import * as MR from "@maipl/react"
 import * as RQ from "@tanstack/react-query"
 import * as RR from "react-router-dom"
 import { TrainerTask } from "@maipl/api"
-import { Console } from "@maipl/react"
+import { Terminal } from "@maipl/react"
 
 export default function ConsoleLoader() {
   const navigate = RR.useNavigate()
@@ -23,9 +23,11 @@ export default function ConsoleLoader() {
     },
   })
 
+  const consoleOutput = typeof data === 'string' ? data : ''
+
   return (
-    <Console
-      consoleOutput={data?.["console_output"] || ""}
+    <Terminal
+      consoleOutput={consoleOutput}
       onClose={onClose}
       onRefresh={refetch}
       isLoading={isLoading}

@@ -86,10 +86,14 @@ function TaskActions(props: { task: RunnerTask.t }) {
         to={`/${props.task.id}`}
       />
       <M.MenuItem
-        children="Detections"
-        disabled={props.task.detections == null}
+        children="Console"
         component={RR.Link}
-        to={`/${props.task.id}/detections`}
+        to={`/${props.task.id}/console`}
+      />
+      <M.MenuItem
+        children="Log"
+        component={RR.Link}
+        to={`/${props.task.id}/log`}
       />
       <M.MenuItem
         disabled={props.task.status != "CREATED" || startMutation.isPending}
