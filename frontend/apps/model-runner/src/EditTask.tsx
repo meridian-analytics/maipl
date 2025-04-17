@@ -91,6 +91,10 @@ function EditTask(props: {
             ),
       [props.task],
     ),
+    pagination: {
+      pageIndex: 0,
+      pageSize: 25,
+    },
   })
 
   const { data: files } = MR.Files.useQuery({
@@ -162,7 +166,7 @@ function EditTask(props: {
   }
 
   return (
-    <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
+    <M.Stack sx={{ height: "80vh", overflow: "hidden" }}>
       <M.Typography variant="h6">
         {props.task == null ? "New Task" : `Copy Task #${props.task.id}`}
       </M.Typography>
@@ -228,7 +232,7 @@ function EditTask(props: {
             if (value) setFolder(value as File.t_maipl_folder)
           }}
           value={folder}
-          values={[File.t_maipl_folder.raw]}
+          values={[File.t_maipl_folder.raw, File.t_maipl_folder.dataset]}
         />
         <M.TextField
           label="Path"
