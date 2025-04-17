@@ -1,4 +1,4 @@
-import { File, Task } from "@maipl/api"
+import { File, RunnerTask } from "@maipl/api"
 import * as F from "@maipl/format"
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
@@ -13,8 +13,8 @@ export default function ShowTaskLoader() {
 
   const { data: task, error } = RQ.useQuery({
     enabled: taskId != null,
-    queryKey: ["tasks", taskId],
-    queryFn: () => Task.get(maipl.client, taskId!),
+    queryKey: ["runner-tasks", taskId],
+    queryFn: () => RunnerTask.get(maipl.client, taskId!),
   })
 
   const { data: model, error: modelError } = RQ.useQuery({
@@ -43,7 +43,7 @@ export default function ShowTaskLoader() {
 }
 
 function ShowTask(props: {
-  task: Task.t
+  task: RunnerTask.t
   model: File.t
   onClose: () => void
 }) {

@@ -28,7 +28,7 @@ export {
   Detections,
   Segments,
   Table,
-  Tasks,
+  RunnerTasks,
   TrainerTasks,
   usePagination,
   useSelection,
@@ -51,4 +51,6 @@ export {
   theme,
   UserAvatar,
   UserAvatarGroup,
+  Console,
+  Log,
 } from "./ui"

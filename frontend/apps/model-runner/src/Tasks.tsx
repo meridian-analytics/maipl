@@ -1,11 +1,11 @@
-import { Task } from "@maipl/api"
+import { RunnerTask } from "@maipl/api"
 import * as MR from "@maipl/react"
 import * as I from "@mui/icons-material"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
 import * as RR from "react-router-dom"
 
-function TaskActions(props: { task: Task.t }) {
+function TaskActions(props: { task: RunnerTask.t }) {
   const queryClient = RQ.useQueryClient()
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
@@ -26,8 +26,8 @@ function TaskActions(props: { task: Task.t }) {
   }
 
   const deleteMutation = RQ.useMutation({
-    mutationFn: (vars: Parameters<typeof Task.delete>) => {
-      return Task.delete(...vars)
+    mutationFn: (vars: Parameters<typeof RunnerTask.delete>) => {
+      return RunnerTask.delete(...vars)
     },
     onError: (err, vars) => {
       notify(onClose => (
@@ -53,7 +53,8 @@ function TaskActions(props: { task: Task.t }) {
   })
 
   const startMutation = RQ.useMutation({
-    mutationFn: (vars: Parameters<typeof Task.start>) => Task.start(...vars),
+    mutationFn: (vars: Parameters<typeof RunnerTask.start>) =>
+      RunnerTask.start(...vars),
     onError: (err, vars) => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="error">
@@ -128,9 +129,9 @@ export default function TasksTable(props: {
 }) {
   const queryClient = RQ.useQueryClient()
   const { pagination, selection, setPagination, setSelection } =
-    MR.Tasks.useTable()
+    MR.RunnerTasks.useTable()
 
-  const { data: tasks } = MR.Tasks.useQuery()
+  const { data: tasks } = MR.RunnerTasks.useQuery()
 
   return (
     <M.Stack
@@ -159,9 +160,9 @@ export default function TasksTable(props: {
           title="Refresh"
         />
       </M.Stack>
-      <MR.Tasks.Table
+      <MR.RunnerTasks.Table
         columns={[
-          MR.Tasks.column.display({
+          MR.RunnerTasks.column.display({
             id: "actions",
             header: "",
             cell: ({ row }) => <TaskActions task={row.original} />,

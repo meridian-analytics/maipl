@@ -1,4 +1,4 @@
-import { Task } from "@maipl/api"
+import { RunnerTask } from "@maipl/api"
 import * as F from "@maipl/format"
 import * as M from "@mui/material"
 import * as RQ from "@tanstack/react-query"
@@ -13,11 +13,11 @@ import BaseTable, {
   useSelection,
 } from "./Table"
 
-const column = RT.createColumnHelper<Task.t>()
+const column = RT.createColumnHelper<RunnerTask.t>()
 
 function useTable(props?: {
   pagination?: PaginationState
-  selection?: SelectionState<Task.t>
+  selection?: SelectionState<RunnerTask.t>
 }) {
   const [pagination, setPagination] = usePagination(props?.pagination)
   const [selection, setSelection] = useSelection(props?.selection)
@@ -36,8 +36,8 @@ function useTable(props?: {
 function useQuery(props?: Task.t_list_request) {
   const { client } = useMaipl()
   return RQ.useQuery({
-    queryKey: ["tasks", "list", props],
-    queryFn: () => Task.list(client, props),
+    queryKey: ["runner-tasks", "list", props],
+    queryFn: () => RunnerTask.list(client, props),
     initialData: [],
   })
 }

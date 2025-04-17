@@ -1,4 +1,4 @@
-import { File, Task } from "@maipl/api"
+import { File, RunnerTask } from "@maipl/api"
 import * as F from "@maipl/format"
 import * as MR from "@maipl/react"
 import * as M from "@mui/material"
@@ -14,9 +14,9 @@ export default function EditTaskLoader() {
 
   const { data: task, error } = RQ.useQuery({
     enabled: taskId != null,
-    queryKey: ["tasks", taskId],
+    queryKey: ["runner-tasks", taskId],
     queryFn: () => {
-      return Task.get(maipl.client, taskId!)
+      return RunnerTask.get(maipl.client, taskId!)
     },
   })
 
@@ -46,7 +46,7 @@ export default function EditTaskLoader() {
 }
 
 function EditTask(props: {
-  task?: Task.t
+  task?: RunnerTask.t
   model?: File.t
   onClose: () => void
 }) {
@@ -106,8 +106,8 @@ function EditTask(props: {
   })
 
   const createMutation = RQ.useMutation({
-    mutationFn: (vars: Parameters<typeof Task.create>) => {
-      return Task.create(...vars)
+    mutationFn: (vars: Parameters<typeof RunnerTask.create>) => {
+      return RunnerTask.create(...vars)
     },
     onError: (err, vars) => {
       notify(onClose => (
@@ -128,7 +128,7 @@ function EditTask(props: {
           Success: Created task #{task.id}
         </M.Alert>
       ))
-      queryClient.refetchQueries({ queryKey: ["tasks"] })
+      queryClient.refetchQueries({ queryKey: ["runner-tasks"] })
       props.onClose()
     },
   })

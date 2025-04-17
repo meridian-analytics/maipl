@@ -147,6 +147,26 @@ const start = async (client: Client.t, id: number): Promise<t> => {
   }
 }
 
+/** Task.get_log: get log output of a runner task */
+const get_log = async (client: Client.t, id: number): Promise<string> => {
+  const response = await client
+    .get<string>(
+      `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/run/tasks/${id}/log/`
+    )
+    .then(r => r.data)
+  return response
+}
+
+/** Task.get_console: get console output of a runner task */
+const get_console = async (client: Client.t, id: number): Promise<string> => {
+  const response = await client
+    .get<string>(
+      `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/run/tasks/${id}/console/`
+    )
+    .then(r => r.data)
+  return response
+}
+
 export {
   type t,
   type t_create_request,
@@ -160,4 +180,6 @@ export {
   get,
   list,
   start,
+  get_log,
+  get_console,
 }
