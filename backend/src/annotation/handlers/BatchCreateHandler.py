@@ -284,7 +284,8 @@ class BatchCreateHandler:
                 label = annotation['label']
 
                 # Optional fields with defaults
-                score = float(annotation.get('score', 0))
+                score_str = annotation.get('score', '0')
+                score = float(score_str) if score_str.strip() else 0.0
                 freq_min = float(annotation.get('freq_min', self.batch.parameters.get('freq_min', 0)))
                 freq_max = float(annotation.get('freq_max', self.batch.parameters.get('freq_max', 0)))
                 call_type = annotation.get('call_type')

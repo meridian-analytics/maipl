@@ -343,14 +343,15 @@ class BatchList(generics.ListCreateAPIView):
 
         if data.get_import_file_id():
             try:
-                request.data["filelist"] = data.get_filelist()
-                response = super().post(request, *args, **kwargs)
-                data.set_batch_id(response.data["id"])
+                with transaction.atomic():
+                    request.data["filelist"] = data.get_filelist()
+                    response = super().post(request, *args, **kwargs)
+                    data.set_batch_id(response.data["id"])
 
-                data.generate_segments_with_filelist()
-                response.data["segments"] = data.get_segment_ids()
-                data.import_annotations_to_batch()
-                return response
+                    data.generate_segments_with_filelist()
+                    response.data["segments"] = data.get_segment_ids()
+                    data.import_annotations_to_batch()
+                    return response
             except (ValueError, Exception) as e:
                 return Response(
                     {
@@ -361,11 +362,12 @@ class BatchList(generics.ListCreateAPIView):
                 )
         else:
             try:
-                response = super().post(request, *args, **kwargs)
-                data.set_batch_id(response.data["id"])
-                data.generate_segments_with_filelist()
-                response.data["segments"] = data.get_segment_ids()
-                return response
+                with transaction.atomic():
+                    response = super().post(request, *args, **kwargs)
+                    data.set_batch_id(response.data["id"])
+                    data.generate_segments_with_filelist()
+                    response.data["segments"] = data.get_segment_ids()
+                    return response
             except Exception as e:
                 return Response(
                     {
