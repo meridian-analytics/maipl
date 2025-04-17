@@ -51,12 +51,22 @@ class ModelRunnerTask(models.Model):
     def get_console_output(self):
         # return the console output of the model runner task
         console_output_file_path = os.path.join("/tasks", "runner", str(self.id), "console.txt")
-        return open(console_output_file_path, "r").read()
+        try:
+            if os.path.exists(console_output_file_path):
+                return open(console_output_file_path, "r").read()
+        except:
+            pass
+        return ""
     
     def get_log(self):
         # return the log of the model runner task
         log_file_path = os.path.join("/tasks", "runner", str(self.id), "detections", "ketos-run.log")
-        return open(log_file_path, "r").read()
+        try:
+            if os.path.exists(log_file_path):
+                return open(log_file_path, "r").read()
+        except:
+            pass
+        return ""
     
     @property
     def title(self):
