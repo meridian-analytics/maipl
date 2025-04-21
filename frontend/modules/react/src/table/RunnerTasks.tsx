@@ -82,6 +82,8 @@ function TaskStatus(props: { status: Task.t["status"] }) {
       return <M.Chip color="warning" label="Retry" />
     case "REVOKED":
       return <M.Chip color="error" label="Revoked" />
+    case "RUNNING":
+      return <M.Chip color="info" label="Running" />
     case "STARTED":
       return <M.Chip color="info" label="Started" />
     case "SUCCESS":

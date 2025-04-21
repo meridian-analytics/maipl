@@ -85,29 +85,37 @@ function ShowTask(props: {
           fullWidth
           label="Batch Size"
           type="number"
-          value={task.batch_size}
+          value={task.parameters.batch_size}
         />
         <M.TextField
           disabled
           fullWidth
           label="Step Size"
           type="number"
-          value={task.step_size}
+          value={task.parameters.step_size}
         />
         <M.TextField
           disabled
           fullWidth
           label="Threshold"
           type="number"
-          value={task.threshold}
+          value={task.parameters.threshold}
         />
         <M.TextField
           disabled
           fullWidth
           label="Buffer"
           type="number"
-          value={task.buffer}
+          value={task.parameters.buffer}
         />
+        {task.parameters.table_name && (
+          <M.TextField
+            disabled
+            fullWidth
+            label="Table Name"
+            value={task.parameters.table_name}
+          />
+        )}
       </M.Stack>
       <M.Typography variant="h6" pt={3}>
         Input Files

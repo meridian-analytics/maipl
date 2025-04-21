@@ -29,7 +29,7 @@ export default function DetectionsLoader() {
   }
 
   return (
-    <MR.Modal onClose={onClose}>
+    <MR.Modal onClose={onClose} sx={{ height: "80vh" }}>
       {error != null ? (
         <M.Typography>{(error as Error).message}</M.Typography>
       ) : modelError != null ? (
@@ -51,21 +51,28 @@ function Detections(props: {
 }) {
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
-  const table = MR.Detections.useTable()
+  const table = MR.Detections.useTable({
+    filter: {
+      label: "",
+      score_max: "1",
+      score_min: "0",
+    },
+    debounceDelay: 1000
+  })
 
   const filter = R.useMemo<Detection.t_list_request>(() => {
     return {
       task: props.task.id,
-      label: F.safeParseString(table.debouncedFilter.get("label"), undefined),
+      label: F.safeParseString(table.debouncedFilter.get("label"), ""),
       score_max: F.safeParseNumber(
         table.debouncedFilter.get("score_max"),
-        undefined,
+        1,
       ),
       score_min: F.safeParseNumber(
         table.debouncedFilter.get("score_min"),
-        undefined,
+        0,
       ),
-      page: table.pagination.pageIndex + 1, // bug: when query changes, page needs to be reset
+      page: table.pagination.pageIndex + 1,
       size: table.pagination.pageSize,
     }
   }, [
@@ -132,7 +139,7 @@ function Detections(props: {
     <M.Stack
       sx={{
         flexGrow: 1,
-        maxHeight: "100%",
+        height: "100%",
         overflow: "hidden",
         padding: 2,
         ...props.sx,
