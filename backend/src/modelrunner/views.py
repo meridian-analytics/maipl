@@ -31,15 +31,6 @@ class ModelRunnerTaskView(generics.RetrieveUpdateDestroyAPIView):
         except ModelRunnerTask.DoesNotExist:
             return Response("No task found with the given task_id.", status=status.HTTP_404_NOT_FOUND)
         
-        # check if the celery task is is not None
-        if model_task.celery_task_id is not None:
-            # get the celery task
-            celery_task = AsyncResult(model_task.celery_task_id)
-            # sync the status of the model_task instance with the celery task
-            model_task.status = celery_task.status
-            # save the model task
-            model_task.save()
-        
         if request.path.endswith(f"/tasks/{task_id}/"):
             serializer = self.get_serializer(model_task)
             return Response(serializer.data, status=status.HTTP_200_OK)

@@ -124,20 +124,37 @@ def construct_command_with_model_parameters(task_context):
 
     # base command
     command = ['ketos-run', 
-               f'{model_file_dir}/{model_task.model_file.basename}', 
-               f'{audio_dir}', 
-               '--output_folder', 
-               f'{detections_dir}']
+               f'{model_file_dir}/{model_task.model_file.basename}']
 
-    # adding optional arguments
-    if model_task.threshold != 0.0:
-        command += ['--threshold', f'{model_task.threshold}']
-    if model_task.step_size != 0:
-        command += ['--step_size', f'{model_task.step_size}']
-    if model_task.batch_size != 0:
-        command += ['--batch_size', f'{model_task.batch_size}']
-    if model_task.buffer != 0.0:
-        command += ['--buffer', f'{model_task.buffer}']
+    # Check if the audio directory contains a single H5 file
+    audio_files = os.listdir(audio_dir)
+    logger.info(f"Audio files found in {audio_dir}: {audio_files}")
+    
+    if len(audio_files) == 1 and audio_files[0].endswith('.h5'):
+        # For single H5 file, append the full path to the file
+        h5_path = f'{audio_dir}/{audio_files[0]}'
+        command.append(h5_path)
+        logger.info(f"Using single H5 file: {h5_path}")
+    else:
+        # For multiple audio files, just append the directory
+        command.append(f'{audio_dir}')
+        logger.info(f"Using audio directory: {audio_dir}")
+
+    # Add output folder
+    command.extend(['--output_folder', f'{detections_dir}'])
+
+    # adding optional arguments from the model task parameters
+    parameters = model_task.parameters
+    if parameters.get('threshold', 0.0) != 0.0:
+        command += ['--threshold', f"{parameters.get('threshold')}"]
+    if parameters.get('step_size', 0) != 0:
+        command += ['--step_size', f"{parameters.get('step_size')}"]
+    if parameters.get('batch_size', 0) != 0:
+        command += ['--batch_size', f"{parameters.get('batch_size')}"]
+    if parameters.get('buffer', 0.0) != 0.0:
+        command += ['--buffer', f"{parameters.get('buffer')}"]
+    if parameters.get('table_name', '/') != '/':
+        command += ['--table_name', f"{parameters.get('table_name')}"]
 
     # write the command to the console output
     write_to_console(task_context["console_output_file"], [
@@ -209,11 +226,20 @@ def save_detections_to_db(task_context):
             writer.writerows(rewritten_rows)
 
         logger.info(f"Successfully saved detections to database and rewrote output file")
+        
+        # Update task status to SUCCESS
+        model_task.status = 'SUCCESS'
+        model_task.save()
+        logger.info(f"Updated task {model_task.id} status to SUCCESS")
 
     except FileNotFoundError as fnf_error:
         logger.exception("File not found error: %s", fnf_error)
+        model_task.status = 'FAILURE'
+        model_task.save()
     except Exception as e:
         logger.exception("An error occurred: %s", e)
+        model_task.status = 'FAILURE'
+        model_task.save()
 
 
 def upload_detections_file(task_context):

@@ -5,7 +5,7 @@ from .models import Detection, ModelRunnerTask
 
 
 class ModelRunnerTaskAdmin(admin.ModelAdmin):
-    list_display = ('id', 'description', 'user_id', 'model_file', 'detections', 'threshold', 'step_size', 'batch_size', 'merge_detections', 'overwrite', 'buffer', 'status', 'created_at', 'updated_at')
+    list_display = ('id', 'description', 'user_id', 'model_file', 'detections', 'parameters', 'status', 'created_at', 'updated_at')
     list_filter = ('user_id', 'status', 'created_at')
 
 class DetectionAdmin(admin.ModelAdmin):
