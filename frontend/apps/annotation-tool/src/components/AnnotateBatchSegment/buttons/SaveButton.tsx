@@ -82,7 +82,7 @@ export function SaveButton() {
   // Handle keyboard shortcut
   R.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "h") {
+      if (e.ctrlKey && e.key === "w") {
         if (!isDisabled) {
           e.preventDefault()
           onSave()
@@ -100,7 +100,7 @@ export function SaveButton() {
         children={<I.Save />}
         disabled={isDisabled}
         onClick={() => onSave()}
-        title="Save Batch (⌘/Ctrl + H)"
+        title="Save Batch (Ctrl + W)"
       />
       <M.Dialog
         open={showProgress}

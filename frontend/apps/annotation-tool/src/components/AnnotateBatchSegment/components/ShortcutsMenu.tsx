@@ -89,6 +89,9 @@ export function ShortcutsMenu() {
         <M.MenuItem>
           <M.Typography>Esc - Deselect</M.Typography>
         </M.MenuItem>
+        <M.MenuItem>
+          <M.Typography>Ctrl + W - Save</M.Typography>
+        </M.MenuItem>
         <M.Divider />
         <M.MenuItem>
           <M.Typography variant="subtitle2" color="primary">

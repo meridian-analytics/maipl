@@ -10,7 +10,9 @@ export function AxisProvider(props: { children: R.ReactNode }) {
     return {
       seconds: Specviz.Axis.time(
         loaderData.active.segment.start,
-        loaderData.active.segment.end
+        loaderData.active.segment.end,
+        "seconds",
+        (t) => t.toFixed(1)
       ),
       hertz: Specviz.Axis.nonlinear(
         loaderData.batch.frequency_axis,
