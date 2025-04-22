@@ -291,6 +291,12 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
   const columns = R.useMemo(
     () => [
       MR.Batches.column.display({
+        id: "role",
+        header: "Role",
+        cell: (info) => <M.Typography>{info.row.original.role?.name ?? 'Owner'}</M.Typography>,
+        size: 100,
+      }),
+      MR.Batches.column.display({
         id: "status",
         header: "Status",
         cell: (info) => <BatchStatus batch={info.row.original} />,

@@ -17,7 +17,7 @@ const columns = [
   Batch.t_role_code.viewer,
   Batch.t_role_code.contributor,
   Batch.t_role_code.collaborator,
-  Batch.t_role_code.owner,
+  Batch.t_role_code.manager,
 ]
 
 export default function BatchShare(props: BatchShareProps) {

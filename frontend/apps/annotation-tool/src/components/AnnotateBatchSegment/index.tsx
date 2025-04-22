@@ -157,9 +157,65 @@ export function Component() {
 
             {/* History & Save Group */}
             <M.Stack direction="row" spacing={1}>
-              <UndoButton />
-              <RedoButton />
-              <SaveButton />
+              <M.Stack direction="row" spacing={1} alignItems="center">
+                <MR.Menu
+                  icon={<I.Person sx={{ fontSize: 20 }} />}
+                  title={`${loaderData.batch.role?.name ?? 'Owner'}`}
+                >
+                  <M.Box sx={{ p: 2 }}>
+                    <M.Stack spacing={1}>
+                      <M.Typography variant="subtitle2" color="primary">
+                        Your Current Role: {loaderData.batch.role?.name ?? 'Owner'}
+                      </M.Typography>
+                    
+                    </M.Stack>
+                  </M.Box>
+                  <M.Divider />
+                  <M.MenuItem>
+                    <M.Stack spacing={1}>
+                      <M.Typography variant="body2">Viewer</M.Typography>
+                      <M.Typography variant="caption" color="text.secondary">
+                        Can view all annotations but cannot make any changes
+                      </M.Typography>
+                    </M.Stack>
+                  </M.MenuItem>
+                  <M.MenuItem>
+                    <M.Stack spacing={1}>
+                      <M.Typography variant="body2">Contributor</M.Typography>
+                      <M.Typography variant="caption" color="text.secondary">
+                        Can view and edit only their own annotations
+                      </M.Typography>
+                    </M.Stack>
+                  </M.MenuItem>
+                  <M.MenuItem>
+                    <M.Stack spacing={1}>
+                      <M.Typography variant="body2">Collaborator</M.Typography>
+                      <M.Typography variant="caption" color="text.secondary">
+                        Can view all annotations and edit their own annotations
+                      </M.Typography>
+                    </M.Stack>
+                  </M.MenuItem>
+                  <M.MenuItem>
+                    <M.Stack spacing={1}>
+                      <M.Typography variant="body2">Manager</M.Typography>
+                      <M.Typography variant="caption" color="text.secondary">
+                        Can view and edit all annotations in the batch
+                      </M.Typography>
+                    </M.Stack>
+                  </M.MenuItem>
+                  <M.MenuItem>
+                    <M.Stack spacing={1}>
+                      <M.Typography variant="body2">Owner</M.Typography>
+                      <M.Typography variant="caption" color="text.secondary">
+                        Has full control over the batch and all its annotations
+                      </M.Typography>
+                    </M.Stack>
+                  </M.MenuItem>
+                </MR.Menu>
+                <UndoButton />
+                <RedoButton />
+                <SaveButton />
+              </M.Stack>
             </M.Stack>
           </M.Stack>
         </Grid>

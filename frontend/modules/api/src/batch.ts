@@ -115,7 +115,7 @@ enum t_role_code {
   viewer = 1,
   contributor = 2,
   collaborator = 3,
-  owner = 4,
+  manager = 4,
 }
 
 /** Batch.t_status */
