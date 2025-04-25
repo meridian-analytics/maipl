@@ -33,7 +33,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.backend
     container_name: maipl_backend
-    hostname: ${HOSTNAME}
+    hostname: ${HOSTNAME:-maipl-backend-dev}
     ports:
       - "${DJANGO_PORT:-8000}:8000"
     volumes:
@@ -55,7 +55,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.backend
-    hostname: ${HOSTNAME}
+    hostname: ${HOSTNAME:-maipl-backend-dev}
     command: /backend/entrypoint.worker.sh
     volumes:
       - ../src:/backend
@@ -74,7 +74,7 @@ services:
   promtail:
     image: grafana/promtail:2.9.2
     container_name: promtail-dev
-    hostname: ${HOSTNAME}
+    hostname: ${HOSTNAME:-maipl-backend-dev}
     volumes:
       - ../logs:/logs
       - ./promtail-config.yml:/etc/promtail/config.yml
