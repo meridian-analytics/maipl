@@ -184,10 +184,17 @@ class BatchCreateHandler:
                     user_id=self.user,
                 ))
 
-            # Add final segment if needed
-            if duration % segment_length > 0 and not segment_pad:
+            # Handle the last segment
+            if duration % segment_length > 0:
                 start = number_of_segments * segment_step
-                end = duration
+                if segment_pad:
+                    # With padding, extend the last segment to match segment_length
+                    end = start + segment_length
+                    # If the padded end exceeds file duration, we'll need to handle this in the audio processing
+                else:
+                    # Without padding, use the actual end of the file
+                    end = duration
+                
                 self.segments.append(Segment.objects.create(
                     filename=file.path,
                     start=start,

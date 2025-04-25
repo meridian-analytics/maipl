@@ -2,6 +2,8 @@ from ketos.audio.waveform import Waveform
 from soundfile import write as write_audio
 from ..audio.filters import low_pass_filter, high_pass_filter, amplify
 from ..utils.array_ops import adjust_range
+import soundfile as sf
+import numpy as np
 
 def create_audio_array(audio_file, start, end, audio_clip_rate=22050, amplification_factor=1.0, amplification_log=False, low_pass_freq=None, high_pass_freq=None, channel=0):
     """Create processed audio array from file segment.
@@ -30,23 +32,44 @@ def create_audio_array(audio_file, start, end, audio_clip_rate=22050, amplificat
         raise ValueError("Audio file path cannot be None")
 
     try:
-        duration = end - start
-        audio_obj = Waveform.from_wav(
-            audio_file, rate=audio_clip_rate, channel=channel, offset=start, duration=duration)
-        if audio_obj is None:
-            raise ValueError("Failed to create Waveform object")
+        # First get the file duration
+        with sf.SoundFile(audio_file) as sf_file:
+            file_duration = len(sf_file) / sf_file.samplerate
+
+        # If end time exceeds file duration, we need to handle padding
+        if end > file_duration:
+            # Load the actual audio up to the end of the file
+            duration = file_duration - start
+            audio_obj = Waveform.from_wav(
+                audio_file, rate=audio_clip_rate, channel=channel, offset=start, duration=duration)
+            
+            if audio_obj is None:
+                raise ValueError("Failed to create Waveform object")
+                
+            # Create padding (silence) for the remaining duration
+            padding_samples = int((end - file_duration) * audio_clip_rate)
+            padding = np.zeros(padding_samples)
+            
+            # Combine the actual audio with padding
+            audio_array = np.concatenate([audio_obj.data, padding])
+            rate = audio_obj.rate
+        else:
+            # Normal case - load the segment directly
+            duration = end - start
+            audio_obj = Waveform.from_wav(
+                audio_file, rate=audio_clip_rate, channel=channel, offset=start, duration=duration)
+            if audio_obj is None:
+                raise ValueError("Failed to create Waveform object")
+                
+            audio_array = audio_obj.data
+            rate = audio_obj.rate
+            
     except Exception as e:
         print(f"Error creating Waveform object from audio file: {e}")
         raise ValueError(f"Failed to load audio file: {e}")
 
-    try:
-        audio_array = audio_obj.data
-        if audio_array is None or audio_array.size == 0:
-            raise ValueError("Audio data is empty")
-        rate = audio_obj.rate
-    except Exception as e:
-        print(f"Error extracting data and rate from Waveform object: {e}")
-        raise ValueError(f"Failed to extract audio data: {e}")
+    if audio_array is None or audio_array.size == 0:
+        raise ValueError("Audio data is empty")
 
     if low_pass_freq:
         try:
