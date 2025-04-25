@@ -2,7 +2,7 @@ from os.path import basename, dirname, splitext
 
 from django.core.files.storage import default_storage
 from django.db import models
-from django.db.models.signals import pre_delete, pre_save
+from django.db.models.signals import pre_delete, pre_save, post_save
 from django.dispatch import receiver
 from django_minio_backend import MinioBackend
 from rest_framework.exceptions import ValidationError
@@ -10,7 +10,7 @@ from rest_framework.exceptions import ValidationError
 from user.models import User
 
 from api.settings import MINIO_BUCKET_NAME
-
+from .tasks import update_meta_from_h5_file
 def get_storage():
     return MinioBackend(bucket_name=MINIO_BUCKET_NAME, replace_existing=True)
 
@@ -151,7 +151,7 @@ class File(models.Model):
 
 
 @receiver(pre_save, sender=File)
-def on_save(sender, instance, **kwargs):
+def update_size(sender, instance, **kwargs):
     if instance.file:
         instance.size = instance.file.size
     else:
@@ -159,6 +159,15 @@ def on_save(sender, instance, **kwargs):
 
 
 @receiver(pre_delete, sender=File)
-def on_delete(sender, instance, **kwargs):
+def delete_file(sender, instance, **kwargs):
     if instance.file:
         default_storage.delete(instance.file.name)
+
+@receiver(post_save, sender=File)
+def handle_h5_file_meta_post_save(sender, instance, **kwargs):
+    # Only trigger if this is a new file or if the file field was updated
+    update_fields = kwargs.get('update_fields', []) or []
+    if instance.file.name.endswith('.h5') and (kwargs.get('created', False) or 'file' in update_fields):
+        update_meta_from_h5_file.delay(instance.id)
+    
+    
