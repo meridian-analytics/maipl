@@ -3,6 +3,7 @@ services:
   backend:
     image: registry.maipl-dev.com/maipl-backend/ketos-backend:dev
     container_name: backend-staging
+    hostname: ${HOSTNAME}
     ports:
       - "${DJANGO_PORT:-8000}:8000"
     volumes:
@@ -18,6 +19,7 @@ services:
   worker:
     image: registry.maipl-dev.com/maipl-backend/ketos-worker:dev
     container_name: worker-staging
+    hostname: ${HOSTNAME}
     command: /backend/entrypoint.worker.sh
     volumes:
       - /data/logs:/logs
@@ -45,6 +47,7 @@ services:
   portainer-agent:
     image: portainer/agent:2.21.2
     container_name: portainer-agent-staging
+    hostname: ${HOSTNAME}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes:/var/lib/docker/volumes
@@ -60,6 +63,7 @@ services:
   promtail:
     image: grafana/promtail:2.9.2
     container_name: promtail-staging
+    hostname: ${HOSTNAME}
     volumes:
       - /data/logs:/logs
       - ./promtail-config.yml:/etc/promtail/config.yml

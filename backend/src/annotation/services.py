@@ -1,4 +1,4 @@
-from common.logger import logger
+from common.logger import annotation_logger
 
 from .audio.verification import verify_audio_file
 from .audio.processing import process_segment_audio
@@ -19,9 +19,9 @@ def generate_image(input_file_path, output_file_path, parameters, start, end):
     is_working = verify_audio_file(input_file_path)
 
     if is_working:
-        logger.info("The audio file is working.")
+        annotation_logger.info("The audio file is working.")
     else:
-        logger.error("The audio file is not working.")
+        annotation_logger.error("The audio file is not working.")
         return
 
     try:
@@ -58,14 +58,14 @@ def generate_image(input_file_path, output_file_path, parameters, start, end):
             spec_config['num_filters'] = int(parameters['num_filters'])  # Number of mel bands (determines height for MelSpectrogram)
 
     except Exception as e:
-        logger.error(f"Error setting up spectrogram configuration: {e}")
+        annotation_logger.error(f"Error setting up spectrogram configuration: {e}")
         return
 
     try:
         start = float(start)
         end = float(end)
     except Exception as e:
-        logger.error(f"Error converting start and end times to float: {e}")
+        annotation_logger.error(f"Error converting start and end times to float: {e}")
         return
 
     # Set default values for visualization parameters if not provided
@@ -96,7 +96,7 @@ def generate_image(input_file_path, output_file_path, parameters, start, end):
             cmap=visualization_params['color_map'],
             spec_height=visualization_params['spec_height'])
     except Exception as e:
-        logger.error(f"Error processing segment image: {e}")
+        annotation_logger.error(f"Error processing segment image: {e}")
 
 
 def generate_audio(input_file_path, output_file_path, parameters, start, end):
@@ -117,7 +117,7 @@ def generate_audio(input_file_path, output_file_path, parameters, start, end):
         high_pass_freq = int(parameters.get('high_pass', None)) if parameters.get('high_pass') is not None else None
         channel = int(parameters['channel'])
     except Exception as e:
-        logger.error(f"Error setting up parameters: {e}")
+        annotation_logger.error(f"Error setting up parameters: {e}")
         return
 
     try:
@@ -131,7 +131,7 @@ def generate_audio(input_file_path, output_file_path, parameters, start, end):
             high_pass_freq=high_pass_freq,
             channel=channel)
     except Exception as e:
-        logger.error(f"Error processing segment audio: {e}")
+        annotation_logger.error(f"Error processing segment audio: {e}")
 
 
 def generate_waveform(input_file_path, output_file_path, parameters, start, end):
@@ -152,27 +152,27 @@ def generate_waveform(input_file_path, output_file_path, parameters, start, end)
         from decimal import Decimal
         import soundfile as sf
 
-        logger.info(f"Starting waveform generation for audio file: {os.path.basename(input_file_path)}")
+        annotation_logger.info(f"Starting waveform generation for audio file: {os.path.basename(input_file_path)}")
         
         # Convert Decimal to float
         start_float = float(start)
         end_float = float(end)
         duration = end_float - start_float
-        logger.info(f"Processing time range: {start_float:.3f}s to {end_float:.3f}s (duration: {duration:.3f}s)")
+        annotation_logger.info(f"Processing time range: {start_float:.3f}s to {end_float:.3f}s (duration: {duration:.3f}s)")
 
         # Verify audio file
         is_working = verify_audio_file(input_file_path)
         if not is_working:
-            logger.error(f"Audio file verification failed for: {os.path.basename(input_file_path)}")
+            annotation_logger.error(f"Audio file verification failed for: {os.path.basename(input_file_path)}")
             return
-        logger.info("Audio file verification successful")
+        annotation_logger.info("Audio file verification successful")
 
         # First get the sample rate
         with sf.SoundFile(input_file_path) as sf_file:
             sample_rate = sf_file.samplerate
             
         # Read audio file with original sampling rate
-        logger.info("Reading audio file with original sampling rate...")
+        annotation_logger.info("Reading audio file with original sampling rate...")
         data = sf.read(input_file_path, 
                       start=int(start_float * sample_rate), 
                       stop=int(end_float * sample_rate))[0]
@@ -181,8 +181,8 @@ def generate_waveform(input_file_path, output_file_path, parameters, start, end)
             # If stereo, take the first channel
             data = data[:, 0]
 
-        logger.info(f"Audio loaded with sample rate: {sample_rate} Hz")
-        logger.info(f"Number of samples: {len(data)}")
+        annotation_logger.info(f"Audio loaded with sample rate: {sample_rate} Hz")
+        annotation_logger.info(f"Number of samples: {len(data)}")
 
         # Create time array with full resolution
         times = np.linspace(start_float, end_float, len(data))
@@ -192,9 +192,11 @@ def generate_waveform(input_file_path, output_file_path, parameters, start, end)
         desired_height_pixels = 400  # Match spectrogram height
         # Calculate width using the same formula as spectrogram
         width_pixels = int(duration / 10 * spec_dpi)  # This matches spectrogram width calculation
+        # Ensure minimum width of 100 pixels for very short segments
+        width_pixels = max(width_pixels, 100)
         
         # Create figure with exact pixel dimensions
-        logger.info(f"Creating matplotlib figure with dimensions: {width_pixels}x{desired_height_pixels} pixels at {spec_dpi} DPI")
+        annotation_logger.info(f"Creating matplotlib figure with dimensions: {width_pixels}x{desired_height_pixels} pixels at {spec_dpi} DPI")
         fig = plt.figure(dpi=spec_dpi)
         fig.set_size_inches(width_pixels/spec_dpi, desired_height_pixels/spec_dpi)
         
@@ -208,7 +210,7 @@ def generate_waveform(input_file_path, output_file_path, parameters, start, end)
         fig.patch.set_facecolor('white')
         
         # Plot waveform with thinner line and no padding
-        logger.info("Plotting waveform data...")
+        annotation_logger.info("Plotting waveform data...")
         ax.plot(times, data, color='black', linewidth=0.1, solid_capstyle='butt')
         
         # Set exact axis limits to remove padding
@@ -217,7 +219,7 @@ def generate_waveform(input_file_path, output_file_path, parameters, start, end)
         ax.set_ylim(-max_amplitude, max_amplitude)
         
         # Save plot with white background and no padding
-        logger.info(f"Saving waveform visualization to: {os.path.basename(output_file_path)}")
+        annotation_logger.info(f"Saving waveform visualization to: {os.path.basename(output_file_path)}")
         plt.savefig(output_file_path, 
                    dpi=spec_dpi,
                    bbox_inches='tight',
@@ -230,17 +232,17 @@ def generate_waveform(input_file_path, output_file_path, parameters, start, end)
         # Verify file was created and has content
         if os.path.exists(output_file_path):
             file_size = os.path.getsize(output_file_path)
-            logger.info(f"Waveform visualization saved successfully. File size: {file_size/1024:.2f} KB")
+            annotation_logger.info(f"Waveform visualization saved successfully. File size: {file_size/1024:.2f} KB")
             if file_size == 0:
-                logger.error("Generated waveform file is empty, removing...")
+                annotation_logger.error("Generated waveform file is empty, removing...")
                 if os.path.exists(output_file_path):
                     os.remove(output_file_path)
         else:
-            logger.error("Failed to create waveform visualization file")
+            annotation_logger.error("Failed to create waveform visualization file")
 
     except ImportError as e:
-        logger.error(f"Failed to import required packages for waveform generation: {e}")
+        annotation_logger.error(f"Failed to import required packages for waveform generation: {e}")
     except Exception as e:
-        logger.error(f"Error during waveform generation: {e}")
+        annotation_logger.error(f"Error during waveform generation: {e}")
         import traceback
-        logger.error(f"Full traceback:\n{traceback.format_exc()}") 
+        annotation_logger.error(f"Full traceback:\n{traceback.format_exc()}") 

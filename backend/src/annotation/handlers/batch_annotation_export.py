@@ -10,7 +10,7 @@ from common.file_utils import upload_file
 from ..models import Batch, Annotation
 from ..permissions import UserCan
 from django.contrib.auth import get_user_model
-logger = logging.getLogger(__name__)
+from common.logger import annotation_logger
 
 class BatchAnnotationExportHandler:
     """Handler for exporting batch annotations to CSV.
@@ -51,7 +51,7 @@ class BatchAnnotationExportHandler:
             return None  # No error response means validation passed
             
         except Batch.DoesNotExist:
-            logger.error(f"Batch with id {self.batch_id} does not exist")
+            annotation_logger.error(f"Batch with id {self.batch_id} does not exist")
             return Response(
                 {"error": f"Batch with id {self.batch_id} does not exist"},
                 status=status.HTTP_404_NOT_FOUND
@@ -67,9 +67,9 @@ class BatchAnnotationExportHandler:
                     batch_id=self.batch_id, 
                     user_id=self.user
                 )
-            logger.info(f"Retrieved {self.annotations.count()} annotations for batch {self.batch_id}")
+            annotation_logger.info(f"Retrieved {self.annotations.count()} annotations for batch {self.batch_id}")
         except Exception as e:
-            logger.error(f"Error retrieving annotations: {str(e)}")
+            annotation_logger.error(f"Error retrieving annotations: {str(e)}")
             raise
     
     def create_csv_file(self):
@@ -126,11 +126,11 @@ class BatchAnnotationExportHandler:
                     }
                     writer.writerow(row)
             
-            logger.info(f"Created CSV file at {temp_filepath}")
+            annotation_logger.info(f"Created CSV file at {temp_filepath}")
             return filename, temp_filepath, timestamp
             
         except Exception as e:
-            logger.error(f"Error creating CSV file: {str(e)}")
+            annotation_logger.error(f"Error creating CSV file: {str(e)}")
             raise
     
     def upload_csv_file(self, filename, temp_filepath, timestamp):
@@ -138,7 +138,7 @@ class BatchAnnotationExportHandler:
         try:
             # Verify the file exists and is readable
             if not os.path.exists(temp_filepath):
-                logger.error(f"Temporary file not found: {temp_filepath}")
+                annotation_logger.error(f"Temporary file not found: {temp_filepath}")
                 return Response(
                     {"error": "Failed to create export file"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -146,9 +146,9 @@ class BatchAnnotationExportHandler:
 
             # Check file size
             file_size = os.path.getsize(temp_filepath)
-            logger.info(f"File size: {file_size} bytes")
+            annotation_logger.info(f"File size: {file_size} bytes")
             if file_size == 0:
-                logger.error("Generated file is empty")
+                annotation_logger.error("Generated file is empty")
                 return Response(
                     {"error": "Generated export file is empty"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -162,7 +162,7 @@ class BatchAnnotationExportHandler:
                 'file_size': file_size
             }
             
-            logger.info(f"Attempting to upload file: {file_path}")
+            annotation_logger.info(f"Attempting to upload file: {file_path}")
             # Pass the User instance directly, not just the ID
             file_obj = upload_file(
                 local_file_path=temp_filepath,
@@ -173,13 +173,13 @@ class BatchAnnotationExportHandler:
             )
             
             if not file_obj:
-                logger.error("File upload failed")
+                annotation_logger.error("File upload failed")
                 return Response(
                     {"error": "Failed to upload the exported file"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             
-            logger.info(f"File uploaded successfully with id: {file_obj.id}")
+            annotation_logger.info(f"File uploaded successfully with id: {file_obj.id}")
             return Response({
                 'file_id': file_obj.id,
                 'filename': file_obj.path,
@@ -187,7 +187,7 @@ class BatchAnnotationExportHandler:
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
-            logger.error(f"Error during file upload: {str(e)}")
+            annotation_logger.error(f"Error during file upload: {str(e)}")
             return Response(
                 {"error": f"Failed to upload file: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -197,9 +197,9 @@ class BatchAnnotationExportHandler:
             try:
                 if os.path.exists(temp_filepath):
                     os.remove(temp_filepath)
-                    logger.info(f"Cleaned up temporary file: {temp_filepath}")
+                    annotation_logger.info(f"Cleaned up temporary file: {temp_filepath}")
             except Exception as e:
-                logger.error(f"Error cleaning up temporary file: {str(e)}")
+                annotation_logger.error(f"Error cleaning up temporary file: {str(e)}")
     
     def handle(self):
         """Main method to handle the export process."""
@@ -219,7 +219,7 @@ class BatchAnnotationExportHandler:
             return self.upload_csv_file(filename, temp_filepath, timestamp)
             
         except Exception as e:
-            logger.error(f"Error in export process: {str(e)}")
+            annotation_logger.error(f"Error in export process: {str(e)}")
             return Response(
                 {"error": f"An error occurred while exporting annotations: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -3,7 +3,7 @@ import hashlib
 import redis
 from .shared_file_cache import shared_file_cache
 from file.models import File
-from .logger import logger
+from common.logger import file_logger
 from django.conf import settings
 from typing import Optional
 from django.core.files import File as DjangoFile
@@ -15,7 +15,7 @@ FILE_CACHE_DIR = settings.FILE_CACHE_DIR
 class FileUtils:
     def __init__(self):
         self.redis_client = redis.Redis.from_url(settings.REDIS_URL)
-        self.logger = logger
+        self.logger = file_logger
 
     def download_file(self, file_id: int) -> Optional[str]:
         """

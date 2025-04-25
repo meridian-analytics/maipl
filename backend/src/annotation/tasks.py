@@ -7,7 +7,7 @@ from django.core.cache import cache
 from django.core.files import File as DjangoFile
 
 from common.download_file import download_file
-from common.logger import logger
+from common.logger import annotation_logger
 from file.models import File
 
 from .models import Batch, ProcessedAudio, ProcessedImage
@@ -25,12 +25,12 @@ def process_batch(self, batch_id):
     Args:
         batch_id: ID of the batch to process
     """
-    logger.info(f"Starting batch processing for batch ID: {batch_id}")
+    annotation_logger.info(f"Starting batch processing for batch ID: {batch_id}")
     try:
         # Fetch batch details from the database
         batch = Batch.objects.get(id=batch_id)
         segments = batch.segments.all()
-        logger.info(f"Found {segments.count()} segments to process in batch '{batch.batch_name}'")
+        annotation_logger.info(f"Found {segments.count()} segments to process in batch '{batch.batch_name}'")
      
         for segment in segments:
             result = process_segment(segment)
@@ -38,17 +38,17 @@ def process_batch(self, batch_id):
                 raise Exception(f"Failed to process segment {segment.id}")
 
     except Batch.DoesNotExist:
-        logger.error(f"Batch with ID {batch_id} not found in database")
+        annotation_logger.error(f"Batch with ID {batch_id} not found in database")
         self.update_state(state=states.FAILURE, 
                          meta={'error': f"Batch with ID {batch_id} not found in database"})
         raise
     except SoftTimeLimitExceeded:
-        logger.warning(f"Batch processing for batch ID {batch_id} exceeded the soft time limit")
+        annotation_logger.warning(f"Batch processing for batch ID {batch_id} exceeded the soft time limit")
         self.update_state(state=states.FAILURE,
                          meta={'error': f"Processing timeout for batch {batch_id}"})
         raise
     except Exception as e:
-        logger.error(f"Unexpected error processing batch {batch_id}: {e}")
+        annotation_logger.error(f"Unexpected error processing batch {batch_id}: {e}")
         self.update_state(state=states.FAILURE,
                          meta={'error': str(e)})
         raise
@@ -74,7 +74,7 @@ def process_segment(segment):
         bool: True if successful, False if failed
     """
     try:
-        logger.info(f"Processing segment ID: {segment.id} from file '{segment.filename}' (time range: {segment.start}s to {segment.end}s)")
+        annotation_logger.info(f"Processing segment ID: {segment.id} from file '{segment.filename}' (time range: {segment.start}s to {segment.end}s)")
         
         # Fetch segment details from the database
         start = segment.start
@@ -88,18 +88,18 @@ def process_segment(segment):
         # Download the file if it hasn't been cached locally
         local_path = cache.get(file_id)
         if not local_path:
-            logger.info(f"Audio file {basename} not found in cache, downloading...")
+            annotation_logger.info(f"Audio file {basename} not found in cache, downloading...")
             local_path = download_file(file_id)
             if local_path is None:
-                logger.error(f"Failed to download audio file: {basename}")
+                annotation_logger.error(f"Failed to download audio file: {basename}")
                 return False
-            logger.info(f"Successfully downloaded and cached audio file: {basename}")
+            annotation_logger.info(f"Successfully downloaded and cached audio file: {basename}")
         else:
-            logger.info(f"Using cached audio file: {basename}")
+            annotation_logger.info(f"Using cached audio file: {basename}")
 
         # Generate spectrogram image and save to database
         with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as img_output:
-            logger.info(f"Generating spectrogram for segment {segment.id}...")
+            annotation_logger.info(f"Generating spectrogram for segment {segment.id}...")
             try:
                 generate_image(local_path, img_output.name, parameters, start, end)
                 image_file_name = f"{basename}-[{start}-{end}]-spectrogram.png"
@@ -112,7 +112,7 @@ def process_segment(segment):
                         image_type="spectrogram"
                     )
                     if existing_image:
-                        logger.info(f"Removing existing spectrogram for segment {segment.id}")
+                        annotation_logger.info(f"Removing existing spectrogram for segment {segment.id}")
                         existing_image.delete()
 
                     ProcessedImage.objects.update_or_create(
@@ -122,16 +122,16 @@ def process_segment(segment):
                         image_type="spectrogram",
                         defaults={'image': image_file}
                     )
-                    logger.info(f"Successfully saved spectrogram for segment {segment.id}")
+                    annotation_logger.info(f"Successfully saved spectrogram for segment {segment.id}")
             except Exception as e:
-                logger.error(f"Failed to generate spectrogram for segment {segment.id}: {e}")
+                annotation_logger.error(f"Failed to generate spectrogram for segment {segment.id}: {e}")
                 return False
             finally:
                 os.remove(img_output.name)
 
         # Generate waveform image and save to database
         with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as waveform_output:
-            logger.info(f"Generating waveform for segment {segment.id}...")
+            annotation_logger.info(f"Generating waveform for segment {segment.id}...")
             try:
                 generate_waveform(local_path, waveform_output.name, parameters, start, end)
                 waveform_file_name = f"{basename}-[{start}-{end}]-waveform.png"
@@ -144,7 +144,7 @@ def process_segment(segment):
                         image_type="waveform"
                     )
                     if existing_waveform:
-                        logger.info(f"Removing existing waveform for segment {segment.id}")
+                        annotation_logger.info(f"Removing existing waveform for segment {segment.id}")
                         existing_waveform.delete()
 
                     ProcessedImage.objects.update_or_create(
@@ -154,16 +154,16 @@ def process_segment(segment):
                         image_type="waveform",
                         defaults={'image': waveform_file}
                     )
-                    logger.info(f"Successfully saved waveform for segment {segment.id}")
+                    annotation_logger.info(f"Successfully saved waveform for segment {segment.id}")
             except Exception as e:
-                logger.error(f"Failed to generate waveform for segment {segment.id}: {e}")
+                annotation_logger.error(f"Failed to generate waveform for segment {segment.id}: {e}")
                 return False
             finally:
                 os.remove(waveform_output.name)
                 
         # Generate audio and save to database
         with tempfile.NamedTemporaryFile(delete=False, suffix=".flac") as audio_output:
-            logger.info(f"Generating processed audio for segment {segment.id}...")
+            annotation_logger.info(f"Generating processed audio for segment {segment.id}...")
             try:
                 generate_audio(local_path, audio_output.name, parameters, start, end)
                 audio_file_name = f"{basename}-[{start}-{end}].flac"
@@ -171,7 +171,7 @@ def process_segment(segment):
                     # Delete existing audio if it exists, and create or update new audio
                     existing_audio = ProcessedAudio.objects.filter(segment_id=segment, batch_id=batch, user_id=user)
                     if existing_audio:
-                        logger.info(f"Removing existing processed audio for segment {segment.id}")
+                        annotation_logger.info(f"Removing existing processed audio for segment {segment.id}")
                         existing_audio.delete()
                     
                     ProcessedAudio.objects.update_or_create(
@@ -180,9 +180,9 @@ def process_segment(segment):
                         user_id=user,
                         defaults={'audio': audio_file}
                     )
-                    logger.info(f"Successfully saved processed audio for segment {segment.id}")
+                    annotation_logger.info(f"Successfully saved processed audio for segment {segment.id}")
             except Exception as e:
-                logger.error(f"Failed to generate audio for segment {segment.id}: {e}")
+                annotation_logger.error(f"Failed to generate audio for segment {segment.id}: {e}")
                 return False
             finally:
                 os.remove(audio_output.name)
@@ -190,5 +190,5 @@ def process_segment(segment):
         return True
 
     except Exception as e:
-        logger.error(f"Unexpected error processing segment {segment.id}: {e}")
+        annotation_logger.error(f"Unexpected error processing segment {segment.id}: {e}")
         return False   

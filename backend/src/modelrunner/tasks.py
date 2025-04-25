@@ -9,7 +9,7 @@ from celery import shared_task, states
 from celery.exceptions import Ignore
 from django.contrib.auth import get_user_model
 
-from common.logger import logger
+from common.logger import modelrunner_logger
 from common.file_utils import download_file, upload_file, create_local_path, create_console_output_file, write_to_console
 
 from .models import Detection, ModelRunnerTask
@@ -23,7 +23,7 @@ def run_model(self, model_task_id):
         model_task = ModelRunnerTask.objects.get(id=model_task_id)
         model_task.status = 'STARTED'
         model_task.save()
-        logger.info(f"Model Runner task {model_task.id} started")
+        modelrunner_logger.info(f"Model Runner task {model_task.id} started")
 
         task_context = {
             "task": model_task,
@@ -64,19 +64,19 @@ def run_model(self, model_task_id):
         else:
             model_task.status = 'FAILURE'
             model_task.save()
-            logger.error(f"Model task {model_task.id} failed with return code {result.returncode}")
+            modelrunner_logger.error(f"Model task {model_task.id} failed with return code {result.returncode}")
 
     except Exception as e:
-        logger.error(f"An error occurred during model run: {e}")
+        modelrunner_logger.error(f"An error occurred during model run: {e}")
         self.update_state(state=states.FAILURE, meta={'exc': e})
         model_task.status = 'FAILURE'
         model_task.save()
         raise Ignore()
 
     finally:
-        logger.info("Cleaning up files")
+        modelrunner_logger.info("Cleaning up files")
         shutil.rmtree('/backend/kt-tmp/', ignore_errors=True)
-        logger.info("Files cleaned up")
+        modelrunner_logger.info("Files cleaned up")
 
 def download_audio_files(task_context):
     filelist = task_context["task"].filelist.all()
@@ -87,7 +87,7 @@ def download_audio_files(task_context):
         audio_file_path = download_file(file.id)
         os.symlink(audio_file_path, os.path.join(audio_dir, file.basename))
     task_context["audio_dir"] = audio_dir
-    logger.info(f"Audio files downloaded and symlinked to {audio_dir}")
+    modelrunner_logger.info(f"Audio files downloaded and symlinked to {audio_dir}")
 
     # write the audio files to the console output
     write_to_console(task_context["console_output_file"], [
@@ -103,7 +103,7 @@ def download_model_file(task_context):
     model_file_path = download_file(model_file.id)
     os.symlink(model_file_path, os.path.join(model_dir, model_file.basename))
     task_context["model_dir"] = model_dir
-    logger.info(f"Model file downloaded and symlinked to {model_dir}")
+    modelrunner_logger.info(f"Model file downloaded and symlinked to {model_dir}")
 
     # write the model file to the console output
     write_to_console(task_context["console_output_file"], [
@@ -128,17 +128,17 @@ def construct_command_with_model_parameters(task_context):
 
     # Check if the audio directory contains a single H5 file
     audio_files = os.listdir(audio_dir)
-    logger.info(f"Audio files found in {audio_dir}: {audio_files}")
+    modelrunner_logger.info(f"Audio files found in {audio_dir}: {audio_files}")
     
     if len(audio_files) == 1 and audio_files[0].endswith('.h5'):
         # For single H5 file, append the full path to the file
         h5_path = f'{audio_dir}/{audio_files[0]}'
         command.append(h5_path)
-        logger.info(f"Using single H5 file: {h5_path}")
+        modelrunner_logger.info(f"Using single H5 file: {h5_path}")
     else:
         # For multiple audio files, just append the directory
         command.append(f'{audio_dir}')
-        logger.info(f"Using audio directory: {audio_dir}")
+        modelrunner_logger.info(f"Using audio directory: {audio_dir}")
 
     # Add output folder
     command.extend(['--output_folder', f'{detections_dir}'])
@@ -200,7 +200,7 @@ def save_detections_to_db(task_context):
                 path = file_instance.path
 
                 if not file_instance:
-                    logger.error(f"No file found with name: {filename}")
+                    modelrunner_logger.error(f"No file found with name: {filename}")
                     continue
 
                 try:
@@ -215,7 +215,7 @@ def save_detections_to_db(task_context):
                     )
                     detection.save()
                 except Exception as e:
-                    logger.error(f"An error occurred: {e}")
+                    modelrunner_logger.error(f"An error occurred: {e}")
                     continue
 
                 rewritten_rows.append([path, start, end, label, score])
@@ -225,19 +225,19 @@ def save_detections_to_db(task_context):
             writer.writerow(['filename', 'start', 'end', 'label', 'score'])
             writer.writerows(rewritten_rows)
 
-        logger.info(f"Successfully saved detections to database and rewrote output file")
+        modelrunner_logger.info(f"Successfully saved detections to database and rewrote output file")
         
         # Update task status to SUCCESS
         model_task.status = 'SUCCESS'
         model_task.save()
-        logger.info(f"Updated task {model_task.id} status to SUCCESS")
+        modelrunner_logger.info(f"Updated task {model_task.id} status to SUCCESS")
 
     except FileNotFoundError as fnf_error:
-        logger.exception("File not found error: %s", fnf_error)
+        modelrunner_logger.exception("File not found error: %s", fnf_error)
         model_task.status = 'FAILURE'
         model_task.save()
     except Exception as e:
-        logger.exception("An error occurred: %s", e)
+        modelrunner_logger.exception("An error occurred: %s", e)
         model_task.status = 'FAILURE'
         model_task.save()
 

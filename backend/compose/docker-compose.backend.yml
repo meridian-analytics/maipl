@@ -5,6 +5,7 @@ services:
       dockerfile: docker/Dockerfile.backend
     image: registry.maipl-dev.com/maipl-backend/ketos-backend:prod
     container_name: ketos-backend
+    hostname: ${HOSTNAME}
     ports:
       - "${DJANGO_PORT:-8000}:8000"
     volumes:
@@ -31,6 +32,7 @@ services:
   portainer-agent:
     image: portainer/agent:2.21.2
     container_name: portainer-agent-backend
+    hostname: ${HOSTNAME}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes:/var/lib/docker/volumes

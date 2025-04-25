@@ -4,7 +4,7 @@ import os
 from django.core.cache import cache
 from django.core.files import File as DjangoFile
 
-from common.logger import logger
+from common.logger import file_logger
 from file.models import File
 
 
@@ -22,7 +22,7 @@ class FileUtils:
         except File.DoesNotExist:
             pass
 
-        logger.info(f"Uploading file: {file_path}")
+        file_logger.info(f"Uploading file: {file_path}")
 
         try:
             sha256_hash = hashlib.sha256()
@@ -45,28 +45,28 @@ class FileUtils:
             file_instance.save()
 
         except FileNotFoundError as fnf_error:
-            logger.error(f"File not found error: {fnf_error}")
+            file_logger.error(f"File not found error: {fnf_error}")
             return None
 
         except Exception as e:
-            logger.error(f"An error occurred: {e}")
+            file_logger.error(f"An error occurred: {e}")
             return None
 
         else:
             django_file.close()
             # delete the file after upload
             os.remove(file_path)
-            logger.info(f"File uploaded: {file_instance.id}")
+            file_logger.info(f"File uploaded: {file_instance.id}")
             return file_instance
 
     @staticmethod
     def download_file(file_id):
-        logger.info(f"Attempting to download file: {file_id} ")
+        file_logger.info(f"Attempting to download file: {file_id} ")
 
         cached_local_path = cache.get(file_id)
 
         if cached_local_path:
-            logger.info(f"File found in cache: {cached_local_path}")
+            file_logger.info(f"File found in cache: {cached_local_path}")
             return cached_local_path
 
         try:
@@ -79,12 +79,12 @@ class FileUtils:
                     local_file.write(chunk)
 
             cache.set(file_id, local_file_path)
-            logger.info(f"File downloaded to: {local_file_path}")
+            file_logger.info(f"File downloaded to: {local_file_path}")
             return local_file_path
 
         except File.DoesNotExist:
-            logger.error(f"No file found with id: {file_id}")
+            file_logger.error(f"No file found with id: {file_id}")
             return None
         except Exception as e:
-            logger.error(f"An error occurred: {e}")
+            file_logger.error(f"An error occurred: {e}")
             return None
