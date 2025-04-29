@@ -7,7 +7,7 @@ from common.logger import file_logger
 from django.conf import settings
 from typing import Optional, List, Union
 from django.core.files import File as DjangoFile
-
+from user.models import User
 
 TASK_LOCAL_STORAGE = settings.TASKS_LOCAL_STORAGE
 FILE_CACHE_DIR = settings.FILE_CACHE_DIR
@@ -29,7 +29,9 @@ class FileUtils:
         Returns:
             str: Path to the cached file if successful, None otherwise
         """
-        self.logger.info(f"Attempting to download file: {file_id}")
+        file_instance = File.objects.get(id=file_id)
+        basename = file_instance.basename
+        self.logger.info(f"Attempting to download file: {basename}")
 
         # Check if the file path has already been cached
         cached_file_path = shared_file_cache.get(file_id)
@@ -46,13 +48,13 @@ class FileUtils:
         try:
             have_lock = lock.acquire()
             if not have_lock:
-                self.logger.warning(f"Could not acquire lock for file {file_id} after {self.file_download_blocking_timeout} seconds, checking if another process downloaded it")
+                self.logger.warning(f"Could not acquire lock for file {basename} after {self.file_download_blocking_timeout} seconds, checking if another process downloaded it")
                 # Check one more time if another process downloaded it while we were waiting
                 cached_file_path = shared_file_cache.get(file_id)
                 if cached_file_path and os.path.exists(cached_file_path):
                     self.logger.info(f"File found in cache after waiting: {cached_file_path}")
                     return cached_file_path
-                self.logger.error(f"Could not acquire lock and file not in cache for file {file_id}")
+                self.logger.error(f"Could not acquire lock and file not in cache for file {basename}")
                 return None
 
             # Double check after acquiring lock
@@ -62,14 +64,12 @@ class FileUtils:
                 return cached_file_path
             
             try:
-                # Fetch file instance from the database
-                file_instance = File.objects.get(id=file_id)
 
                 # Get the path where the file should be saved in the cache
                 cache_file_path = shared_file_cache._get_file_path(file_id)
 
                 # Download the file in chunks and save it directly to the cache path
-                self.logger.info(f"Starting download of file {file_id} to {cache_file_path}")
+                self.logger.info(f"Starting download of file {basename} to {cache_file_path}")
                 with open(cache_file_path, 'wb') as cache_file:
                     for chunk in file_instance.file:
                         cache_file.write(chunk)
@@ -80,20 +80,20 @@ class FileUtils:
                 return cache_file_path
 
             except File.DoesNotExist:
-                self.logger.error(f"No file found with id: {file_id}")
+                self.logger.error(f"No file found with id: {basename}")
                 return None
             
         except redis.exceptions.LockError as e:
-            self.logger.error(f"Failed to acquire lock for file {file_id}: {e}")
+            self.logger.error(f"Failed to acquire lock for file {basename}: {e}")
             return None
         except Exception as e:
-            self.logger.error(f"An error occurred while downloading file {file_id}: {e}")
+            self.logger.error(f"An error occurred while downloading file {basename}: {e}")
             return None
         finally:
             if 'lock' in locals() and have_lock:
                 lock.release()
 
-    def upload_file(self, local_file_path: str, maipl_folder: str, path: str, meta: dict, user: int) -> Optional[File]:
+    def upload_file(self, local_file_path: str, maipl_folder: str, path: str, meta: dict, user: User) -> Optional[File]:
         """
         Uploads a file to the storage and returns its File instance.
         
@@ -136,7 +136,7 @@ class FileUtils:
                 # Save the file instance
                 file_instance.save()
 
-            self.logger.info(f"File uploaded successfully: {file_instance.id}")
+            self.logger.info(f"File uploaded successfully: {file_instance.basename}")
             return file_instance
 
         except Exception as e:
