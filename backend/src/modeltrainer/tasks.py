@@ -3,7 +3,7 @@ import os
 from celery import shared_task
 from django.conf import settings
 from common.logger import modeltrainer_logger
-from common.file_utils import download_file, create_local_path, create_console_output_file, write_to_console
+from common.file_utils import FileUtils
 
 from .models import TrainingTask
 
@@ -20,23 +20,25 @@ def train_model(self, task_id):
     task.status = 'STARTED'
     task.save()
     modeltrainer_logger.info(f"Task: {task} started")
+    
+    file_utils = FileUtils()
     task_context = {
         "task": task,
-        "local_path": create_local_path(task, "train"),
-        "console_output_file": create_console_output_file(task),
+        "local_path": file_utils.create_local_path(task, "train"),
+        "console_output_file": file_utils.create_console_output_file(task),
         "dataset_file": "",
         "recipe_file": "",
     }
-    download_training_files(task_context)
+    download_training_files(task_context, file_utils)
     run_training(task_context)
 
-def download_training_files(task_context):
+def download_training_files(task_context, file_utils):
     task = task_context["task"]
     local_path = task_context["local_path"]
     console_output_file = task_context["console_output_file"]
 
-    dataset_cache_path = download_file(task.dataset_file_id)
-    recipe_cache_path = download_file(task.recipe_file_id)
+    dataset_cache_path = file_utils.download_file(task.dataset_file_id)
+    recipe_cache_path = file_utils.download_file(task.recipe_file_id)
 
     #create symlinks to the cache path
     os.symlink(dataset_cache_path, os.path.join(local_path, "dataset.h5"))
@@ -49,14 +51,17 @@ def download_training_files(task_context):
     modeltrainer_logger.info(f"Recipe file: {task_context['recipe_file']}")
 
     #write the dataset and recipe file paths to the console output file
-    with open(console_output_file, "a") as f:
-        f.write(f"Dataset file: {task_context['dataset_file']}\n")
-        f.write(f"Recipe file: {task_context['recipe_file']}\n")
-        f.write("Files downloaded\n")
+    file_utils.write_to_console(console_output_file, [
+        f"Dataset file: {task_context['dataset_file']}",
+        f"Recipe file: {task_context['recipe_file']}",
+        "Files downloaded"
+    ])
     
     #write the content of the recipt file to the console output file
-    with open(console_output_file, "a") as f:
-        f.write(f"Recipe file content: {open(recipe_cache_path).read()}\n")
+    with open(recipe_cache_path) as f:
+        file_utils.write_to_console(console_output_file, [
+            f"Recipe file content: {f.read()}"
+        ])
 
 def run_training(task_context):
     task = task_context["task"]

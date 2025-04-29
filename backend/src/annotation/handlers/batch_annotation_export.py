@@ -6,7 +6,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 
-from common.file_utils import upload_file
+from common.file_utils import FileUtils
 from ..models import Batch, Annotation
 from ..permissions import UserCan
 from django.contrib.auth import get_user_model
@@ -22,19 +22,21 @@ class BatchAnnotationExportHandler:
     4. Uploading the file to storage
     """
     
-    def __init__(self, user, batch_id):
+    def __init__(self, user, batch_id, file_utils):
         """
         Initialize the handler.
         
         Args:
             user: User instance (not user ID)
             batch_id: ID of the batch to export
+            file_utils: FileUtils instance
         """
         user_id = user.id
         self.user = get_user_model().objects.get(id=user_id)
         self.batch_id = batch_id
         self.batch = None
         self.annotations = None
+        self.file_utils = file_utils
         
     def validate_and_get_batch(self):
         """Validate batch exists and user has permission to access it."""
@@ -164,12 +166,12 @@ class BatchAnnotationExportHandler:
             
             annotation_logger.info(f"Attempting to upload file: {file_path}")
             # Pass the User instance directly, not just the ID
-            file_obj = upload_file(
+            file_obj = self.file_utils.upload_file(
                 local_file_path=temp_filepath,
                 maipl_folder='annotation',
                 path=file_path,
                 meta=meta,
-                user=self.user  
+                user=self.user  # Pass the User instance directly
             )
             
             if not file_obj:
@@ -200,6 +202,7 @@ class BatchAnnotationExportHandler:
                     annotation_logger.info(f"Cleaned up temporary file: {temp_filepath}")
             except Exception as e:
                 annotation_logger.error(f"Error cleaning up temporary file: {str(e)}")
+                # Don't raise the error as the main operation might have succeeded
     
     def handle(self):
         """Main method to handle the export process."""

@@ -9,7 +9,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
-from common.download_file import download_file
+from common.file_utils import FileUtils
 
 from .models import MetricsTask
 from .serializers import MetricSerializer, MetricsReadSerializer
@@ -92,10 +92,13 @@ class MetricsFilesView(generics.GenericAPIView):
     Download and convert metrics csv files to json
     """
 
-    def get(self, request):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.file_utils = FileUtils()
 
+    def get(self, request):
         file_ids = request.query_params.get("file_ids", "").split(",")
-        files = [[file_id, download_file(file_id)] for file_id in file_ids]
+        files = [[file_id, self.file_utils.download_file(file_id)] for file_id in file_ids]
         response = {}
 
         for item in files:

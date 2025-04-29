@@ -68,8 +68,8 @@ def setup_logger(component_name):
 # Setup loggers for different components
 backend_logger = setup_logger("backend")
 worker_logger = setup_logger("worker")
-api_logger = setup_logger("api")
 annotation_logger = setup_logger("annotation")
 file_logger = setup_logger("file")
 modelrunner_logger = setup_logger("modelrunner")
 modeltrainer_logger = setup_logger("modeltrainer")
+dbcreator_logger = setup_logger("dbcreator")

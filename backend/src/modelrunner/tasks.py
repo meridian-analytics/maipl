@@ -10,7 +10,7 @@ from celery.exceptions import Ignore
 from django.contrib.auth import get_user_model
 
 from common.logger import modelrunner_logger
-from common.file_utils import download_file, upload_file, create_local_path, create_console_output_file, write_to_console
+from common.file_utils import FileUtils
 
 from .models import Detection, ModelRunnerTask
 
@@ -25,14 +25,15 @@ def run_model(self, model_task_id):
         model_task.save()
         modelrunner_logger.info(f"Model Runner task {model_task.id} started")
 
+        file_utils = FileUtils()
         task_context = {
             "task": model_task,
-            "local_path": create_local_path(model_task, "runner"),
-            "console_output_file": create_console_output_file(model_task),
+            "local_path": file_utils.create_local_path(model_task, "runner"),
+            "console_output_file": file_utils.create_console_output_file(model_task),
         }
 
-        download_audio_files(task_context)
-        download_model_file(task_context)
+        download_audio_files(task_context, file_utils)
+        download_model_file(task_context, file_utils)
 
         command = construct_command_with_model_parameters(task_context)
 
@@ -40,7 +41,7 @@ def run_model(self, model_task_id):
         model_task.save()
         # run the command and write the output to the console output file
         result = subprocess.run(command, capture_output=True, text=True)
-        write_to_console(task_context["console_output_file"], [
+        file_utils.write_to_console(task_context["console_output_file"], [
             "Command output:",
             "=============",
             "STDOUT:",
@@ -56,7 +57,7 @@ def run_model(self, model_task_id):
 
         if result.returncode == 0:
             save_detections_to_db(task_context)
-            file_instance = upload_detections_file(task_context)
+            file_instance = upload_detections_file(task_context, file_utils)
             model_task.detections = file_instance
             attach_meta_data_to_detections(file_instance)
             model_task.status = 'SUCCESS'
@@ -78,35 +79,35 @@ def run_model(self, model_task_id):
         shutil.rmtree('/backend/kt-tmp/', ignore_errors=True)
         modelrunner_logger.info("Files cleaned up")
 
-def download_audio_files(task_context):
+def download_audio_files(task_context, file_utils):
     filelist = task_context["task"].filelist.all()
     #create a audio directory
     audio_dir = os.path.join(task_context["local_path"], "audio")
     os.makedirs(audio_dir, exist_ok=True)
     for file in filelist:
-        audio_file_path = download_file(file.id)
+        audio_file_path = file_utils.download_file(file.id)
         os.symlink(audio_file_path, os.path.join(audio_dir, file.basename))
     task_context["audio_dir"] = audio_dir
     modelrunner_logger.info(f"Audio files downloaded and symlinked to {audio_dir}")
 
     # write the audio files to the console output
-    write_to_console(task_context["console_output_file"], [
+    file_utils.write_to_console(task_context["console_output_file"], [
         "Audio files: ",
         *[f"{file}" for file in os.listdir(task_context["audio_dir"])],
         "\n"
     ])
 
-def download_model_file(task_context):
+def download_model_file(task_context, file_utils):
     model_file = task_context["task"].model_file
     model_dir = os.path.join(task_context["local_path"], "model")
     os.makedirs(model_dir, exist_ok=True)
-    model_file_path = download_file(model_file.id)
+    model_file_path = file_utils.download_file(model_file.id)
     os.symlink(model_file_path, os.path.join(model_dir, model_file.basename))
     task_context["model_dir"] = model_dir
     modelrunner_logger.info(f"Model file downloaded and symlinked to {model_dir}")
 
     # write the model file to the console output
-    write_to_console(task_context["console_output_file"], [
+    file_utils.write_to_console(task_context["console_output_file"], [
         "Model file: ",
         f"{model_file.basename}",
         "\n"
@@ -157,7 +158,8 @@ def construct_command_with_model_parameters(task_context):
         command += ['--table_name', f"{parameters.get('table_name')}"]
 
     # write the command to the console output
-    write_to_console(task_context["console_output_file"], [
+    file_utils = FileUtils()
+    file_utils.write_to_console(task_context["console_output_file"], [
         "Command for running the model: ",
         f"{' '.join(command)}\n"
     ])
@@ -242,20 +244,30 @@ def save_detections_to_db(task_context):
         model_task.save()
 
 
-def upload_detections_file(task_context):
+def upload_detections_file(task_context, file_utils):
+    """Upload the detections file to storage."""
     detections_dir = task_context["detections_dir"]
-    model_task_id = task_context["task"].id
-    path = f'Task-{model_task_id}-{datetime.now().strftime("%Y%m%d")}-detections.csv'
-    meta = {"Type": "Detection", "Source": "Model-Runner", "Model-Task-ID": f"{model_task_id}"}
+    local_file_path = os.path.join(detections_dir, "detections.csv")
+    task = task_context["task"]
     
-    file_instance = upload_file(
-        local_file_path=os.path.join(detections_dir, "detections.csv"),
-        maipl_folder='annotation',
-        path=path,
-        meta=meta,
-        user=User.objects.get(id=task_context["task"].user_id.id)
+    # Create a unique filename for the detections file
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"detections_{task.id}_{timestamp}.csv"
+    file_path = os.path.join('detections', filename)
+    
+    # Upload the file
+    file_instance = file_utils.upload_file(
+        local_file_path=local_file_path,
+        maipl_folder='detections',
+        path=file_path,
+        meta={
+            'task_id': task.id,
+            'upload_time': timestamp,
+            'file_count': len(task.filelist.all())
+        },
+        user=task.user_id  # Pass the User instance directly
     )
-
+    
     return file_instance
     
 

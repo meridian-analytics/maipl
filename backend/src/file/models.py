@@ -10,7 +10,7 @@ from rest_framework.exceptions import ValidationError
 from user.models import User
 
 from api.settings import MINIO_BUCKET_NAME
-from .tasks import update_meta_from_h5_file
+
 def get_storage():
     return MinioBackend(bucket_name=MINIO_BUCKET_NAME, replace_existing=True)
 
@@ -168,6 +168,7 @@ def handle_h5_file_meta_post_save(sender, instance, **kwargs):
     # Only trigger if this is a new file or if the file field was updated
     update_fields = kwargs.get('update_fields', []) or []
     if instance.file.name.endswith('.h5') and (kwargs.get('created', False) or 'file' in update_fields):
+        from .tasks import update_meta_from_h5_file
         update_meta_from_h5_file.delay(instance.id)
     
     

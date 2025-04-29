@@ -3,7 +3,7 @@ import subprocess
 
 from django.db import models
 
-from common.file import FileUtils
+from common.file_utils import FileUtils
 
 # Create your models here.
 from file.models import File

@@ -3,7 +3,7 @@ import tempfile
 from django.core.cache import cache
 
 from annotation.services import generate_image
-from common.download_file import download_file
+from common.file_utils import FileUtils
 from file.models import File
 
 
@@ -37,6 +37,7 @@ class BatchPreviewHandler:
         self.start = request.data.get("start", 0)
         self.file_id = None
         self.preview_url = None
+        self.file_utils = FileUtils()
 
         self.__set_file_id()
         self.__create_segment()
@@ -53,7 +54,7 @@ class BatchPreviewHandler:
         """
         local_path = cache.get(self.file_id)
         if not local_path:
-            local_path = download_file(self.file_id)
+            local_path = self.file_utils.download_file(self.file_id)
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as img_output:
             generate_image(

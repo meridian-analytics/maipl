@@ -4,6 +4,7 @@ from django.core.files import File as DjangoFile
 from common.logger import file_logger
 import h5py
 from celery import shared_task
+from common.file_utils import FileUtils
 
 @shared_task(bind=True)
 def update_meta_from_h5_file(self, file_id):
@@ -18,13 +19,13 @@ def update_meta_from_h5_file(self, file_id):
 
     try:
         from .models import File
-        from common.download_file import download_file
         file = File.objects.get(id=file_id)
         #log the file details
         file_logger.info(f"File details: {file.id}, {file.path}")
         
         #download the file
-        local_file_path = download_file(file.id)
+        file_utils = FileUtils()
+        local_file_path = file_utils.download_file(file.id)
 
         #open the file
         with h5py.File(local_file_path, 'r') as f:

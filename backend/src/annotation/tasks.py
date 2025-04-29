@@ -6,7 +6,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 from django.core.cache import cache
 from django.core.files import File as DjangoFile
 
-from common.download_file import download_file
+from common.file_utils import FileUtils
 from common.logger import annotation_logger
 from file.models import File
 
@@ -89,7 +89,8 @@ def process_segment(segment):
         local_path = cache.get(file_id)
         if not local_path:
             annotation_logger.info(f"Audio file {basename} not found in cache, downloading...")
-            local_path = download_file(file_id)
+            file_utils = FileUtils()
+            local_path = file_utils.download_file(file_id)
             if local_path is None:
                 annotation_logger.error(f"Failed to download audio file: {basename}")
                 return False

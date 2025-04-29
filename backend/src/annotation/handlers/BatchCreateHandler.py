@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.db.models import Q
 
 from annotation.models import Annotation, Batch, Segment
-from common.download_file import download_file
+from common.file_utils import FileUtils
 from file.models import File
 
 
@@ -45,6 +45,7 @@ class BatchCreateHandler:
         self.user = get_user_model().objects.get(id=request.user.id)
         self.segments = []
         self.file_ids = {}
+        self.file_utils = FileUtils()
 
     def get_annotation_config(self):
         """Get the annotation configuration from file."""
@@ -98,7 +99,7 @@ class BatchCreateHandler:
         - User doesn't have access to the files
         """
         try:
-            file_local_path = download_file(self.import_file_id)
+            file_local_path = self.file_utils.download_file(self.import_file_id)
             self.__check_required_fields(file_local_path)
             with open(file_local_path, 'r', encoding='utf-8') as file:
                 reader = csv.DictReader(file)

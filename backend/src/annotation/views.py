@@ -17,7 +17,7 @@ from common.pagination import MaiplPagination
 from common.shared_mixins import CreateListModelMixin, DeleteByIdsMixin
 from common.sorting import SortableMixin
 from file.serializers import ReadSerializer
-from common.file_utils import upload_file
+from common.file_utils import FileUtils
 
 from .handlers import BatchCreateHandler, BatchPreviewHandler
 from .models import (
@@ -114,6 +114,10 @@ class BatchAnnotationExportView(APIView):
     The exported file is saved in the File model under the 'annotation' folder
     and can be queried later using the file_id.
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.file_utils = FileUtils()
+
     def post(self, request):
         batch_id = request.data.get('batch_id')
         if not batch_id:
@@ -122,7 +126,7 @@ class BatchAnnotationExportView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        handler = BatchAnnotationExportHandler(request.user, batch_id)
+        handler = BatchAnnotationExportHandler(request.user, batch_id, self.file_utils)
         return handler.handle()
 
 
