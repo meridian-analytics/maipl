@@ -20,7 +20,7 @@ def metrics_eval(self, task_id):
     task = MetricsTask.objects.get(id=task_id)
     
     # set the task status to started
-    task.status = "STARTED"
+    task.status = "RUNNING"
     task.save()
 
     # download ref and eval files
