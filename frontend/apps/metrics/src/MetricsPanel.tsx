@@ -28,7 +28,7 @@ export default function MetricsPanel() {
   const [addRef, setAddRef] = R.useState<boolean>(false)
   const [isCooldown, setIsCooldown] = R.useState(false)
   const [cooldownTime, setCooldownTime] = R.useState(0)
-  const [tasks, setTasks] = R.useState([])
+  const [newTaskId, setNewTaskId] = R.useState<number | null>(null)
 
   const {
     debouncedFilter,
@@ -56,28 +56,8 @@ export default function MetricsPanel() {
     size: pagination.pageSize,
   })
 
-  const tasksMutation = RQ.useMutation({
-    mutationFn: (vars: Parameters<typeof Metrics.tasks>) => {
-      return Metrics.tasks(...vars)
-    },
-    onError: (err, vars) => {
-      notify((onClose) => (
-        <M.Alert onClose={onClose} severity='error'>
-          Error: Could not fetch tasks
-        </M.Alert>
-      ))
-    },
-    onSettled: () => {
-      tasksMutation.reset()
-    },
-    onSuccess: (tasks) => {
-      notify((onClose) => (
-        <M.Alert onClose={onClose} severity='success'>
-          Success: Fetched tasks
-        </M.Alert>
-      ))
-      setTasks(tasks)
-    },
+  const { data: tasks } = MR.MetricTasks.useQuery({
+    ordering: "-created_at",
   })
 
   const createMutation = RQ.useMutation({
@@ -95,12 +75,13 @@ export default function MetricsPanel() {
       createMutation.reset()
     },
     onSuccess: (metric) => {
+      setNewTaskId(metric.id)
       notify((onClose) => (
         <M.Alert onClose={onClose} severity='success'>
           Success: Processed metrics #{metric.id}
         </M.Alert>
       ))
-      tasksMutation.mutateAsync([maipl.client, { ordering: "-created_at" }])
+      queryClient.refetchQueries({ queryKey: ["metrics"] })
     },
   })
 
@@ -114,8 +95,11 @@ export default function MetricsPanel() {
           ref_file: refFile,
           eval_file: evalFile,
           folder: output,
-          type: isClip ? "clips" : "continuous",
-          ...options,
+          parameters: {
+            type: isClip ? "clips" : "continuous",
+            add_ref: addRef,
+            ...options
+          },
         },
       ])
     }
@@ -135,9 +119,25 @@ export default function MetricsPanel() {
     }
   }, [isCooldown, cooldownTime])
 
+  // Reset newTaskId after animation completes
   R.useEffect(() => {
-    tasksMutation.mutateAsync([maipl.client, { ordering: "-created_at" }])
-  }, [])
+    if (newTaskId) {
+      const timer = setTimeout(() => {
+        setNewTaskId(null)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [newTaskId])
+
+  // Refresh metrics every 10 seconds
+  R.useEffect(() => {
+    const interval = setInterval(() => {
+      queryClient.refetchQueries({ queryKey: ["metrics"] })
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [queryClient])
+
 
   return (
     <M.Stack
@@ -320,7 +320,11 @@ export default function MetricsPanel() {
         }}
       >
         {tasks.map((task) => (
-          <Task key={task.id} task={task} />
+          <Task 
+            key={task.id} 
+            task={task}
+            isNew={task.id === newTaskId}
+          />
         ))}
       </M.Stack>
     </M.Stack>

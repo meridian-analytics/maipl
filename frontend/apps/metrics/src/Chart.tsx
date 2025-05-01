@@ -172,7 +172,7 @@ const MetricsChart = ({ metricsData, xs }) => {
               {fileIds.map((id) => (
                 <M.MenuItem key={id} value={id}>
                   <M.Checkbox checked={selectedFileIds.includes(id)} />
-                  <M.ListItemText primary={files.get(parseInt(id)).tag} />
+                  <M.ListItemText primary={files.get(parseInt(id)).path} />
                 </M.MenuItem>
               ))}
             </M.Select>

@@ -30,6 +30,7 @@ export {
   Table,
   RunnerTasks,
   TrainerTasks,
+  MetricTasks,
   usePagination,
   useSelection,
   useTable,

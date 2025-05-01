@@ -1,5 +1,6 @@
 import type * as Client from "./client"
 import * as K from "@maipl/constants"
+import type { t_page_params,t_page } from "./types"
 
 /** Metric.t */
 type t = {
@@ -13,28 +14,27 @@ type t = {
   description: string | null
   /** Folder name of the output files */
   folder: string
-  /** Type of metric */
-  type: "clips" | "continuous"
-  /** Minimum threshold value */
-  threshold_min: number
-  /** Maximum threshold value */
-  threshold_max: number
-  /** Threshold increment */
-  threshold_increment: number
-  /** Total time units */
-  total_time_units: number
-  /** Add background reference */
-  add_bg_ref?: boolean
-  /** Background label */
-  bg_label?: string | null
+  /** Parameters */
+  parameters: {
+    type: "clips" | "continuous"
+    /** Minimum threshold value */
+    threshold_min: number
+    /** Maximum threshold value */
+    threshold_max: number
+    /** Threshold increment */
+    threshold_increment: number
+    /** Total time units */
+    total_time_units: number
+    /** Add background reference */
+    add_ref?: boolean
+  }
   /** Task status */
   status:
     | "CREATED"
     | "PENDING"
     | "STARTED"
     | "FAILURE"
-    | "RETRY"
-    | "REVOKED"
+    | "RUNNING"
     | "SUCCESS"
   /** Date created */
   created_at: Date
@@ -67,23 +67,20 @@ type t_filter_params = {
   user_id?: number
 }
 
+/** Task.t_list_item */
+type t_list_item = Omit<t, "created_at" | "updated_at"> 
+
 /** Task.t_list_request */
-type t_list_request = t_filter_params
+type t_list_request = t_filter_params & t_page_params
 
 /** Task.t_list_response */
-type t_list_response = Array<t_get_response>
-
-type t_metrics = {
-  
-}
-
-type t_file_json_response = Array<any>
+type t_list_response = t_page<t_list_item>
 
 /** Metric.create: create a new task */
 const create = async (client: Client.t, body: t_create_request): Promise<t> => {
   const response = await client
     .post<t_create_response>(
-      `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/metrics/tasks/`,
+      `${K.MAIPL_METRICS_BACKEND}/api/ketos/metrics/tasks/`,
       body
     )
     .then((r) => r.data)
@@ -94,14 +91,31 @@ const create = async (client: Client.t, body: t_create_request): Promise<t> => {
   }
 }
 
+/** Metric.get: get a task by id */
+const get = async (client: Client.t, id: number): Promise<t> => {
+  const response = await client
+    .get<t_get_response>(
+      `${K.MAIPL_METRICS_BACKEND}/api/ketos/metrics/tasks/${id}/`
+    )
+    .then((r) => r.data)
+  return response
+}
+
+/** Metric.remove: delete a task by id */
+const remove = (client: Client.t, id: number): Promise<void> => {
+  return client.delete(
+    `${K.MAIPL_METRICS_BACKEND}/api/ketos/metrics/tasks/${id}/`
+  )
+}
+
 /** Task.list: get list of tasks */
-const tasks = async (
+const list = async (
   client: Client.t,
   params?: t_list_request
 ): Promise<Array<t>> => {
   const response = await client
     .get<t_list_response>(
-      `${K.MAIPL_MODEL_RUNNER_BACKEND}/api/ketos/metrics/tasks/`,
+      `${K.MAIPL_METRICS_BACKEND}/api/ketos/metrics/tasks/`,
       { params }
     )
     .then((r) => r.data)
@@ -133,7 +147,11 @@ export {
   type t_filter_params,
   type t_list_request,
   type t_list_response,
+  type t_list_item,
   create,
-  tasks,
+  get,
+  get_console,
+  list,
+  remove,
   files,
 }

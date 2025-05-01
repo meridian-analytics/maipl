@@ -26,20 +26,29 @@ const buttonStyle = {
   padding: "0 4px",
 }
 
-const Task = ({ task }) => {
+const getStatusColor = (status) => {
+  switch (status.toLowerCase()) {
+    case 'success':
+      return '#2e7d32' // Material UI success dark
+    case 'failure':
+      return '#d32f2f' // Material UI error dark
+    case 'running':
+      return 'warning.main'
+    case 'pending':
+      return 'info.main'
+    default:
+      return 'text.secondary'
+  }
+}
+
+const Task = ({ task, isNew }) => {
   const {
     id,
     bg_audio_list,
     output_files,
     description,
     folder,
-    type,
-    threshold_min,
-    threshold_max,
-    threshold_increment,
-    total_time_units,
-    add_bg_ref,
-    bg_label,
+    parameters,
     status,
     created_at,
     updated_at,
@@ -48,71 +57,116 @@ const Task = ({ task }) => {
   } = task
 
   const [showOutputFiles, setShowOutputFiles] = R.useState(false)
+  const { type, threshold_min, threshold_max, threshold_increment, total_time_units, add_bg_ref, bg_label } = parameters
 
   return (
-    <M.Stack spacing={1}>
-      <M.Card variant='outlined' sx={{ position: "relative" }}>
-        <M.CardContent>
-          <M.Grid container spacing={1} id='task-status'>
-            <M.Grid item xs={6}>
-              <M.Typography variant='body2'>
-                Metrics Created at: {new Date(created_at).toLocaleDateString()}{" "}
-                {new Date(created_at).toLocaleTimeString()}
-              </M.Typography>
-            </M.Grid>
-            <M.Grid item xs={6} style={{ textAlign: "right" }}>
-              <M.Typography variant='body2'>Status: {status}</M.Typography>
-            </M.Grid>
-            <M.Grid item xs={12} id='eval-and-ref-files'>
-              <M.Typography variant='body2'>
-                Evaluation File: {eval_file.path}
-              </M.Typography>
-              <M.Typography variant='body2'>
-                Reference File: {ref_file.path}
-              </M.Typography>
-            </M.Grid>
-            <M.Grid item xs={12} id='output-files'>
-              <M.Collapse in={showOutputFiles}>
-                <M.Grid container item spacing={2} xs={12} id='task-settings'>
-                  <M.Grid item xs={3}>
-                    <M.Typography variant='body2'>Type: {type}</M.Typography>
-                  </M.Grid>
-                  <M.Grid item xs={3}>
-                    <M.Typography variant='body2'>
-                      Folder: {folder}
-                    </M.Typography>
-                  </M.Grid>
-                  <M.Grid item xs={3}>
-                    <M.Typography variant='body2'>
-                      Threshold: {threshold_min} - {threshold_max} (Increment:{" "}
-                      {threshold_increment})
-                    </M.Typography>
-                  </M.Grid>
-                  <M.Grid item xs={3}>
-                    <M.Typography variant='body2'>
-                      Total Time Units: {total_time_units}
-                    </M.Typography>
-                  </M.Grid>
-                </M.Grid>
-                <M.Typography variant='body2'>Output Files:</M.Typography>
-                {output_files &&
-                  output_files.map((file, index) => (
-                    <M.Typography key={index} variant='body2'>
-                      - {file.path}
-                    </M.Typography>
-                  ))}
-              </M.Collapse>
-            </M.Grid>
-          </M.Grid>
-        </M.CardContent>
-        <M.Button
-          onClick={() => setShowOutputFiles(!showOutputFiles)}
-          sx={buttonStyle}
+    <M.Fade in={true} timeout={500}>
+      <M.Stack spacing={1}>
+        <M.Card 
+          variant='outlined' 
+          sx={{ 
+            position: "relative",
+            ...(isNew && {
+              animation: "highlight 2s ease-in-out",
+              "@keyframes highlight": {
+                "0%": {
+                  backgroundColor: "rgba(76, 175, 80, 0.2)",
+                },
+                "100%": {
+                  backgroundColor: "transparent",
+                },
+              },
+            }),
+          }}
         >
-          {showOutputFiles ? "Hide Details" : "Show Details"}
-        </M.Button>
-      </M.Card>
-    </M.Stack>
+          <M.CardContent>
+            <M.Stack spacing={2}>
+              {/* Header Section */}
+              <M.Grid container spacing={1} alignItems="center">
+                <M.Grid item xs={4}>
+                  <M.Typography variant="subtitle2" color="text.secondary">
+                    Task ID: {id}
+                  </M.Typography>
+                </M.Grid>
+                <M.Grid item xs={4} sx={{ textAlign: 'center' }}>
+                  <M.Chip 
+                    label={status} 
+                    size="small"
+                    sx={{ 
+                      backgroundColor: getStatusColor(status),
+                      color: 'white',
+                      fontWeight: 'bold'
+                    }}
+                  />
+                </M.Grid>
+                <M.Grid item xs={4} sx={{ textAlign: 'right' }}>
+                  <M.Typography variant="subtitle2" color="text.secondary">
+                    Created: {new Date(created_at).toLocaleDateString()} {new Date(created_at).toLocaleTimeString()}
+                  </M.Typography>
+                </M.Grid>
+              </M.Grid>
+
+              {/* Files Section */}
+              <M.Box>
+                <M.Typography variant="subtitle2" gutterBottom>Files</M.Typography>
+                <M.Typography variant='body2'>
+                  Evaluation: {eval_file.path}
+                </M.Typography>
+                <M.Typography variant='body2'>
+                  Reference: {ref_file.path}
+                </M.Typography>
+              </M.Box>
+
+              {/* Parameters Section */}
+              <M.Collapse in={showOutputFiles}>
+                <M.Box>
+                  <M.Typography variant="subtitle2" gutterBottom>Parameters</M.Typography>
+                  <M.Grid container spacing={2}>
+                    <M.Grid item xs={3}>
+                      <M.Typography variant='body2'>Type: {type}</M.Typography>
+                    </M.Grid>
+                    <M.Grid item xs={3}>
+                      <M.Typography variant='body2'>Folder: {folder}</M.Typography>
+                    </M.Grid>
+                    <M.Grid item xs={3}>
+                      <M.Typography variant='body2'>
+                        Threshold: {threshold_min} - {threshold_max}
+                      </M.Typography>
+                      <M.Typography variant='caption' color="text.secondary">
+                        Increment: {threshold_increment}
+                      </M.Typography>
+                    </M.Grid>
+                    <M.Grid item xs={3}>
+                      <M.Typography variant='body2'>
+                        Time Units: {total_time_units}
+                      </M.Typography>
+                    </M.Grid>
+                  </M.Grid>
+                </M.Box>
+
+                {/* Output Files Section */}
+                {output_files && output_files.length > 0 && (
+                  <M.Box sx={{ mt: 2 }}>
+                    <M.Typography variant="subtitle2" gutterBottom>Output Files</M.Typography>
+                    {output_files.map((file, index) => (
+                      <M.Typography key={index} variant='body2'>
+                        - {file.path}
+                      </M.Typography>
+                    ))}
+                  </M.Box>
+                )}
+              </M.Collapse>
+            </M.Stack>
+          </M.CardContent>
+          <M.Button
+            onClick={() => setShowOutputFiles(!showOutputFiles)}
+            sx={buttonStyle}
+          >
+            {showOutputFiles ? "Hide Details" : "Show Details"}
+          </M.Button>
+        </M.Card>
+      </M.Stack>
+    </M.Fade>
   )
 }
 
