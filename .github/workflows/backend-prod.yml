@@ -165,7 +165,7 @@ jobs:
 
           # Deploy
           ssh ubuntu@$BACKEND_HOST_A "cd ~/backend && \
-            HOSTNAME=backend-a \
+            export HOSTNAME=backend-a && \
             echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
@@ -173,7 +173,7 @@ jobs:
             docker system prune -f"
 
           ssh ubuntu@$BACKEND_HOST_B "cd ~/backend && \
-            HOSTNAME=backend-b \
+            export HOSTNAME=backend-b && \
             echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
@@ -200,7 +200,7 @@ jobs:
 
           # Deploy
           ssh ubuntu@$WORKER_HOST_A "cd ~/worker && \
-            HOSTNAME=worker-a \
+            export HOSTNAME=worker-a && \
             echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
@@ -208,7 +208,7 @@ jobs:
             docker system prune -f"
 
           ssh ubuntu@$WORKER_HOST_B "cd ~/worker && \
-            HOSTNAME=worker-b \
+            export HOSTNAME=worker-b && \
             echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
@@ -216,7 +216,7 @@ jobs:
             docker system prune -f"
 
           ssh ubuntu@$WORKER_HOST_C "cd ~/worker && \
-            HOSTNAME=worker-c \
+            export HOSTNAME=worker-c && \
             echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
