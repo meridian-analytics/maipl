@@ -97,6 +97,17 @@ export default function Signin() {
           padding: 4,
         }}
       >
+        <M.Box
+          component="img"
+          src="https://meridian.cs.dal.ca/wp-content/uploads/2019/10/MERIDIAN_Logo_Header.png"
+          alt="MERIDIAN Logo"
+          sx={{ 
+            maxWidth: '150px',
+            mb: 4,
+            width: '100%',
+            height: 'auto'
+          }}
+        />
         <M.Typography
           variant="h3"
           component="h2"
@@ -106,55 +117,14 @@ export default function Signin() {
             Welcome to{" "}
           </Box>
           <Box component="span" color="#B22222">
-            Maipl
+            MAIPL
           </Box>
         </M.Typography>
         <M.Typography
           variant="h5"
           sx={{ mb: 4, color: (t) => t.palette.text.secondary }}
         >
-          Complete Platform for Machine Learning Operations
-        </M.Typography>
-        <M.Box sx={{ mb: 4 }}>
-          <M.Typography
-            variant="body1"
-            paragraph
-            sx={{ display: "flex", alignItems: "center", gap: 1 }}
-          >
-            <I.ModelTraining fontSize="small" /> Train and Deploy ML Models with
-            Ease
-          </M.Typography>
-          <M.Typography
-            variant="body1"
-            paragraph
-            sx={{ display: "flex", alignItems: "center", gap: 1 }}
-          >
-            <I.DataObject fontSize="small" /> Efficient Data Annotation Tools
-          </M.Typography>
-          <M.Typography
-            variant="body1"
-            paragraph
-            sx={{ display: "flex", alignItems: "center", gap: 1 }}
-          >
-            <I.Assessment fontSize="small" /> Real-time Model Performance
-            Metrics
-          </M.Typography>
-          <M.Typography
-            variant="body1"
-            paragraph
-            sx={{ display: "flex", alignItems: "center", gap: 1 }}
-          >
-            <I.CloudUpload fontSize="small" /> Integrated File Management System
-          </M.Typography>
-        </M.Box>
-        <M.Typography
-          variant="subtitle1"
-          sx={{
-            color: "primary.main",
-            fontStyle: "italic",
-          }}
-        >
-          "Streamline your ML workflow from data to deployment"
+          MERIDIAN's Marine Artificial Intelligence Platform
         </M.Typography>
       </M.Grid>
       <M.Grid
