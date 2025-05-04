@@ -13,7 +13,7 @@ class UploadValidationHandler:
         "audio files": config.RAW_CONTENT_TYPE.split(","),
         "models": config.MODEL_CONTENT_TYPE.split(","),
         "metrics": config.METRICS_CONTENT_TYPE.split(","),
-        ".h5 database": config.DATASET_CONTENT_TYPE.split(","),
+        ".h5 databases": config.DATASET_CONTENT_TYPE.split(","),
         "model recipes": config.RECIPE_CONTENT_TYPE.split(","),
         "audio configs": config.RECIPE_CONTENT_TYPE.split(","),
     }
