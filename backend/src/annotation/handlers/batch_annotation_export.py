@@ -168,7 +168,7 @@ class BatchAnnotationExportHandler:
             # Pass the User instance directly, not just the ID
             file_obj = self.file_utils.upload_file(
                 local_file_path=temp_filepath,
-                maipl_folder='annotation',
+                maipl_folder='annotations',
                 path=file_path,
                 meta=meta,
                 user=self.user  # Pass the User instance directly

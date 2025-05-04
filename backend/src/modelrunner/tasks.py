@@ -252,14 +252,13 @@ def upload_detections_file(task_context, file_utils):
     
     # Create a unique filename for the detections file
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f"detections_{task.id}_{timestamp}.csv"
-    file_path = os.path.join('detections', filename)
+    filepath = f"detections_{task.id}_{timestamp}.csv"
     
     # Upload the file
     file_instance = file_utils.upload_file(
         local_file_path=local_file_path,
-        maipl_folder='detections',
-        path=file_path,
+        maipl_folder='annotations',
+        path=filepath,
         meta={
             'task_id': task.id,
             'upload_time': timestamp,

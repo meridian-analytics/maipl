@@ -58,7 +58,7 @@ class Command(BaseCommand):
                     "duration": duration, "sample_rate": sample_rate}
 
             file = File(
-                maipl_folder="raw",
+                maipl_folder="audio files",
                 path=path,
                 sha256=sha256_hash.hexdigest(),
                 user_id=self.admin_user,
