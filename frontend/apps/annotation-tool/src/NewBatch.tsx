@@ -114,10 +114,10 @@ function NewBatch(props: { onClose: () => void }) {
   const [importFile, setImportFile] = R.useState<null | number>(null)
 
   const { data: importFiles } = RQ.useQuery({
-    queryKey: ["files", File.t_maipl_folder.annotation],
+    queryKey: ["files", File.t_maipl_folder.annotation_schemas],
     queryFn: () =>
       File.list(maipl.client, {
-        maipl_folder: File.t_maipl_folder.annotation,
+        maipl_folder: File.t_maipl_folder.annotation_schemas,
         page: 1,
         size: 100,
       }).then((page) => new Map(page.data.map((f) => [f.id, f]))),
@@ -135,7 +135,7 @@ function NewBatch(props: { onClose: () => void }) {
   const table = MR.Files.useTable()
 
   const { data: files } = MR.Files.useQuery({
-    maipl_folder: File.t_maipl_folder.raw,
+    maipl_folder: File.t_maipl_folder.audio_files,
     path: table.debouncedFilter.get("path"),
     tag: table.debouncedFilter.get("tag"),
     page: table.pagination.pageIndex + 1,

@@ -158,7 +158,7 @@ export default function ShowBatch(props: ShowBatchProps) {
   })
 
   const { data: files } = MR.Files.useQuery({
-    maipl_folder: File.t_maipl_folder.raw,
+    maipl_folder: File.t_maipl_folder.audio_files,
     path: table.debouncedFilter.get("path"),
     tag: table.debouncedFilter.get("tag"),
     page: table.pagination.pageIndex + 1,

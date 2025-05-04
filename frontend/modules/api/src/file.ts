@@ -8,13 +8,14 @@ import type * as User from "./user"
 
 /** File.t_maipl_folder */
 enum t_maipl_folder {
-  annotation = "annotation",
-  config = "config",
-  dataset = "dataset",
-  model = "model",
-  raw = "raw",
+  annotations = "annotations",
+  annotation_schemas = "annotation schemas",
+  h5_databases = ".h5 databases",
+  models = "models",
+  audio_files = "audio files",
   metrics = "metrics",
-  recipe = "recipe"
+  model_recipes = "model recipes",
+  audio_configs = "audio configs"
 }
 
 /** File.t represents files that have already been uploaded */
@@ -56,19 +57,21 @@ type t = {
 /** File.t_usage */
 type t_usage = {
   /** Annotation usage in bytes */
-  annotation: number
+  annotations: number
   /** Configuration usage in bytes */
-  config: number
+  annotation_schemas: number
   /** Dataset usage in bytes */
-  dataset: number
+  h5_databases: number
   /** Model usage in bytes */
-  model: number
+  models: number
   /** Public file usage in bytes */
   public: number
   /** Private file usage in bytes */
   private: number
   /** Raw usage in bytes */
-  raw: number
+  audio_files: number
+  /** Audio configs usage in bytes */
+  audio_configs: number
 }
 
 /** File._filter_params used to filter results from File.list */

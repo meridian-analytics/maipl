@@ -60,7 +60,7 @@ function useTable(props?: {
   const [pagination, setPagination] = usePagination(props?.pagination)
   const [selection, setSelection] = useSelection(props?.selection)
   const [folder, setFolder] = R.useState<File.t_maipl_folder>(
-    props?.maipl_folder ?? File.t_maipl_folder.raw
+    props?.maipl_folder ?? File.t_maipl_folder.audio_files
   )
   const filter = useFilter(
     R.useMemo(

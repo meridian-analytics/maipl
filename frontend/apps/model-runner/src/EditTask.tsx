@@ -68,7 +68,7 @@ function EditTask(props: {
   const [selectionWarning, setSelectionWarning] = R.useState("")
 
   const { data: models } = MR.Files.useQuery({
-    maipl_folder: File.t_maipl_folder.model,
+    maipl_folder: File.t_maipl_folder.models,
     page: 1, // bug: when query changes, page needs to be reset
     size: 100,
   })
@@ -156,7 +156,7 @@ function EditTask(props: {
       .filter(Boolean)
 
     const hasMultipleDatasetFiles =
-      selectedFileTypes.filter((f) => f?.folder === File.t_maipl_folder.dataset)
+      selectedFileTypes.filter((f) => f?.folder === File.t_maipl_folder.h5_databases)
         .length > 1
 
     if (hasMultipleDatasetFiles) {
@@ -196,7 +196,7 @@ function EditTask(props: {
     const h5Files = selectedFiles.filter(
       (id) =>
         files?.data.find((f) => f.id === id)?.maipl_folder ===
-        File.t_maipl_folder.dataset
+        File.t_maipl_folder.h5_databases
     ).length
     return h5Files === 1
   }, [selection, files?.data])
@@ -294,7 +294,7 @@ function EditTask(props: {
             }
           }}
           value={folder}
-          values={[File.t_maipl_folder.raw, File.t_maipl_folder.dataset]}
+          values={[File.t_maipl_folder.audio_files, File.t_maipl_folder.h5_databases]}
         />
         <M.TextField
           label="Path"
@@ -351,12 +351,12 @@ function EditTask(props: {
                 const audioFiles = selectedFiles.filter(
                   (id) =>
                     files?.data.find((f) => f.id === id)?.maipl_folder ===
-                    File.t_maipl_folder.raw
+                    File.t_maipl_folder.audio_files
                 ).length
                 const h5Files = selectedFiles.filter(
                   (id) =>
                     files?.data.find((f) => f.id === id)?.maipl_folder ===
-                    File.t_maipl_folder.dataset
+                    File.t_maipl_folder.h5_databases
                 ).length
 
                 const parts = []

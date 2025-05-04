@@ -95,7 +95,7 @@ const export_ = async (
     file: new window.File([CSV.encode(columns, detections)], path, {
       type: "text/csv",
     }),
-    maipl_folder: File.t_maipl_folder.annotation,
+    maipl_folder: File.t_maipl_folder.annotations,
     meta: {
       maipl: "detections",
       label: params?.label,

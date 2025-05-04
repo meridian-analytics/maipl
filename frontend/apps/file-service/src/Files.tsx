@@ -40,7 +40,7 @@ export const loader = (_maipl: MR.t_context) =>
   }) satisfies RR.LoaderFunction
 
 function parseParams(search: URLSearchParams) {
-  const folder = search.get("folder") ?? File.t_maipl_folder.raw
+  const folder = search.get("folder") ?? File.t_maipl_folder.audio_files
   const path = search.get("path") ?? ""
   const tag = search.get("tag") ?? ""
   const shared = search.get("shared") ?? File.t_filter_shared.all
@@ -588,6 +588,18 @@ export default function Files(props: { sx?: M.SxProps }) {
     shared: qs.shared,
   })
 
+  // Update the folder options
+  const folderOptions = [
+    File.t_maipl_folder.annotations,
+    File.t_maipl_folder.annotation_schemas,
+    File.t_maipl_folder.h5_databases,
+    File.t_maipl_folder.models,
+    File.t_maipl_folder.audio_files,
+    File.t_maipl_folder.metrics,
+    File.t_maipl_folder.model_recipes,
+    File.t_maipl_folder.audio_configs,
+  ]
+
   return (
     <Context.Provider value={{ selection }}>
       <M.Stack
@@ -617,15 +629,7 @@ export default function Files(props: { sx?: M.SxProps }) {
               }
             }}
             value={qs.folder}
-            values={[
-              File.t_maipl_folder.annotation,
-              File.t_maipl_folder.config,
-              File.t_maipl_folder.dataset,
-              File.t_maipl_folder.model,
-              File.t_maipl_folder.raw,
-              File.t_maipl_folder.metrics,
-              File.t_maipl_folder.recipe,
-            ]}
+            values={folderOptions}
           />
           <M.TextField
             label="Path"

@@ -94,14 +94,17 @@ function EditTask(props: {
 
   const selectedFiles = Array.from(selection.values())
   const selectedTrainDatasetFiles = selectedFiles.filter(
-    (file) => file.maipl_folder === File.t_maipl_folder.dataset
+    (file) => file.maipl_folder === File.t_maipl_folder.h5_databases
   )
   const selectedRecipeFiles = selectedFiles.filter(
-    (file) => file.maipl_folder === File.t_maipl_folder.recipe
+    (file) => file.maipl_folder === File.t_maipl_folder.model_recipes
+  )
+  const selectedModelFiles = selectedFiles.filter(
+    (file) => file.maipl_folder === File.t_maipl_folder.models
   )
 
   const { data: datasetFiles } = MR.Files.useQuery({
-    maipl_folder: File.t_maipl_folder.dataset,
+    maipl_folder: File.t_maipl_folder.h5_databases,
     path: debouncedFilter.get("path"),
     tag: debouncedFilter.get("tag"),
     page: pagination.pageIndex + 1,
@@ -109,7 +112,7 @@ function EditTask(props: {
   })
 
   const { data: recipeFiles } = MR.Files.useQuery({
-    maipl_folder: File.t_maipl_folder.recipe,
+    maipl_folder: File.t_maipl_folder.model_recipes,
     path: debouncedFilter.get("path"),
     tag: debouncedFilter.get("tag"),
     page: pagination.pageIndex + 1,
@@ -117,7 +120,7 @@ function EditTask(props: {
   })
 
   const { data: modelFiles } = MR.Files.useQuery({
-    maipl_folder: File.t_maipl_folder.model,
+    maipl_folder: File.t_maipl_folder.models,
     path: debouncedFilter.get("path"),
     tag: debouncedFilter.get("tag"),
     page: pagination.pageIndex + 1,
@@ -155,13 +158,13 @@ function EditTask(props: {
   const onCreate = () => {
     const selectedFiles = Array.from(selection.values())
     const datasetFiles = selectedFiles.filter(
-      (file) => file.maipl_folder === File.t_maipl_folder.dataset
+      (file) => file.maipl_folder === File.t_maipl_folder.h5_databases
     )
     const recipeFiles = selectedFiles.filter(
-      (file) => file.maipl_folder === File.t_maipl_folder.recipe
+      (file) => file.maipl_folder === File.t_maipl_folder.model_recipes
     )
     const modelFiles = selectedFiles.filter(
-      (file) => file.maipl_folder === File.t_maipl_folder.model
+      (file) => file.maipl_folder === File.t_maipl_folder.models
     )
 
     if (datasetFiles.length !== 1 || recipeFiles.length !== 1) {

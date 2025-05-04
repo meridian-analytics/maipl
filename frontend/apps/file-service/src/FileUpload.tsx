@@ -16,7 +16,7 @@ export const loader = (_maipl: MR.t_context) =>
     // folder query param
     const url = new URL(request.url)
     const search = url.searchParams
-    const folder = search.get("folder") ?? "raw"
+    const folder = search.get("folder") ?? File.t_maipl_folder.audio_files
     JS.invariantEnum(folder, File.t_maipl_folder, "File.t_maipl_folder")
     // payload
     return { folder }
@@ -29,7 +29,7 @@ function Element() {
     navigate(-1)
   }
   switch (folder) {
-    case File.t_maipl_folder.annotation:
+    case File.t_maipl_folder.annotations:
       return (
         <FileUpload
           folder={folder}
@@ -39,7 +39,7 @@ function Element() {
           }}
         />
       )
-    case File.t_maipl_folder.config:
+    case File.t_maipl_folder.annotation_schemas:
       return (
         <FileUpload
           folder={folder}
@@ -49,7 +49,7 @@ function Element() {
           }}
         />
       )
-    case File.t_maipl_folder.dataset:
+    case File.t_maipl_folder.h5_databases:
       return (
         <FileUpload
           folder={folder}
@@ -59,7 +59,7 @@ function Element() {
           }}
         />
       )
-    case File.t_maipl_folder.model:
+    case File.t_maipl_folder.models:
       return (
         <FileUpload
           folder={folder}
@@ -69,7 +69,7 @@ function Element() {
           }}
         />
       )
-    case File.t_maipl_folder.raw:
+    case File.t_maipl_folder.audio_files:
       return (
         <FileUpload
           folder={folder}
@@ -90,7 +90,17 @@ function Element() {
           }}
         />
       )
-    case File.t_maipl_folder.recipe:
+    case File.t_maipl_folder.model_recipes:
+      return (
+        <FileUpload
+          folder={folder}
+          onClose={onClose}
+          accept={{
+            "application/json": [".json"],
+          }}
+        />
+      )
+    case File.t_maipl_folder.audio_configs:
       return (
         <FileUpload
           folder={folder}
