@@ -8,13 +8,14 @@ class UploadValidationHandler:
     """
 
     folder_contentType = {
-        "annotation": config.ANNOTATION_CONTENT_TYPE.split(","),
-        "config": config.CONFIG_CONTENT_TYPE.split(","),
-        "raw": config.RAW_CONTENT_TYPE.split(","),
-        "model": config.MODEL_CONTENT_TYPE.split(","),
+        "annotations": config.ANNOTATION_CONTENT_TYPE.split(","),
+        "annotation schemas": config.CONFIG_CONTENT_TYPE.split(","),
+        "audio files": config.RAW_CONTENT_TYPE.split(","),
+        "models": config.MODEL_CONTENT_TYPE.split(","),
         "metrics": config.METRICS_CONTENT_TYPE.split(","),
-        "dataset": config.DATASET_CONTENT_TYPE.split(","),
-        "recipe": config.RECIPE_CONTENT_TYPE.split(","),
+        ".h5 database": config.DATASET_CONTENT_TYPE.split(","),
+        "model recipes": config.RECIPE_CONTENT_TYPE.split(","),
+        "audio configs": config.RECIPE_CONTENT_TYPE.split(","),
     }
 
     def __init__(self, request):
