@@ -100,10 +100,10 @@ function NewBatch(props: { onClose: () => void }) {
   const [previewImage, setPreviewImage] = R.useState<string | null>(null)
 
   const { data: annotationFiles } = RQ.useQuery({
-    queryKey: ["files", File.t_maipl_folder.config],
+    queryKey: ["files", File.t_maipl_folder.annotation_schemas],
     queryFn: () =>
       File.list(maipl.client, {
-        maipl_folder: File.t_maipl_folder.config,
+        maipl_folder: File.t_maipl_folder.annotation_schemas,
         page: 1,
         size: 100,
       }).then((page) => new Map(page.data.map((f) => [f.id, f]))),
