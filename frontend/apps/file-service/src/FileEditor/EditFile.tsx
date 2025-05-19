@@ -20,7 +20,7 @@ export const loader = (maipl: MR.t_context) =>
     // folder query param
     const url = new URL(request.url)
     const search = url.searchParams
-    const folder = search.get("folder") ?? "raw"
+    const folder = search.get("folder") ?? "audio files"
     JS.invariantEnum(folder, File.t_maipl_folder, "File.t_maipl_folder")
     // file resource
     const file = await File.get(maipl.client, fileId)

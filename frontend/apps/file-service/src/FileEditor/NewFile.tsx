@@ -114,11 +114,11 @@ export default function NewFile(props: {
             setValue={() => {}}
             value={props.folder}
             values={[
-              File.t_maipl_folder.annotation,
-              File.t_maipl_folder.config,
-              File.t_maipl_folder.dataset,
-              File.t_maipl_folder.model,
-              File.t_maipl_folder.raw,
+              File.t_maipl_folder.annotations,
+              File.t_maipl_folder.annotation_schemas,
+              File.t_maipl_folder.audio_files,
+              File.t_maipl_folder.model_recipes,
+              File.t_maipl_folder.audio_configs
             ]}
           />
           <M.TextField
