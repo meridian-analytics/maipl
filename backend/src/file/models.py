@@ -167,7 +167,7 @@ def delete_file(sender, instance, **kwargs):
 def handle_h5_file_meta_post_save(sender, instance, **kwargs):
     # Only trigger if this is a new file or if the file field was updated
     update_fields = kwargs.get('update_fields', []) or []
-    if instance.file.name.endswith('.h5') and (kwargs.get('created', False) or 'file' in update_fields):
+    if instance.file and instance.file.name and instance.file.name.endswith('.h5') and (kwargs.get('created', False) or 'file' in update_fields):
         from .tasks import update_meta_from_h5_file
         update_meta_from_h5_file.delay(instance.id)
     
