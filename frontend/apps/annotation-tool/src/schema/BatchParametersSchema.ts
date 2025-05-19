@@ -9,24 +9,30 @@ export const MagSpectrogramSchema: RJSFSchema = {
       title: "Window length(s)",
       description: "Window size in seconds for the spectrogram computation",
       type: "number",
+      minimum: 0,
+      exclusiveMinimum: 0,
     },
     step_size: {
       default: 0.01955,
-      title: "Step size(s)",
+      title: "Step size(s)", 
       description: "Step size in seconds between consecutive windows",
       type: "number",
+      minimum: 0,
+      exclusiveMinimum: 0,
     },
     freq_min: {
       default: 0,
       title: "Frequency min(Hz)",
       description: "Lower frequency bound in Hz for the spectrogram",
       type: "integer",
+      minimum: 0,
     },
     freq_max: {
       default: 10000,
       title: "Frequency max(Hz)",
       description: "Upper frequency bound in Hz for the spectrogram",
       type: "integer",
+      minimum: 0,
     },
     rate: {
       default: 24000,
@@ -34,6 +40,7 @@ export const MagSpectrogramSchema: RJSFSchema = {
       description:
         "Desired sampling rate in Hz. If not specified, original sampling rate will be used",
       type: "integer",
+      minimum: 0,
     },
     vmin: {
       default: 0,
@@ -77,12 +84,14 @@ export const MagSpectrogramSchema: RJSFSchema = {
       description: "Low-pass filter cutoff frequency in Hz",
       type: "integer",
       default: 0,
+      minimum: 0,
     },
     high_pass: {
       title: "High Pass(Hz)",
       description: "High-pass filter cutoff frequency in Hz",
       type: "integer",
       default: 0,
+      minimum: 0,
     },
     color_map: {
       default: "viridis",

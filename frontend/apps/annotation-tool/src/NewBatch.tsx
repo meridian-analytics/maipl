@@ -595,6 +595,7 @@ function NewBatch(props: { onClose: () => void }) {
                   : MelSpectrogramUiSchema
               }
               validator={validator}
+              liveValidate={true}
             />
           </M.Stack>
         )}
