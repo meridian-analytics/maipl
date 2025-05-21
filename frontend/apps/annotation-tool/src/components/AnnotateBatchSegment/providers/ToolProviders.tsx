@@ -162,6 +162,11 @@ export function VisualizationToolProvider(props: { children: R.ReactNode }) {
                 properties: {
                   ...Object.fromEntries(schema.defaults),
                   user_id: maipl.user?.id,
+                  author:{
+                    user_last_name: maipl.user?.last_name,
+                    user_first_name: maipl.user?.first_name,
+                    user_email: maipl.user?.email,
+                  }
                 },
               },
               { autoSelect: true }

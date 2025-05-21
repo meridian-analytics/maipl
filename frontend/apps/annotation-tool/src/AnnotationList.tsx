@@ -11,7 +11,7 @@ import * as SchemaContext from "./SchemaContext"
 const COLUMN_STYLES = {
   container: {
     display: "grid",
-    gridTemplateColumns: "1fr 160px 160px",
+    gridTemplateColumns: "1fr 140px 140px 80px",
     gap: 0,
     width: "100%",
     minHeight: "40px",
@@ -94,7 +94,13 @@ export default function AnnotationList(props: {
               variant="subtitle2"
               sx={{ ...COLUMN_STYLES.cell, ...COLUMN_STYLES.divider }}
             >
-              Frequency Range
+              Frequency
+            </M.Typography>
+            <M.Typography
+              variant="subtitle2"
+              sx={{ ...COLUMN_STYLES.cell, ...COLUMN_STYLES.divider }}
+            >
+              Author
             </M.Typography>
           </M.Box>
           <M.List disablePadding>
@@ -125,6 +131,12 @@ export function AnnotationListItem(
   )
   const secondary = F.duration(props.x, props.x + props.width)
   const frequencyRange = `${props.y.toFixed(0)} - ${(props.y + props.height).toFixed(0)} Hz`
+  const author = `${props.properties?.author?.user_first_name} ${props.properties?.author?.user_last_name}`
+  const initials = React.useMemo(() => {
+    const first = props.properties?.author?.user_first_name?.[0] || ''
+    const last = props.properties?.author?.user_last_name?.[0] || ''
+    return `${first}${last}`.toUpperCase()
+  }, [props.properties?.author])
   
   return (
     <M.ListItem disablePadding key={props.id}>
@@ -175,6 +187,28 @@ export function AnnotationListItem(
           >
             {frequencyRange}
           </M.Typography>
+        </M.Tooltip>
+        <M.Tooltip title={author} placement="top">
+          <M.Box
+            sx={{
+              ...COLUMN_STYLES.cell,
+              ...COLUMN_STYLES.divider,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <M.Avatar
+              sx={{
+                width: 24,
+                height: 24,
+                fontSize: '0.75rem',
+                bgcolor: 'primary.main'
+              }}
+            >
+              {initials}
+            </M.Avatar>
+          </M.Box>
         </M.Tooltip>
       </M.ListItemButton>
     </M.ListItem>
