@@ -6,6 +6,25 @@
       - docker-compose==1.29.2
     state: present
 
+- name: Create PostgreSQL data directory
+  file:
+    path: "{{ postgresql_data_dir }}/data"
+    state: directory
+    mode: '0700'  # PostgreSQL requires strict permissions
+    owner: "999"  # postgres user in container
+    group: "999"  # postgres group in container
+
+- name: Create pgAdmin directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0750'
+    owner: "5050"  # pgAdmin container runs as UID 5050
+    group: "5050"
+  with_items:
+    - "{{ postgresql_data_dir }}/pgadmin"
+    - "{{ postgresql_data_dir }}/pgadmin/sessions"
+
 - name: Create docker-compose.yml
   template:
     src: docker-compose.yml.j2

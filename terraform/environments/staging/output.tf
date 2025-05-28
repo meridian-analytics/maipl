@@ -1,14 +1,39 @@
-output "k8s_node_ips" {
-  description = "IP addresses of the Kubernetes nodes"
-  value       = module.minio_staging.k8s_node_ips
+output "staging_instance_ip" {
+  description = "IP addresses of the staging node"
+  value       = module.staging_instance.instance_ip
 }
 
-output "volume_ids" {
+output "staging_instance_name" {
+  description = "Names of the staging node"
+  value       = module.staging_instance.instance_name
+}
+
+output "staging_volume_id" {
   description = "IDs of the attached volumes"
-  value       = module.minio_staging.volume_ids
+  value       = module.staging_instance.volume_id
 }
 
-output "volume_device_names" {
-  description = "Device names of the attached volumes"
-  value       = module.minio_staging.volume_device_names
+output "staging_instance_id" {
+  description = "IDs of the application instances"
+  value       = module.staging_instance.instance_id
+}
+
+output "demo_instance_ip" {
+  description = "IP addresses of the demo node"
+  value       = module.demo_instance.instance_ip
+}
+
+output "demo_instance_name" {
+  description = "Names of the demo node"
+  value       = module.demo_instance.instance_name
+}
+
+output "demo_volume_id" {
+  description = "IDs of the attached volumes"
+  value       = module.demo_instance.volume_id
+}
+
+output "demo_instance_id" {
+  description = "IDs of the application instances"
+  value       = module.demo_instance.instance_id
 }

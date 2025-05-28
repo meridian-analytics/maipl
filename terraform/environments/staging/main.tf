@@ -1,16 +1,31 @@
-module "minio_staging" {
-  source = "../../modules/minio-k8s"
+module "staging_instance" {
+  source = "../../modules/application"
 
   project_name = "maipl"
   environment  = "staging"
   
   instance_config = {
-    count            = 1                                          # 1 nodes 
-    flavor_id        = "8b110439-caf6-4f05-853b-86e697edaabe"   # p8-12gb (8 CPU, 12GB RAM)
-    volume_size      = 1000
-    image_id         = "cc683663-c2b6-4626-ae6a-f6129cf2f316"   # Ubuntu 22.04
-    key_pair         = "maipl-dev-gateway"
-    drives_per_node  = 1                                         # 4 drives per node
+    flavor_id   = "fdf112cd-dcb5-445b-b429-6e93dc0dbc16"   # p16-32gb
+    volume_size = 512                                      # 512GB for data volume
+    image_id    = "cc683663-c2b6-4626-ae6a-f6129cf2f316"   # Ubuntu 22.04
+    key_pair    = "maipl-dev-gateway"
+  }
+
+  network_name    = "rpp-stanmat-network"
+  security_groups = ["MAIPL-SERVICES", "MAIPL-SSH", "default"]
+}
+
+module "demo_instance" {
+  source = "../../modules/application"
+
+  project_name = "maipl"
+  environment  = "demo"
+  
+  instance_config = {
+    flavor_id   = "fdf112cd-dcb5-445b-b429-6e93dc0dbc16"   # p16-32gb
+    volume_size = 512                                      # 512GB for data volume
+    image_id    = "cc683663-c2b6-4626-ae6a-f6129cf2f316"   # Ubuntu 22.04
+    key_pair    = "maipl-dev-gateway"
   }
 
   network_name    = "rpp-stanmat-network"
