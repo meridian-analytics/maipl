@@ -83,7 +83,7 @@ class Detection(models.Model):
     # This model is used to store information about a detection.
     # It is used to store the results of a model runner task.
     #
-    file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='file_detections', help_text='File')
+    filename = models.CharField(max_length=255, help_text='Filename')
     start = models.FloatField(help_text='Start')
     end = models.FloatField(help_text='End')
     score = models.FloatField(help_text='score')

@@ -13,6 +13,7 @@ from common.logger import modelrunner_logger
 from common.file_utils import FileUtils
 
 from .models import Detection, ModelRunnerTask
+from file.models import File
 
 User = get_user_model()
 
@@ -115,6 +116,7 @@ def download_model_file(task_context, file_utils):
 
 def construct_command_with_model_parameters(task_context):
     model_task = task_context["task"]
+    user = model_task.user_id
     model_file_dir = task_context["model_dir"]
     audio_dir = task_context["audio_dir"]
 
@@ -172,14 +174,41 @@ def save_detections_to_db(task_context):
     detections_dir = task_context["detections_dir"]
     user = User.objects.get(id=model_task.user_id.id)
 
+    # get the local file path for the detections.csv
+    local_file_path = os.path.join(detections_dir, "detections.csv")
     # get the audio files from the task
     filelist = model_task.filelist.all()
 
-    # create a dictionary to map the basename to the file instance
-    filename_to_file = {file.basename: file for file in filelist}
+    filename_to_file = {}
+    
+    modelrunner_logger.info(f"Filelist: {filelist}")
 
-    # get the local file path for the detections.csv
-    local_file_path = os.path.join(detections_dir, "detections.csv")
+    # if the filelist only contains one h5 file, create a dictionary to map the basename to the file instance
+    if len(filelist) == 1 and filelist[0].path.endswith('.h5'):
+        # read the detections.csv and create a file instance for each filename
+        modelrunner_logger.info(f"Filelist only contains one h5 file, reading detections.csv to create file instances")
+        modelrunner_logger.info(f"File path: {filelist[0].path}")
+        with open(local_file_path, 'r') as f:
+            reader = csv.reader(f)
+            next(reader, None)  # skip the header
+            for row in reader:
+                if row:  # ensure row is not empty
+                    filename = basename(row[0])
+                    # if the filename is already in the dictionary, skip
+                    if filename in filename_to_file:
+                        continue
+                    #query the file instance from the database, if not found, raise an error
+                    file_instance = File.objects.get(path__endswith=filename, user_id=user)
+                    if not file_instance:
+                        modelrunner_logger.error(f"No file found with name: {filename}")
+                        raise Exception(f"No file found with name: {filename}")
+                    else:
+                        modelrunner_logger.info(f"File found with name: {filename}")
+                        #add the file instance to the dictionary if it is found
+                        filename_to_file[filename] = file_instance
+    else:
+        modelrunner_logger.info(f"Filelist contains multiple files, creating dictionary to map basename to file instance")
+        filename_to_file = {file.basename: file for file in filelist}
 
     try:
         with open(local_file_path, 'r') as f:

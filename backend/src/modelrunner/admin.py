@@ -9,7 +9,7 @@ class ModelRunnerTaskAdmin(admin.ModelAdmin):
     list_filter = ('user_id', 'status', 'created_at')
 
 class DetectionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'file', 'start', 'end', 'score', 'label', 'task', 'user_id')
+    list_display = ('id', 'filename', 'start', 'end', 'score', 'label', 'task', 'user_id')
     list_filter = ('user_id', 'task', 'created_at')
 
 admin.site.register(ModelRunnerTask, ModelRunnerTaskAdmin)
