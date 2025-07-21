@@ -41,3 +41,4 @@ COPY --from=build /build/apps/file-service/dist /usr/share/nginx/html/file-servi
 COPY --from=build /build/apps/metrics/dist /usr/share/nginx/html/metrics
 COPY --from=build /build/apps/model-runner/dist /usr/share/nginx/html/model-runner
 COPY --from=build /build/apps/model-trainer/dist /usr/share/nginx/html/model-trainer
+COPY --from=build /build/apps/database-tool/dist /usr/share/nginx/html/database-tool

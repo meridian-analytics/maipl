@@ -14,7 +14,7 @@ import {
   MAIPL_MODEL_RUNNER_FRONTEND,
   MAIPL_MODEL_TRAINER_FRONTEND,
   MAIPL_DOCUMENTATION_URL,
-  MAIPL_DATABASE_FRONTEND,
+  MAIPL_DATABASE_TOOL_FRONTEND,
 } from "@maipl/constants"
 import React from "react"
 
@@ -40,7 +40,7 @@ export default function Navbar(props: {
     { name: "Model Runner", url: MAIPL_MODEL_RUNNER_FRONTEND },
     { name: "Metrics Tool", url: MAIPL_METRICS_FRONTEND },
     { name: "Model Trainer", url: MAIPL_MODEL_TRAINER_FRONTEND },
-    { name: "Database Tool", url: MAIPL_DATABASE_FRONTEND },
+    { name: "Database Tool", url: MAIPL_DATABASE_TOOL_FRONTEND },
   ]
 
   // Filter out the current app and items with null URLs

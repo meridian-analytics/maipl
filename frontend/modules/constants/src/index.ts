@@ -48,12 +48,12 @@ export const MAIPL_MODEL_TRAINER_FRONTEND = safeParseString(
   import.meta.env["MAIPL_MODEL_TRAINER_FRONTEND"]
 )
 
-export const MAIPL_DATABASE_BACKEND = safeParseString(
-  import.meta.env["MAIPL_DATABASE_BACKEND"]
+export const MAIPL_DATABASE_TOOL_BACKEND = safeParseString(
+  import.meta.env["MAIPL_DATABASE_TOOL_BACKEND"]
 )
 
-export const MAIPL_DATABASE_FRONTEND = safeParseString(
-  import.meta.env["MAIPL_DATABASE_FRONTEND"]
+export const MAIPL_DATABASE_TOOL_FRONTEND = safeParseString(
+  import.meta.env["MAIPL_DATABASE_TOOL_FRONTEND"]
 )
 
 export const MAIPL_REACT_QUERY_DEVTOOLS: boolean = safeParseBoolean(

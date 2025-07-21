@@ -155,6 +155,61 @@ importers:
         specifier: ^5.2.7
         version: 5.4.11
 
+  apps/database-tool:
+    dependencies:
+      '@emotion/react':
+        specifier: ^11.11.4
+        version: 11.14.0(@types/react@18.3.18)(react@18.3.1)
+      '@emotion/styled':
+        specifier: ^11.11.5
+        version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react@18.3.1)
+      '@maipl/api':
+        specifier: workspace:^
+        version: link:../../modules/api
+      '@maipl/format':
+        specifier: workspace:^
+        version: link:../../modules/format
+      '@maipl/react':
+        specifier: workspace:^
+        version: link:../../modules/react
+      '@mui/icons-material':
+        specifier: ^5.15.14
+        version: 5.16.13(@mui/material@5.16.13(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.18)(react@18.3.1)
+      '@mui/material':
+        specifier: ^5.15.14
+        version: 5.16.13(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-query':
+        specifier: ^5.28.9
+        version: 5.62.15(react@18.3.1)
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.22.3
+        version: 6.28.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+    devDependencies:
+      '@tanstack/react-query-devtools':
+        specifier: ^5.28.10
+        version: 5.62.15(@tanstack/react-query@5.62.15(react@18.3.1))(react@18.3.1)
+      '@types/react':
+        specifier: ^18.2.73
+        version: 18.3.18
+      '@types/react-dom':
+        specifier: ^18.2.23
+        version: 18.3.5(@types/react@18.3.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.2.1
+        version: 4.3.4(vite@5.4.11)
+      typescript:
+        specifier: ^5.5.3
+        version: 5.7.2
+      vite:
+        specifier: ^5.2.7
+        version: 5.4.11
+
   apps/file-service:
     dependencies:
       '@emotion/react':

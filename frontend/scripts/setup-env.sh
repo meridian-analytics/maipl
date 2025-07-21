@@ -15,6 +15,7 @@ get_port() {
         "metrics") echo "3400" ;;
         "model-runner") echo "3300" ;;
         "model-trainer") echo "3500" ;;
+        "database-tool") echo "3600" ;;
         *) echo "" ;;
     esac
 }
@@ -28,6 +29,7 @@ get_base_url() {
         "metrics") echo "/metrics" ;;
         "model-runner") echo "/model-runner" ;;
         "model-trainer") echo "/model-trainer" ;;
+        "database-tool") echo "/database-tool" ;;
         *) echo "" ;;
     esac
 }
