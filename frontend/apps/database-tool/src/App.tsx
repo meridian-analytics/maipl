@@ -2,6 +2,7 @@ import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
 import DatabaseHome from "./DatabaseHome"
+import TaskDetailView from "./components/TaskDetailView"
 
 export default function App() {
   return <MR.MaiplProvider router={router} />
@@ -25,6 +26,10 @@ function Layout() {
   )
 }
 
+function TaskDetail() {
+  return <TaskDetailView />
+}
+
 const router: MR.t_router = () => [
   {
     element: <Layout />,
@@ -32,6 +37,16 @@ const router: MR.t_router = () => [
       {
         path: "/",
         element: <DatabaseHome />,
+        children: [
+          {
+            path: ":taskId",
+            element: <TaskDetail />,
+          },
+          {
+            path: ":taskId/copy",
+            element: <TaskDetail />,
+          },
+        ],
       },
     ],
   },

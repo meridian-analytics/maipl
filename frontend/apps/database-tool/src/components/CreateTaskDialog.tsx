@@ -1,0 +1,435 @@
+import * as M from "@mui/material"
+import * as R from "react"
+import { useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import * as RQ from "@tanstack/react-query"
+import * as MR from "@maipl/react"
+import { File } from "@maipl/api"
+import type { CreateTaskRequest } from "../types"
+import { mockApi } from "../api/mockApi"
+import { getDatabaseMetadata, getExistingGroups } from "../utils/databaseMetadata"
+
+interface CreateTaskDialogProps {
+  open: boolean
+  onClose: () => void
+}
+
+interface TaskFormData extends CreateTaskRequest {
+  audio_representation_config_id: number
+  selectedDatabaseFile?: number
+}
+
+function optionsForAudioConfigFiles(files: Map<number, File.t>): Record<string, string> {
+  return Object.fromEntries(
+    Array.from(
+      files.values(),
+      (f) => [`${f.maipl_folder}/${f.path}`, String(f.id)] as const
+    ).sort((a, b) => a[0].localeCompare(b[0]))
+  )
+}
+
+export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProps) {
+  const queryClient = useQueryClient()
+  const maipl = MR.useMaipl()
+  const [formData, setFormData] = useState<TaskFormData>({
+    task_name: "",
+    description: "",
+    audio_representation_config_id: 0,
+    database_selection: {
+      mode: "new_database"
+    }
+  })
+
+  // Track selected database metadata
+  const [selectedDatabaseMetadata, setSelectedDatabaseMetadata] = useState<{
+    file: File.t
+    metadata: ReturnType<typeof getDatabaseMetadata>
+  } | null>(null)
+
+  // File browser state for existing database selection
+  const {
+    debouncedFilter,
+    filter,
+    folder,
+    pagination,
+    selection,
+    setFolder,
+    setPagination,
+    setSelection,
+  } = MR.Files.useTable({
+    selection: R.useMemo(
+      () => new Map<number, File.t>(),
+      []
+    ),
+    pagination: {
+      pageIndex: 0,
+      pageSize: 25,
+    },
+  })
+
+  const { data: databaseFiles } = MR.Files.useQuery({
+    maipl_folder: folder,
+    path: debouncedFilter.get("path"),
+    tag: debouncedFilter.get("tag"),
+    page: pagination.pageIndex + 1,
+    size: pagination.pageSize,
+  })
+
+  // Set folder to h5_databases when switching to existing database mode
+  R.useEffect(() => {
+    if (formData.database_selection.mode === "use_existing") {
+      setFolder(File.t_maipl_folder.h5_databases)
+    }
+  }, [formData.database_selection.mode, setFolder])
+
+  // Clear selection when folder changes
+  R.useEffect(() => {
+    setSelection(new Map())
+  }, [folder, setSelection])
+
+  // Update selected database metadata when selection changes
+  R.useEffect(() => {
+    if (selection.size === 1 && formData.database_selection.mode === "use_existing") {
+      const selectedFileId = Array.from(selection.keys())[0]
+      const selectedFile = databaseFiles?.data.find(f => f.id === selectedFileId)
+      
+      if (selectedFile) {
+        const metadata = getDatabaseMetadata(selectedFile)
+        setSelectedDatabaseMetadata({ file: selectedFile, metadata })
+        
+        // Update form data with selected database file ID
+        setFormData(prev => ({
+          ...prev,
+          database_selection: {
+            ...prev.database_selection,
+            database_file_id: selectedFile.id
+          }
+        }))
+      }
+    } else {
+      setSelectedDatabaseMetadata(null)
+    }
+  }, [selection, databaseFiles?.data, formData.database_selection.mode])
+
+  // Fetch audio configuration files
+  const { data: audioConfigFiles } = RQ.useQuery({
+    queryKey: ["files", File.t_maipl_folder.audio_configs],
+    queryFn: () =>
+      File.list(maipl.client, {
+        maipl_folder: File.t_maipl_folder.audio_configs,
+        page: 1,
+        size: 100,
+      }).then((page) => new Map(page.data.map((f) => [f.id, f]))),
+    initialData: new Map<number, File.t>(),
+  })
+
+  const createTaskMutation = useMutation({
+    mutationFn: (data: TaskFormData) => {
+      return mockApi.createTask(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['database-tasks'] })
+      onClose()
+      setFormData({
+        task_name: "",
+        description: "",
+        audio_representation_config_id: 0,
+        database_selection: {
+          mode: "new_database"
+        }
+      })
+      setSelection(new Map())
+    }
+  })
+
+  const handleSubmit = (e: R.FormEvent) => {
+    e.preventDefault()
+    createTaskMutation.mutate(formData)
+  }
+
+  const handleClose = () => {
+    if (!createTaskMutation.isPending) {
+      onClose()
+      setFormData({
+        task_name: "",
+        description: "",
+        audio_representation_config_id: 0,
+        database_selection: {
+          mode: "new_database"
+        }
+      })
+      setSelection(new Map())
+    }
+  }
+
+  return (
+    <M.Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <M.DialogTitle>
+        Create New Database Task
+      </M.DialogTitle>
+      
+      <form onSubmit={handleSubmit}>
+        <M.DialogContent>
+          <M.Stack spacing={3}>
+            {/* Basic Task Information */}
+            <M.TextField
+              label="Task Name"
+              value={formData.task_name}
+              onChange={(e) => setFormData(prev => ({ ...prev, task_name: e.target.value }))}
+              required
+              fullWidth
+              placeholder="e.g., Whale Detection Database"
+            />
+            
+            <M.TextField
+              label="Description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              multiline
+              rows={3}
+              fullWidth
+              placeholder="Describe the purpose of this database..."
+            />
+
+            {/* Audio Representation Configuration - Only show for new database */}
+            {formData.database_selection.mode === "new_database" && (
+              <>
+                <MR.Picker
+                  label="Audio Representation Configuration (required)"
+                  setValue={(value) => setFormData(prev => ({ 
+                    ...prev, 
+                    audio_representation_config_id: Number(value) 
+                  }))}
+                  value={formData.audio_representation_config_id ? String(formData.audio_representation_config_id) : ""}
+                  values={optionsForAudioConfigFiles(audioConfigFiles)}
+                  fullWidth
+                />
+                {audioConfigFiles.size === 0 && (
+                  <M.Alert severity="info">
+                    <M.Typography variant="body2">
+                      No audio configuration files found. Please upload audio configuration files to the "audio configs" folder first.
+                    </M.Typography>
+                  </M.Alert>
+                )}
+              </>
+            )}
+
+            {/* Database Selection */}
+            <M.FormControl component="fieldset">
+              <M.FormLabel component="legend">Database Selection</M.FormLabel>
+              <M.RadioGroup
+                value={formData.database_selection.mode}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  database_selection: {
+                    mode: e.target.value as "new_database" | "use_existing"
+                  },
+                  // Clear audio config when switching to existing database mode
+                  ...(e.target.value === "use_existing" && { 
+                    audio_representation_config_id: 0,
+                    selectedDatabaseFile: undefined
+                  })
+                }))}
+              >
+                <M.FormControlLabel
+                  value="new_database"
+                  control={<M.Radio />}
+                  label="Create New Database"
+                />
+                <M.FormControlLabel
+                  value="use_existing"
+                  control={<M.Radio />}
+                  label="Use Existing Database"
+                />
+              </M.RadioGroup>
+            </M.FormControl>
+
+            {/* Existing Database Selection */}
+            {formData.database_selection.mode === "use_existing" && (
+              <>
+                <M.Typography variant="h6" gutterBottom>
+                  Select Existing Database File
+                </M.Typography>
+                
+                <M.Stack direction="row" spacing={2}>
+                  <M.TextField
+                    label="Path"
+                    onChange={(e) => filter.set("path", e.currentTarget.value)}
+                    placeholder="path/to/folder"
+                    value={filter.get("path")}
+                    size="small"
+                  />
+                  <M.TextField
+                    label="Tag"
+                    onChange={(e) => filter.set("tag", e.currentTarget.value)}
+                    placeholder="my-tag"
+                    value={filter.get("tag")}
+                    size="small"
+                  />
+                </M.Stack>
+
+                <M.Paper sx={{ height: "300px", overflow: "hidden" }}>
+                  <MR.Files.Table
+                    rows={databaseFiles?.data ?? []}
+                    count={databaseFiles?.count ?? 0}
+                    pagination={pagination}
+                    selection={selection}
+                    setPagination={setPagination}
+                    setSelection={setSelection}
+                    visibility={{
+                      basename: false,
+                      dirname: false,
+                      extname: false,
+                      channels: false,
+                      sample_rate: false,
+                      created_at: true,
+                    }}
+                  />
+                </M.Paper>
+
+                <M.Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <M.Typography variant="body2" color="text.secondary">
+                    {selection.size > 0 ? (
+                      `Selected: ${Array.from(selection.keys()).length} database file${Array.from(selection.keys()).length > 1 ? 's' : ''}`
+                    ) : (
+                      "No database file selected"
+                    )}
+                  </M.Typography>
+                  
+                  {selection.size > 1 && (
+                    <M.Alert severity="warning" sx={{ py: 0 }}>
+                      Only one database file can be selected
+                    </M.Alert>
+                  )}
+                </M.Stack>
+
+                {/* Display selected database metadata */}
+                {selectedDatabaseMetadata && (
+                  <M.Paper sx={{ p: 2, bgcolor: "grey.50" }}>
+                    <M.Typography variant="subtitle2" gutterBottom>
+                      Selected Database: {selectedDatabaseMetadata.file.basename}
+                    </M.Typography>
+                    
+                    {selectedDatabaseMetadata.metadata ? (
+                      <>
+                        <M.Typography variant="body2" color="text.secondary" gutterBottom>
+                          Existing Groups: {selectedDatabaseMetadata.metadata.groups.length}
+                        </M.Typography>
+                        
+                        {selectedDatabaseMetadata.metadata.groups.length > 0 && (
+                          <M.Chip
+                            label={`Groups: ${selectedDatabaseMetadata.metadata.groups.join(', ')}`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ mt: 1 }}
+                          />
+                        )}
+                        
+                        <M.Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                          Total Samples: {selectedDatabaseMetadata.metadata.total_samples || 'Unknown'}
+                        </M.Typography>
+                      </>
+                    ) : (
+                      <M.Typography variant="body2" color="text.secondary">
+                        No metadata available for this database
+                      </M.Typography>
+                    )}
+                  </M.Paper>
+                )}
+                
+                <M.Alert severity="info">
+                  <M.Typography variant="body2">
+                    When using an existing database file, the audio representation configuration is already embedded in the file and doesn't need to be selected again.
+                  </M.Typography>
+                </M.Alert>
+              </>
+            )}
+
+            {/* Next Steps Info */}
+            <M.Alert severity="info">
+              <M.Typography variant="body2">
+                After creating the task, you'll be able to:
+              </M.Typography>
+              <M.List dense sx={{ mt: 1 }}>
+                {formData.database_selection.mode === "new_database" ? (
+                  <>
+                    <M.ListItem sx={{ py: 0 }}>
+                      <M.ListItemIcon sx={{ minWidth: 24 }}>
+                        <M.Icon fontSize="small">check</M.Icon>
+                      </M.ListItemIcon>
+                      <M.ListItemText primary="Select audio files using the file browser" />
+                    </M.ListItem>
+                    <M.ListItem sx={{ py: 0 }}>
+                      <M.ListItemIcon sx={{ minWidth: 24 }}>
+                        <M.Icon fontSize="small">check</M.Icon>
+                      </M.ListItemIcon>
+                      <M.ListItemText primary="Add annotation files and label mappings" />
+                    </M.ListItem>
+                    <M.ListItem sx={{ py: 0 }}>
+                      <M.ListItemIcon sx={{ minWidth: 24 }}>
+                        <M.Icon fontSize="small">check</M.Icon>
+                      </M.ListItemIcon>
+                      <M.ListItemText primary="Create multiple groups (train/test/validation)" />
+                    </M.ListItem>
+                    <M.ListItem sx={{ py: 0 }}>
+                      <M.ListItemIcon sx={{ minWidth: 24 }}>
+                        <M.Icon fontSize="small">check</M.Icon>
+                      </M.ListItemIcon>
+                      <M.ListItemText primary="Generate HDF5 database with embedded audio configuration" />
+                    </M.ListItem>
+                  </>
+                ) : (
+                  <>
+                    <M.ListItem sx={{ py: 0 }}>
+                      <M.ListItemIcon sx={{ minWidth: 24 }}>
+                        <M.Icon fontSize="small">check</M.Icon>
+                      </M.ListItemIcon>
+                      <M.ListItemText primary="View existing database structure and groups" />
+                    </M.ListItem>
+                    <M.ListItem sx={{ py: 0 }}>
+                      <M.ListItemIcon sx={{ minWidth: 24 }}>
+                        <M.Icon fontSize="small">check</M.Icon>
+                      </M.ListItemIcon>
+                      <M.ListItemText primary="Add new audio files to existing groups" />
+                    </M.ListItem>
+                    <M.ListItem sx={{ py: 0 }}>
+                      <M.ListItemIcon sx={{ minWidth: 24 }}>
+                        <M.Icon fontSize="small">check</M.Icon>
+                      </M.ListItemIcon>
+                      <M.ListItemText primary="Add new annotation files and label mappings" />
+                    </M.ListItem>
+                    <M.ListItem sx={{ py: 0 }}>
+                      <M.ListItemIcon sx={{ minWidth: 24 }}>
+                        <M.Icon fontSize="small">check</M.Icon>
+                      </M.ListItemIcon>
+                      <M.ListItemText primary="Create additional groups or modify existing ones" />
+                    </M.ListItem>
+                  </>
+                )}
+              </M.List>
+            </M.Alert>
+          </M.Stack>
+        </M.DialogContent>
+
+        <M.DialogActions>
+          <M.Button onClick={handleClose} disabled={createTaskMutation.isPending}>
+            Cancel
+          </M.Button>
+          <M.Button
+            type="submit"
+            variant="contained"
+            disabled={
+              !formData.task_name || 
+              (formData.database_selection.mode === "new_database" && !formData.audio_representation_config_id) || 
+              (formData.database_selection.mode === "use_existing" && selection.size !== 1) ||
+              createTaskMutation.isPending
+            }
+            startIcon={createTaskMutation.isPending ? <M.CircularProgress size={16} /> : <M.Icon>add</M.Icon>}
+          >
+            {createTaskMutation.isPending ? "Creating..." : "Create Task"}
+          </M.Button>
+        </M.DialogActions>
+      </form>
+    </M.Dialog>
+  )
+} 
