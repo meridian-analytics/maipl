@@ -13,7 +13,6 @@ export default function CreateTaskButton() {
     <>
       <M.Button
         variant="contained"
-        startIcon={<M.Icon>add</M.Icon>}
         onClick={handleOpen}
       >
         Create Database Task

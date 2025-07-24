@@ -424,7 +424,7 @@ export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProp
               (formData.database_selection.mode === "use_existing" && selection.size !== 1) ||
               createTaskMutation.isPending
             }
-            startIcon={createTaskMutation.isPending ? <M.CircularProgress size={16} /> : <M.Icon>add</M.Icon>}
+            startIcon={createTaskMutation.isPending ? <M.CircularProgress size={16} /> : undefined}
           >
             {createTaskMutation.isPending ? "Creating..." : "Create Task"}
           </M.Button>

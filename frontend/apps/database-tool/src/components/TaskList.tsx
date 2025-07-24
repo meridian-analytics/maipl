@@ -107,7 +107,6 @@ export default function TaskList() {
               
               <M.Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <M.Chip
-                  icon={<M.Icon>{getStatusIcon(task.status)}</M.Icon>}
                   label={task.status.replace('_', ' ')}
                   color={getStatusColor(task.status)}
                   size="small"
@@ -146,23 +145,12 @@ export default function TaskList() {
               <M.Button
                 size="small"
                 variant="outlined"
-                startIcon={<M.Icon>visibility</M.Icon>}
               >
                 View Details
               </M.Button>
-              {task.status === "active" && (
-                <M.Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<M.Icon>add</M.Icon>}
-                >
-                  Add Group
-                </M.Button>
-              )}
               <M.Button
                 size="small"
                 variant="outlined"
-                startIcon={<M.Icon>download</M.Icon>}
               >
                 Download
               </M.Button>
@@ -170,7 +158,6 @@ export default function TaskList() {
                 size="small"
                 variant="outlined"
                 color="error"
-                startIcon={<M.Icon>delete</M.Icon>}
               >
                 Delete
               </M.Button>

@@ -116,20 +116,9 @@ export default function TaskActions(props: { task: DatabaseTask }) {
           to={`/${props.task.task_id}`}
         />
         <M.MenuItem
-          children="Add Group"
-          onClick={onAddGroup}
-          disabled={props.task.status !== "active"}
-        />
-        <M.MenuItem
           children="Download Database"
           onClick={onDownload}
           disabled={props.task.status !== "completed"}
-        />
-        <M.Divider />
-        <M.MenuItem
-          children="Copy Task"
-          component={RR.Link}
-          to={`/${props.task.task_id}/copy`}
         />
         <M.MenuItem
           disabled={props.task.status === "in_progress"}
