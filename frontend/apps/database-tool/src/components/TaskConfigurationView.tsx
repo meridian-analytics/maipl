@@ -71,11 +71,6 @@ export default function TaskConfigurationView({ task }: TaskConfigurationViewPro
             <M.Typography variant="body2">
               <strong>Mode:</strong> {task.database_selection.mode === "new_database" ? "New Database" : "Existing Database"}
             </M.Typography>
-            {task.audio_representation_config_id && (
-              <M.Typography variant="body2">
-                <strong>Audio Config ID:</strong> {task.audio_representation_config_id}
-              </M.Typography>
-            )}
             {task.database_selection.mode === "use_existing" && task.database_selection.database_file_id && (
               <M.Typography variant="body2">
                 <strong>Source Database ID:</strong> {task.database_selection.database_file_id}
@@ -106,7 +101,7 @@ export default function TaskConfigurationView({ task }: TaskConfigurationViewPro
           </M.Box>
         )}
 
-
+        <M.Divider />
 
         {/* Output Settings */}
         {task.output_settings && (
@@ -117,9 +112,6 @@ export default function TaskConfigurationView({ task }: TaskConfigurationViewPro
             <M.Stack spacing={1}>
               <M.Typography variant="body2">
                 <strong>Database Filename:</strong> {task.output_settings.database_filename}
-              </M.Typography>
-              <M.Typography variant="body2">
-                <strong>Table Name:</strong> {task.output_settings.table_name}
               </M.Typography>
               {task.output_settings.seed && (
                 <M.Typography variant="body2">

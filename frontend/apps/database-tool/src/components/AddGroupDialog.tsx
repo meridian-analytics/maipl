@@ -7,7 +7,7 @@ import * as MR from "@maipl/react"
 import { File } from "@maipl/api"
 import type { DatabaseTask, GroupConfig } from "../types"
 import { mockApi } from "../api/mockApi"
-import { validateGroupName, getExistingGroups } from "../utils/databaseMetadata"
+import { validateGroupName, getExistingGroups, trimGroupName } from "../utils/databaseMetadata"
 
 enum Tab {
   audio_files = "audio_files",
@@ -25,6 +25,7 @@ interface AddGroupDialogProps {
 interface GroupFormData {
   name: string
   audio_file_ids: number[]
+  audio_representation_config_id: number
   annotations?: {
     file_id: number
     labels: Record<string, number>
@@ -36,6 +37,7 @@ interface GroupFormData {
     num_samples: number | "same"
     label: number
     filename_filter_file_id?: number
+    seed?: number
   }
   avoid_annotations_file_id?: number
 }
@@ -47,6 +49,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
   const [formData, setFormData] = useState<GroupFormData>({
     name: "",
     audio_file_ids: [],
+    audio_representation_config_id: 0,
     annotations: {
       file_id: 0,
       labels: {},
@@ -107,6 +110,27 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
     page: annotationPagination.pageIndex + 1,
     size: annotationPagination.pageSize,
   })
+
+  // Fetch audio configuration files
+  const { data: audioConfigFiles } = RQ.useQuery({
+    queryKey: ["files", File.t_maipl_folder.audio_configs],
+    queryFn: () =>
+      File.list(maipl.client, {
+        maipl_folder: File.t_maipl_folder.audio_configs,
+        page: 1,
+        size: 100,
+      }).then((page) => new Map(page.data.map((f) => [f.id, f]))),
+    initialData: new Map<number, File.t>(),
+  })
+
+  function optionsForAudioConfigFiles(files: Map<number, File.t>): Record<string, string> {
+    return Object.fromEntries(
+      Array.from(
+        files.values(),
+        (f) => [`${f.maipl_folder}/${f.path}`, String(f.id)] as const
+      ).sort((a, b) => a[0].localeCompare(b[0]))
+    )
+  }
 
   // Set folder to audio_files when dialog opens
   R.useEffect(() => {
@@ -203,21 +227,53 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['database-tasks', task.task_id] })
       onGroupAdded()
-      setFormData({ name: "", audio_file_ids: [] })
+      setFormData({
+        name: "",
+        audio_file_ids: [],
+        audio_representation_config_id: 0,
+        annotations: {
+          file_id: 0,
+          labels: {},
+          annotation_step: 0.5,
+          step_min_overlap: 0.7,
+          only_augmented: false
+        }
+      })
       setSelection(new Map())
+      setAnnotationSelection(new Map())
     }
   })
 
   const handleSubmit = (e: R.FormEvent) => {
     e.preventDefault()
-    addGroupMutation.mutate(formData)
+    
+    // Use trimmed group name
+    const trimmedName = trimGroupName(formData.name)
+    const groupConfigWithTrimmedName = {
+      ...formData,
+      name: trimmedName
+    }
+    
+    addGroupMutation.mutate(groupConfigWithTrimmedName)
   }
 
   const handleClose = () => {
     if (!addGroupMutation.isPending) {
       onClose()
-      setFormData({ name: "", audio_file_ids: [] })
+      setFormData({
+        name: "",
+        audio_file_ids: [],
+        audio_representation_config_id: 0,
+        annotations: {
+          file_id: 0,
+          labels: {},
+          annotation_step: 0.5,
+          step_min_overlap: 0.7,
+          only_augmented: false
+        }
+      })
       setSelection(new Map())
+      setAnnotationSelection(new Map())
     }
   }
 
@@ -229,33 +285,30 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
   const existingGroups = getExistingGroups(task.database_metadata)
   const nameValidation = validateGroupName(formData.name, existingGroups)
   const hasAudioFiles = formData.audio_file_ids.length > 0
+  const hasAudioConfig = formData.audio_representation_config_id > 0
   
-  // We always need audio files and the specific configuration for the selected mode
-  const isFormValid = nameValidation.isValid && hasAudioFiles && (
+  // We always need audio files, audio config, and the specific configuration for the selected mode
+  const isFormValid = nameValidation.isValid && hasAudioFiles && hasAudioConfig && (
     (processingMode === "annotations" && formData.annotations?.file_id) ||
     (processingMode === "random" && formData.random_selections?.num_samples)
   )
 
   return (
     <M.Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
-      <M.DialogTitle>
-        Add New Group
-      </M.DialogTitle>
-      
+      <M.DialogTitle>Add New Group</M.DialogTitle>
       <form onSubmit={handleSubmit}>
         <M.DialogContent>
           <M.Stack spacing={3}>
-            {/* Group Name and Processing Mode */}
             <M.Stack direction="row" spacing={2} alignItems="flex-start">
               <M.TextField
                 label="Group Name"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 required
-                sx={{ flex: 1 }}
-                placeholder="e.g., /train, /test, /validation"
-                error={!nameValidation.isValid && formData.name.length > 0}
-                helperText={!nameValidation.isValid && formData.name.length > 0 ? nameValidation.error : ""}
+                fullWidth
+                error={!nameValidation.isValid}
+                helperText={nameValidation.error || "Enter a unique name for this group (e.g., '/train', '/test', '/train/sub/dec')"}
+                placeholder="e.g., /train, /test, /train/sub/dec"
               />
               <M.Box sx={{ pt: 2 }}>
                 <M.FormControlLabel
@@ -271,6 +324,36 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
                 />
               </M.Box>
             </M.Stack>
+
+            <M.TextField
+              label="Audio Representation Configuration"
+              value={formData.audio_representation_config_id ? String(formData.audio_representation_config_id) : ""}
+              onChange={(e) => setFormData(prev => ({ 
+                ...prev, 
+                audio_representation_config_id: Number(e.target.value) 
+              }))}
+              select
+              required
+              fullWidth
+              helperText="Select the audio configuration for this group"
+            >
+              <M.MenuItem value="">
+                <M.Typography color="text.secondary">Select audio configuration...</M.Typography>
+              </M.MenuItem>
+              {Array.from(audioConfigFiles?.values() || []).map((file) => (
+                <M.MenuItem key={file.id} value={file.id}>
+                  {`${file.maipl_folder}/${file.path}`}
+                </M.MenuItem>
+              ))}
+            </M.TextField>
+
+            {audioConfigFiles?.size === 0 && (
+              <M.Alert severity="info">
+                <M.Typography variant="body2">
+                  No audio configuration files found. Please upload audio configuration files to the "audio configs" folder first.
+                </M.Typography>
+              </M.Alert>
+            )}
 
             {/* Tabs */}
             <M.Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -465,6 +548,21 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
                     fullWidth
                     helperText="Label to assign to all randomly selected samples"
                   />
+
+                  <M.TextField
+                    label="Random Seed (optional)"
+                    type="number"
+                    value={formData.random_selections?.seed || ""}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      random_selections: {
+                        ...prev.random_selections,
+                        seed: e.target.value ? parseInt(e.target.value) : undefined
+                      }
+                    }))}
+                    fullWidth
+                    helperText="Seed for random number generator to ensure reproducible sampling. Leave empty for random seed."
+                  />
                 </M.Stack>
               )}
             </M.Box>
@@ -480,10 +578,10 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
           <M.Button
             type="submit"
             variant="contained"
-            disabled={!isFormValid || addGroupMutation.isPending}
+            disabled={addGroupMutation.isPending || !isFormValid}
             startIcon={addGroupMutation.isPending ? <M.CircularProgress size={16} /> : undefined}
           >
-            {addGroupMutation.isPending ? "Adding..." : "Add Group"}
+            Add Group
           </M.Button>
         </M.DialogActions>
       </form>

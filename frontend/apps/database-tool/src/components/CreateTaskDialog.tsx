@@ -15,17 +15,8 @@ interface CreateTaskDialogProps {
 }
 
 interface TaskFormData extends CreateTaskRequest {
-  audio_representation_config_id: number
   selectedDatabaseFile?: number
-}
-
-function optionsForAudioConfigFiles(files: Map<number, File.t>): Record<string, string> {
-  return Object.fromEntries(
-    Array.from(
-      files.values(),
-      (f) => [`${f.maipl_folder}/${f.path}`, String(f.id)] as const
-    ).sort((a, b) => a[0].localeCompare(b[0]))
-  )
+  database_filename: string
 }
 
 export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProps) {
@@ -34,10 +25,10 @@ export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProp
   const [formData, setFormData] = useState<TaskFormData>({
     task_name: "",
     description: "",
-    audio_representation_config_id: 0,
     database_selection: {
       mode: "new_database"
-    }
+    },
+    database_filename: "database.h5"
   })
 
   // Track selected database metadata
@@ -111,18 +102,6 @@ export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProp
     }
   }, [selection, databaseFiles?.data, formData.database_selection.mode])
 
-  // Fetch audio configuration files
-  const { data: audioConfigFiles } = RQ.useQuery({
-    queryKey: ["files", File.t_maipl_folder.audio_configs],
-    queryFn: () =>
-      File.list(maipl.client, {
-        maipl_folder: File.t_maipl_folder.audio_configs,
-        page: 1,
-        size: 100,
-      }).then((page) => new Map(page.data.map((f) => [f.id, f]))),
-    initialData: new Map<number, File.t>(),
-  })
-
   const createTaskMutation = useMutation({
     mutationFn: (data: TaskFormData) => {
       return mockApi.createTask(data)
@@ -133,18 +112,41 @@ export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProp
       setFormData({
         task_name: "",
         description: "",
-        audio_representation_config_id: 0,
         database_selection: {
           mode: "new_database"
-        }
+        },
+        database_filename: "database.h5"
       })
       setSelection(new Map())
     }
   })
 
+  const generateDefaultFilename = (taskName: string) => {
+    if (!taskName.trim()) return "database.h5"
+    const sanitized = taskName
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '_')
+      .trim()
+    return `${sanitized}_database.h5`
+  }
+
+  const handleTaskNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTaskName = e.target.value
+    setFormData(prev => ({ 
+      ...prev, 
+      task_name: newTaskName,
+      database_filename: generateDefaultFilename(newTaskName)
+    }))
+  }
+
   const handleSubmit = (e: R.FormEvent) => {
     e.preventDefault()
-    createTaskMutation.mutate(formData)
+    const payload = { ...formData }
+    if (formData.database_selection.mode !== "new_database") {
+      delete payload.table_name
+    }
+    createTaskMutation.mutate(payload)
   }
 
   const handleClose = () => {
@@ -153,14 +155,19 @@ export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProp
       setFormData({
         task_name: "",
         description: "",
-        audio_representation_config_id: 0,
         database_selection: {
           mode: "new_database"
-        }
+        },
+        database_filename: "database.h5"
       })
       setSelection(new Map())
     }
   }
+
+  const isFormValid = formData.task_name && formData.database_filename && (
+    (formData.database_selection.mode === "new_database") || 
+    (formData.database_selection.mode === "use_existing" && selection.size === 1)
+  ) && !createTaskMutation.isPending
 
   return (
     <M.Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
@@ -175,7 +182,7 @@ export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProp
             <M.TextField
               label="Task Name"
               value={formData.task_name}
-              onChange={(e) => setFormData(prev => ({ ...prev, task_name: e.target.value }))}
+              onChange={handleTaskNameChange}
               required
               fullWidth
               placeholder="e.g., Whale Detection Database"
@@ -191,28 +198,15 @@ export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProp
               placeholder="Describe the purpose of this database..."
             />
 
-            {/* Audio Representation Configuration - Only show for new database */}
-            {formData.database_selection.mode === "new_database" && (
-              <>
-                <MR.Picker
-                  label="Audio Representation Configuration (required)"
-                  setValue={(value) => setFormData(prev => ({ 
-                    ...prev, 
-                    audio_representation_config_id: Number(value) 
-                  }))}
-                  value={formData.audio_representation_config_id ? String(formData.audio_representation_config_id) : ""}
-                  values={optionsForAudioConfigFiles(audioConfigFiles)}
-                  fullWidth
-                />
-                {audioConfigFiles.size === 0 && (
-                  <M.Alert severity="info">
-                    <M.Typography variant="body2">
-                      No audio configuration files found. Please upload audio configuration files to the "audio configs" folder first.
-                    </M.Typography>
-                  </M.Alert>
-                )}
-              </>
-            )}
+            <M.TextField
+              label="Database Filename"
+              value={formData.database_filename}
+              onChange={(e) => setFormData(prev => ({ ...prev, database_filename: e.target.value }))}
+              required
+              fullWidth
+              helperText="Name of the output HDF5 database file"
+              placeholder="e.g., whale_detection_database.h5"
+            />
 
             {/* Database Selection */}
             <M.FormControl component="fieldset">
@@ -224,11 +218,10 @@ export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProp
                   database_selection: {
                     mode: e.target.value as "new_database" | "use_existing"
                   },
-                  // Clear audio config when switching to existing database mode
-                  ...(e.target.value === "use_existing" && { 
-                    audio_representation_config_id: 0,
-                    selectedDatabaseFile: undefined
-                  })
+                  // Clear selection when switching modes
+                  ...(e.target.value === "use_existing"
+                    ? { selectedDatabaseFile: undefined }
+                    : {})
                 }))}
               >
                 <M.FormControlLabel
@@ -354,54 +347,30 @@ export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProp
                 {formData.database_selection.mode === "new_database" ? (
                   <>
                     <M.ListItem sx={{ py: 0 }}>
-                      <M.ListItemIcon sx={{ minWidth: 24 }}>
-                        <M.Icon fontSize="small">check</M.Icon>
-                      </M.ListItemIcon>
                       <M.ListItemText primary="Select audio files using the file browser" />
                     </M.ListItem>
                     <M.ListItem sx={{ py: 0 }}>
-                      <M.ListItemIcon sx={{ minWidth: 24 }}>
-                        <M.Icon fontSize="small">check</M.Icon>
-                      </M.ListItemIcon>
                       <M.ListItemText primary="Add annotation files and label mappings" />
                     </M.ListItem>
                     <M.ListItem sx={{ py: 0 }}>
-                      <M.ListItemIcon sx={{ minWidth: 24 }}>
-                        <M.Icon fontSize="small">check</M.Icon>
-                      </M.ListItemIcon>
                       <M.ListItemText primary="Create multiple groups (train/test/validation)" />
                     </M.ListItem>
                     <M.ListItem sx={{ py: 0 }}>
-                      <M.ListItemIcon sx={{ minWidth: 24 }}>
-                        <M.Icon fontSize="small">check</M.Icon>
-                      </M.ListItemIcon>
                       <M.ListItemText primary="Generate HDF5 database with embedded audio configuration" />
                     </M.ListItem>
                   </>
                 ) : (
                   <>
                     <M.ListItem sx={{ py: 0 }}>
-                      <M.ListItemIcon sx={{ minWidth: 24 }}>
-                        <M.Icon fontSize="small">check</M.Icon>
-                      </M.ListItemIcon>
                       <M.ListItemText primary="View existing database structure and groups" />
                     </M.ListItem>
                     <M.ListItem sx={{ py: 0 }}>
-                      <M.ListItemIcon sx={{ minWidth: 24 }}>
-                        <M.Icon fontSize="small">check</M.Icon>
-                      </M.ListItemIcon>
                       <M.ListItemText primary="Add new audio files to existing groups" />
                     </M.ListItem>
                     <M.ListItem sx={{ py: 0 }}>
-                      <M.ListItemIcon sx={{ minWidth: 24 }}>
-                        <M.Icon fontSize="small">check</M.Icon>
-                      </M.ListItemIcon>
                       <M.ListItemText primary="Add new annotation files and label mappings" />
                     </M.ListItem>
                     <M.ListItem sx={{ py: 0 }}>
-                      <M.ListItemIcon sx={{ minWidth: 24 }}>
-                        <M.Icon fontSize="small">check</M.Icon>
-                      </M.ListItemIcon>
                       <M.ListItemText primary="Create additional groups or modify existing ones" />
                     </M.ListItem>
                   </>
@@ -419,10 +388,7 @@ export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProp
             type="submit"
             variant="contained"
             disabled={
-              !formData.task_name || 
-              (formData.database_selection.mode === "new_database" && !formData.audio_representation_config_id) || 
-              (formData.database_selection.mode === "use_existing" && selection.size !== 1) ||
-              createTaskMutation.isPending
+              !isFormValid
             }
             startIcon={createTaskMutation.isPending ? <M.CircularProgress size={16} /> : undefined}
           >

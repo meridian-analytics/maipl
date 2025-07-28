@@ -12,7 +12,6 @@ let mockTasks: DatabaseTask[] = [
     created_at: "2024-01-15T10:30:00Z",
     updated_at: "2024-01-15T11:45:00Z",
     status: "active",
-    audio_representation_config_id: 15,
     database_selection: {
       mode: "new_database"
     },
@@ -36,7 +35,6 @@ let mockTasks: DatabaseTask[] = [
     ],
     output_settings: {
       database_filename: "whale_detection_db.h5",
-      table_name: "/data",
       overwrite: false,
       seed: 42
     }
@@ -49,7 +47,6 @@ let mockTasks: DatabaseTask[] = [
     created_at: "2024-01-16T09:15:00Z",
     updated_at: "2024-01-16T10:30:00Z",
     status: "completed",
-    audio_representation_config_id: 15,
     database_selection: {
       mode: "new_database"
     },
@@ -61,7 +58,6 @@ let mockTasks: DatabaseTask[] = [
     groups: [],
     output_settings: {
       database_filename: "background_db.h5",
-      table_name: "/data",
       overwrite: false
     }
   }
@@ -246,7 +242,6 @@ export const mockApi = {
       created_at: now,
       updated_at: now,
       status: "active",
-      audio_representation_config_id: request.audio_representation_config_id || 15, // Default to 15 if not provided
       database_selection: request.database_selection,
       database_file: {
         filename: `${request.task_name.toLowerCase().replace(/\s+/g, '_')}_db.h5`,
@@ -256,7 +251,6 @@ export const mockApi = {
       groups: groups,
       output_settings: {
         database_filename: `${request.task_name.toLowerCase().replace(/\s+/g, '_')}_db.h5`,
-        table_name: "/data",
         overwrite: false
       },
       database_metadata: databaseMetadata

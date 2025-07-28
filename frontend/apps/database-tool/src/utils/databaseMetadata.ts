@@ -56,12 +56,30 @@ export function updateMetadataWithNewGroup(
   const existingStructure = currentMetadata?.hdf5_structure || {}
   const existingGroups = currentMetadata?.groups || []
   
-  // Add new group to structure
-  const updatedStructure = {
-    ...existingStructure,
-    [newGroup.name]: {
-      "data": "dataset",
-      "labels": "dataset"
+  // Create nested structure for the new group
+  // For a path like "/train/sub/dec", we need to create the full hierarchy
+  const groupPath = newGroup.name
+  const pathParts = groupPath.split('/').filter(part => part.length > 0)
+  
+  let currentStructure = { ...existingStructure }
+  let currentPath = ""
+  
+  // Build the nested structure
+  for (let i = 0; i < pathParts.length; i++) {
+    const part = pathParts[i]
+    currentPath = currentPath + "/" + part
+    
+    if (i === pathParts.length - 1) {
+      // This is the final group, add the datasets
+      currentStructure[currentPath] = {
+        "data": "dataset",
+        "labels": "dataset"
+      }
+    } else {
+      // This is an intermediate group, create it if it doesn't exist
+      if (!currentStructure[currentPath]) {
+        currentStructure[currentPath] = {}
+      }
     }
   }
 
@@ -72,7 +90,7 @@ export function updateMetadataWithNewGroup(
   const totalSamples = (currentMetadata?.total_samples || 0) + (newGroup.statistics.total_samples || 0)
 
   return {
-    hdf5_structure: updatedStructure,
+    hdf5_structure: currentStructure,
     total_samples: totalSamples,
     groups: updatedGroups
   }
@@ -97,25 +115,35 @@ export function getExistingGroups(metadata: DatabaseTask["database_metadata"]): 
 }
 
 /**
+ * Trim trailing spaces from group name
+ */
+export function trimGroupName(groupName: string): string {
+  return groupName.trimEnd()
+}
+
+/**
  * Validate group name format and uniqueness
  */
 export function validateGroupName(
   groupName: string,
   existingGroups: string[]
 ): { isValid: boolean; error?: string } {
+  // Trim trailing spaces
+  const trimmedName = trimGroupName(groupName)
+  
   // Check if group name starts with /
-  if (!groupName.startsWith('/')) {
+  if (!trimmedName.startsWith('/')) {
     return { isValid: false, error: "Group name must start with '/' (e.g., '/train')" }
   }
 
-  // Check if group name is valid format
-  if (!/^\/[a-zA-Z0-9_-]+$/.test(groupName)) {
-    return { isValid: false, error: "Group name can only contain letters, numbers, underscores, and hyphens" }
+  // Check if group name is valid format - support nested paths like /train/sub/dec
+  if (!/^\/[a-zA-Z0-9_-]+(\/[a-zA-Z0-9_-]+)*$/.test(trimmedName)) {
+    return { isValid: false, error: "Group name can only contain letters, numbers, underscores, and hyphens. Nested paths are supported (e.g., '/train/sub/dec')" }
   }
 
   // Check if group already exists
-  if (existingGroups.includes(groupName)) {
-    return { isValid: false, error: `Group '${groupName}' already exists in the database` }
+  if (existingGroups.includes(trimmedName)) {
+    return { isValid: false, error: `Group '${trimmedName}' already exists in the database` }
   }
 
   return { isValid: true }

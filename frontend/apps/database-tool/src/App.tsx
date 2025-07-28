@@ -2,7 +2,6 @@ import * as MR from "@maipl/react"
 import * as M from "@mui/material"
 import * as RR from "react-router-dom"
 import DatabaseHome from "./DatabaseHome"
-import TaskDetailView from "./components/TaskDetailView"
 import TaskWorkspace from "./components/TaskWorkspace"
 
 export default function App() {

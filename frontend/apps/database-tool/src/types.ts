@@ -6,7 +6,6 @@ export interface DatabaseTask {
   created_at: string
   updated_at: string
   status: "active" | "completed" | "failed" | "in_progress"
-  audio_representation_config_id: number
   database_selection: {
     mode: "new_database" | "use_existing"
     database_file_id?: number
@@ -24,7 +23,6 @@ export interface DatabaseTask {
   groups: DatabaseGroup[]
   output_settings: {
     database_filename: string
-    table_name: string
     overwrite: boolean
     custom_module_id?: number
     seed?: number
@@ -52,6 +50,7 @@ export interface DatabaseGroup {
 
 export interface GroupConfig {
   audio_file_ids: number[]
+  audio_representation_config_id: number
   annotations?: {
     file_id: number
     labels: Record<string, number>
@@ -63,6 +62,7 @@ export interface GroupConfig {
     num_samples: number | "same"
     label: number
     filename_filter_file_id?: number
+    seed?: number
   }
   avoid_annotations_file_id?: number
 }
@@ -70,7 +70,6 @@ export interface GroupConfig {
 export interface CreateTaskRequest {
   task_name: string
   description: string
-  audio_representation_config_id: number
   database_selection: {
     mode: "new_database" | "use_existing"
     database_file_id?: number
