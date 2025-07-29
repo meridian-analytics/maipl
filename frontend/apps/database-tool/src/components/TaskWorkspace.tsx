@@ -14,32 +14,25 @@ export default function TaskWorkspace() {
   const taskId = params.taskId
   const navigate = RR.useNavigate()
   const [isAddGroupDialogOpen, setIsAddGroupDialogOpen] = R.useState(false)
-
   const { data: task, isLoading, error } = RQ.useQuery({
     queryKey: ['database-tasks', taskId],
     queryFn: () => mockApi.getTask(taskId!),
-    enabled: !!taskId,
+    enabled: !!taskId
   })
-
   const queryClient = RQ.useQueryClient()
-
-  const onClose = () => {
-    navigate(-1)
-  }
-
-  const handleAddGroup = () => {
-    setIsAddGroupDialogOpen(true)
-  }
-
+  const onClose = () => { navigate(-1) }
+  const handleAddGroup = () => { setIsAddGroupDialogOpen(true) }
   const handleGroupAdded = () => {
-    setIsAddGroupDialogOpen(false)
     queryClient.invalidateQueries({ queryKey: ['database-tasks', taskId] })
   }
 
   if (isLoading) {
     return (
       <MR.Modal onClose={onClose}>
-        <M.CircularProgress />
+        <M.Stack spacing={2} alignItems="center" sx={{ p: 4 }}>
+          <M.CircularProgress />
+          <M.Typography>Loading task details...</M.Typography>
+        </M.Stack>
       </MR.Modal>
     )
   }
@@ -47,9 +40,10 @@ export default function TaskWorkspace() {
   if (error || !task) {
     return (
       <MR.Modal onClose={onClose}>
-        <M.Typography color="error">
-          {error ? (error as Error).message : "Task not found"}
-        </M.Typography>
+        <M.Stack spacing={2} alignItems="center" sx={{ p: 4 }}>
+          <M.Typography color="error">Failed to load task details</M.Typography>
+          <M.Button onClick={onClose}>Close</M.Button>
+        </M.Stack>
       </MR.Modal>
     )
   }
@@ -57,141 +51,70 @@ export default function TaskWorkspace() {
   return (
     <MR.Modal onClose={onClose}>
       <M.Stack spacing={3} sx={{ maxWidth: "1200px", maxHeight: "90vh", overflow: "auto" }}>
-        {/* Header */}
         <M.Stack direction="row" justifyContent="space-between" alignItems="center">
-          <M.Typography variant="h4">
-            {task.task_name}
-          </M.Typography>
-          <M.Button
-            variant="contained"
-            onClick={handleAddGroup}
-            disabled={task.status === "completed"}
-          >
+          <M.Typography variant="h4">{task.task_name}</M.Typography>
+          <M.Button variant="contained" onClick={handleAddGroup} disabled={task.status === "completed"}>
             Add Group
           </M.Button>
         </M.Stack>
-
-        {/* Task Status */}
         <M.Paper sx={{ p: 2 }}>
           <M.Stack direction="row" spacing={2} alignItems="center">
+            <M.Typography variant="body1">Status:</M.Typography>
             <M.Chip 
               label={task.status} 
               color={task.status === "completed" ? "success" : 
                      task.status === "failed" ? "error" : 
                      task.status === "in_progress" ? "warning" : "default"}
             />
-            <M.Typography variant="body2" color="text.secondary">
-              Database Mode: {task.database_selection.mode === "new_database" ? "New Database" : "Existing Database"}
-            </M.Typography>
-            {task.database_selection.mode === "use_existing" && task.database_selection.database_file_id && (
-              <M.Typography variant="body2" color="text.secondary">
-                Source Database ID: {task.database_selection.database_file_id}
-              </M.Typography>
-            )}
           </M.Stack>
         </M.Paper>
-
-        {/* Main Content */}
         <M.Stack direction="row" spacing={3} sx={{ flex: 1 }}>
-          {/* Left Panel - Task Configuration */}
           <M.Box sx={{ flex: 1 }}>
             <TaskConfigurationView task={task} />
           </M.Box>
-
-          {/* Right Panel - Groups and Actions */}
           <M.Box sx={{ flex: 1 }}>
             <M.Paper sx={{ p: 2, height: "fit-content" }}>
-              <M.Typography variant="h6" gutterBottom>
-                Groups ({task.groups.length})
-              </M.Typography>
-              
+              <M.Typography variant="h6" gutterBottom>Groups ({task.groups.length})</M.Typography>
               {task.groups.length === 0 ? (
                 <M.Stack spacing={2} alignItems="center" sx={{ py: 4 }}>
-                  <M.Typography variant="body1" color="text.secondary">
-                    No groups created yet
-                  </M.Typography>
-                  <M.Typography variant="body2" color="text.secondary" textAlign="center">
-                    Start by adding your first group to the database
-                  </M.Typography>
-                  <M.Button
-                    variant="outlined"
-                    onClick={handleAddGroup}
-                  >
-                    Add First Group
-                  </M.Button>
+                  <M.Typography variant="body1" color="text.secondary">No groups created yet</M.Typography>
+                  <M.Typography variant="body2" color="text.secondary" textAlign="center">Start by adding your first group to the database</M.Typography>
+                  <M.Button variant="outlined" onClick={handleAddGroup}>Add First Group</M.Button>
                 </M.Stack>
               ) : (
                 <M.Stack spacing={1}>
                   {task.groups.map((group) => (
-                    <M.Card key={group.name} variant="outlined">
-                      <M.CardContent>
-                        <M.Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <M.Typography variant="subtitle1">
-                            {group.name}
-                          </M.Typography>
-                          <M.Chip 
-                            label={group.status} 
-                            size="small"
-                            color={group.status === "completed" ? "success" : 
-                                   group.status === "failed" ? "error" : 
-                                   group.status === "in_progress" ? "warning" : "default"}
-                          />
-                        </M.Stack>
-                        
-                        <M.Typography variant="body2" color="text.secondary">
-                          Source: {group.source === "new_group" ? "New Group" : "Existing Database"}
-                        </M.Typography>
-                        
-                        <M.Stack direction="row" spacing={2} sx={{ mt: 1 }}>
-                          <M.Typography variant="caption">
-                            Files: {group.statistics.file_count}
-                          </M.Typography>
-                          <M.Typography variant="caption">
-                            Labels: {group.statistics.label_count}
-                          </M.Typography>
-                          <M.Typography variant="caption">
-                            Samples: {group.statistics.total_samples}
-                          </M.Typography>
-                        </M.Stack>
-                      </M.CardContent>
-                    </M.Card>
+                    <M.Paper key={group.id} sx={{ p: 2, border: 1, borderColor: 'divider' }}>
+                      <M.Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <M.Typography variant="subtitle1">{group.name}</M.Typography>
+                        <M.Chip 
+                          label={group.status} 
+                          size="small"
+                          color={group.status === "completed" ? "success" : 
+                                 group.status === "failed" ? "error" : 
+                                 group.status === "in_progress" ? "warning" : "default"}
+                        />
+                      </M.Stack>
+                      <M.Typography variant="body2" color="text.secondary">
+                        {group.statistics.file_count} files, {group.statistics.total_samples} samples
+                      </M.Typography>
+                    </M.Paper>
                   ))}
                 </M.Stack>
               )}
             </M.Paper>
-
-            {/* Quick Actions */}
             {task.groups.length > 0 && (
               <M.Paper sx={{ p: 2, mt: 2 }}>
-                <M.Typography variant="h6" gutterBottom>
-                  Quick Actions
-                </M.Typography>
+                <M.Typography variant="h6" gutterBottom>Quick Actions</M.Typography>
                 <M.Stack direction="row" spacing={2}>
-                  <M.Button
-                    variant="outlined"
-                    disabled={task.status !== "completed"}
-                  >
-                    Download Database
-                  </M.Button>
-                  <M.Button
-                    variant="outlined"
-                    disabled={task.status !== "completed"}
-                  >
-                    Share Database
-                  </M.Button>
+                  <M.Button variant="outlined" disabled={task.status !== "completed"}>Download Database</M.Button>
+                  <M.Button variant="outlined" disabled={task.status !== "completed"}>Share Database</M.Button>
                 </M.Stack>
               </M.Paper>
             )}
           </M.Box>
         </M.Stack>
-
-        {/* Add Group Dialog */}
-        <AddGroupDialog
-          open={isAddGroupDialogOpen}
-          onClose={() => setIsAddGroupDialogOpen(false)}
-          onGroupAdded={handleGroupAdded}
-          task={task}
-        />
+        <AddGroupDialog open={isAddGroupDialogOpen} onClose={() => setIsAddGroupDialogOpen(false)} onGroupAdded={handleGroupAdded} task={task} />
       </M.Stack>
     </MR.Modal>
   )

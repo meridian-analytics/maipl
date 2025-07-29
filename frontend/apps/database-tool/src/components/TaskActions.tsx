@@ -113,7 +113,7 @@ export default function TaskActions(props: { task: DatabaseTask }) {
         <M.MenuItem
           children="View Details"
           component={RR.Link}
-          to={`/${props.task.task_id}`}
+          to={`/${props.task.id}`}
         />
         <M.MenuItem
           children="Download Database"

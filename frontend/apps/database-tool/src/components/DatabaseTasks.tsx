@@ -43,41 +43,15 @@ function useQuery() {
 }
 
 const Table = BaseTable([
-  column.accessor("task_id", {
-    header: "Task ID",
-    size: 120,
-  }),
-  column.accessor("task_name", {
-    header: "Task Name",
-    size: 200,
-  }),
-  column.accessor("description", {
-    header: "Description",
-    size: 250,
-  }),
-  column.accessor("database_file.filename", {
-    header: "Database File",
-    size: 180,
-  }),
-  column.accessor("groups", {
-    header: "Groups",
-    size: 100,
-    cell: info => info.getValue().length,
-  }),
-  column.accessor("created_at", {
-    header: "Created",
-    size: 120,
-    cell: info => F.fuzzyTime(new Date(info.getValue())),
-  }),
-  column.accessor("status", {
-    header: "Status",
-    size: 120,
-    cell: info => (
-      <M.Stack width={100}>
-        <TaskStatus status={info.getValue()} />
-      </M.Stack>
-    ),
-  }),
+  column.accessor("id", { header: "Task ID", size: 120 }),
+  column.accessor("task_name", { header: "Task Name", size: 200 }),
+  column.accessor("description", { header: "Description", size: 250 }),
+  column.accessor("database_file.filename", { header: "Database File", size: 180 }),
+  column.accessor("groups", { header: "Groups", size: 100, cell: info => info.getValue().length }),
+  column.accessor("created_at", { header: "Created", size: 120, cell: info => F.fuzzyTime(new Date(info.getValue())) }),
+  column.accessor("status", { header: "Status", size: 120, cell: info => (
+    <M.Stack width={100}> <TaskStatus status={info.getValue()} /> </M.Stack>
+  )}),
 ] as Array<ColumnDef<DatabaseTask>>)
 
 function TaskStatus(props: { status: DatabaseTask["status"] }) {
