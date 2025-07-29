@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     "modelrunner",
     "modeltrainer",
     'metrics',
+    "dbtool",
     "common",
     "drf_yasg",
     "django_celery_results",

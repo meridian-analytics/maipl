@@ -30,5 +30,6 @@ urlpatterns = [
     path('api/ketos/run/', include('modelrunner.urls', namespace='runner')),
     path('api/ketos/train/', include('modeltrainer.urls', namespace='trainer')),
     path('api/ketos/metrics/', include('metrics.urls', namespace='metrics')),
+    path('api/ketos/dbtool/', include('dbtool.urls', namespace='dbtool')),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
