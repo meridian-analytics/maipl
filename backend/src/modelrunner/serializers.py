@@ -31,4 +31,5 @@ class DetectionSerializer(CreatorMixin, serializers.ModelSerializer):
 
     def get_filename(self, obj):
       # return the filename of the file associated with the detection
-      return obj.file.path 
+      # Note: file field was removed, so we return the filename field directly
+      return obj.filename 

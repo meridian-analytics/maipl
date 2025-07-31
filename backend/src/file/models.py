@@ -128,9 +128,9 @@ class File(models.Model):
         if self.annotation_set.exists():
             return True
             
-        # Check Detection relationship
-        if self.file_detections.exists():
-            return True
+        # Check Detection relationship - removed as file field was removed from Detection model
+        # if self.file_detections.exists():
+        #     return True
             
         # Check MetricsTask relationships
         if (

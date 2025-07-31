@@ -97,7 +97,8 @@ class Detection(models.Model):
         # return a string representation of a detection
         return f'{self.id} - {self.created_at}'
     
-    @property
-    def filename(self):
-        # return the filename of the file associated with the detection
-        return self.file.basename
+    # @property
+    # def filename(self):
+    #     # return the filename of the file associated with the detection
+    #     # Note: file field was removed, so we return the filename field directly
+    #     return self.filename
