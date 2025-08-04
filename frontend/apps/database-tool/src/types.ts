@@ -1,6 +1,5 @@
 export interface DatabaseTask {
-  id: string // For table compatibility
-  task_id: string
+  id: number // For table compatibility and API consistency
   task_name: string
   description: string
   created_at: string
@@ -15,12 +14,12 @@ export interface DatabaseTask {
       uploaded_at: string
     }
   }
-  database_file: {
+  database_file?: {
     filename: string
     size: number
     created_at: string
   }
-  groups: DatabaseGroup[]
+  groups?: DatabaseGroup[]
   output_settings: {
     database_filename: string
     overwrite: boolean
@@ -33,9 +32,12 @@ export interface DatabaseTask {
     total_samples: number
     groups: string[]
   }
+  // Celery task ID for processing
+  celery_task_id?: string
 }
 
 export interface DatabaseGroup {
+  id: number
   name: string
   created_at: string
   status: "completed" | "failed" | "in_progress" | "imported"
@@ -46,6 +48,8 @@ export interface DatabaseGroup {
     label_count: number
     total_samples: number
   }
+  // Celery task ID for processing
+  celery_task_id?: string
 }
 
 export interface GroupConfig {

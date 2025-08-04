@@ -8,7 +8,7 @@ import type { DatabaseTask } from "../types"
 import { Table, column, useQuery, useTable } from "./DatabaseTasks"
 import TaskActions from "./TaskActions"
 import CreateTaskButton from "./CreateTaskButton"
-import { mockApi } from "../api/mockApi"
+import { createDatabaseTaskApi } from "../api/client"
 
 function DeleteTasksDialog(props: {
   open: boolean
@@ -39,12 +39,12 @@ function DeleteTasksDialog(props: {
         </M.DialogContentText>
         <M.List>
           {props.deletableTasks.map(task => (
-            <M.ListItem key={task.task_id}>
-              <M.ListItemText
-                primary={task.task_name}
-                secondary={`Status: ${task.status}`}
-              />
-            </M.ListItem>
+                    <M.ListItem key={task.id}>
+          <M.ListItemText
+            primary={task.task_name}
+            secondary={`Status: ${task.status}`}
+          />
+        </M.ListItem>
           ))}
         </M.List>
       </M.DialogContent>
@@ -72,6 +72,7 @@ export default function TasksTable(props: {
   const { data: tasks } = useQuery()
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
+  const databaseTaskApi = createDatabaseTaskApi(maipl.client)
 
   const onDeleteSelected = () => {
     if (selection.size === 0) return
@@ -79,8 +80,9 @@ export default function TasksTable(props: {
   }
 
   const deleteMutation = RQ.useMutation({
-    mutationFn: async (taskIds: string[]) => {
-      return mockApi.deleteTasks(taskIds)
+    mutationFn: async (taskIds: number[]) => {
+      // Delete tasks one by one since the API doesn't support bulk delete
+      await Promise.all(taskIds.map(id => databaseTaskApi.deleteTask(id)))
     },
     onError: (err, taskIds) => {
       notify(onClose => (
@@ -106,10 +108,10 @@ export default function TasksTable(props: {
   })
 
   const handleDeleteConfirm = () => {
-    const selectedTasks = tasks?.filter(task => selection.has(task.id)) ?? []
+    const selectedTasks = tasks?.data?.filter(task => selection.has(task.id)) ?? []
     const deletableTaskIds = selectedTasks
       .filter(task => task.status !== "in_progress")
-      .map(task => task.task_id)
+      .map(task => task.id)
 
     if (deleteMutation.isIdle && deletableTaskIds.length > 0) {
       deleteMutation.mutateAsync(deletableTaskIds)
@@ -117,7 +119,7 @@ export default function TasksTable(props: {
     setDeleteModalOpen(false)
   }
 
-  const selectedTasks = tasks?.filter(task => selection.has(task.id)) ?? []
+  const selectedTasks = tasks?.data?.filter(task => selection.has(task.id)) ?? []
   const deletableTasks = selectedTasks.filter(task => task.status !== "in_progress")
 
   return (
@@ -156,8 +158,8 @@ export default function TasksTable(props: {
             cell: ({ row }) => <TaskActions task={row.original} />,
           }),
         ]}
-        rows={tasks ?? []}
-        count={tasks?.length ?? 0}
+        rows={tasks?.data ?? []}
+        count={tasks?.count ?? 0}
         pagination={pagination}
         selection={selection}
         setPagination={setPagination}

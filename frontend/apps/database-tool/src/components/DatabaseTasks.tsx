@@ -4,7 +4,7 @@ import * as RT from "@tanstack/react-table"
 import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import type { DatabaseTask } from "../types"
-import { mockApi } from "../api/mockApi"
+import { createDatabaseTaskApi } from "../api/client"
 import {
   type ColumnDef,
   type PaginationState,
@@ -12,6 +12,7 @@ import {
   usePagination,
   useSelection,
   Table as BaseTable,
+  useMaipl,
 } from "@maipl/react"
 
 const column = RT.createColumnHelper<DatabaseTask>()
@@ -35,10 +36,13 @@ function useTable(props?: {
 }
 
 function useQuery() {
+  const maipl = useMaipl()
+  const databaseTaskApi = createDatabaseTaskApi(maipl.client)
+  
   return RQ.useQuery({
     queryKey: ['database-tasks'],
-    queryFn: () => mockApi.getTasks(),
-    initialData: []
+    queryFn: () => databaseTaskApi.getTasks(),
+    initialData: { data: [], count: 0, next: null, previous: null }
   })
 }
 
@@ -46,9 +50,30 @@ const Table = BaseTable([
   column.accessor("id", { header: "Task ID", size: 120 }),
   column.accessor("task_name", { header: "Task Name", size: 200 }),
   column.accessor("description", { header: "Description", size: 250 }),
-  column.accessor("database_file.filename", { header: "Database File", size: 180 }),
-  column.accessor("groups", { header: "Groups", size: 100, cell: info => info.getValue().length }),
-  column.accessor("created_at", { header: "Created", size: 120, cell: info => F.fuzzyTime(new Date(info.getValue())) }),
+  column.display({
+    id: "database_file",
+    header: "Database File",
+    size: 180,
+    cell: info => info.row.original.database_file?.filename || 'No database file'
+  }),
+  column.display({
+    id: "groups",
+    header: "Groups",
+    size: 100,
+    cell: info => {
+      const groups = info.row.original.groups
+      const metadataGroups = info.row.original.database_metadata?.groups
+      // Use groups array if available, otherwise fall back to metadata groups
+      return groups?.length || metadataGroups?.length || 0
+    }
+  }),
+  column.display({
+    id: "total_samples",
+    header: "Total Samples",
+    size: 120,
+    cell: info => info.row.original.database_metadata?.total_samples || 0
+  }),
+  column.accessor("created_at", { header: "Created", size: 120, cell: info => F.fuzzyTime(info.getValue()) }),
   column.accessor("status", { header: "Status", size: 120, cell: info => (
     <M.Stack width={100}> <TaskStatus status={info.getValue()} /> </M.Stack>
   )}),

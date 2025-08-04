@@ -121,6 +121,40 @@ export default function TaskConfigurationView({ task }: TaskConfigurationViewPro
             </M.Stack>
           </M.Box>
         )}
+
+        <M.Divider />
+
+        {/* Database Metadata */}
+        {task.database_metadata && (
+          <M.Box>
+            <M.Typography variant="subtitle2" color="primary" gutterBottom>
+              Database Metadata
+            </M.Typography>
+            <M.Stack spacing={1}>
+              <M.Typography variant="body2">
+                <strong>Total Samples:</strong> {task.database_metadata.total_samples}
+              </M.Typography>
+              <M.Typography variant="body2">
+                <strong>Groups:</strong> {task.database_metadata.groups?.length || 0}
+              </M.Typography>
+              {task.database_metadata.groups && task.database_metadata.groups.length > 0 && (
+                <M.Stack spacing={0.5}>
+                  <M.Typography variant="body2" color="text.secondary">
+                    <strong>Group Details:</strong>
+                  </M.Typography>
+                  {task.database_metadata.groups.map(groupPath => {
+                    const groupInfo = task.database_metadata?.hdf5_structure?.[groupPath]
+                    return (
+                      <M.Typography key={groupPath} variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                        • {groupPath}: {groupInfo?.samples || 0} samples
+                      </M.Typography>
+                    )
+                  })}
+                </M.Stack>
+              )}
+            </M.Stack>
+          </M.Box>
+        )}
       </M.Stack>
     </M.Paper>
   )

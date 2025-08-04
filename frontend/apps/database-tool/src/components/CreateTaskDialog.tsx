@@ -5,8 +5,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import * as RQ from "@tanstack/react-query"
 import * as MR from "@maipl/react"
 import { File } from "@maipl/api"
+import * as API from "@maipl/api"
 import type { CreateTaskRequest } from "../types"
-import { mockApi } from "../api/mockApi"
+import { createDatabaseTaskApi } from "../api/client"
 import { getDatabaseMetadata, getExistingGroups } from "../utils/databaseMetadata"
 
 interface CreateTaskDialogProps {
@@ -22,6 +23,7 @@ interface TaskFormData extends CreateTaskRequest {
 export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProps) {
   const queryClient = useQueryClient()
   const maipl = MR.useMaipl()
+  const databaseTaskApi = createDatabaseTaskApi(maipl.client)
   const [formData, setFormData] = useState<TaskFormData>({
     task_name: "",
     description: "",
@@ -104,7 +106,17 @@ export default function CreateTaskDialog({ open, onClose }: CreateTaskDialogProp
 
   const createTaskMutation = useMutation({
     mutationFn: (data: TaskFormData) => {
-      return mockApi.createTask(data)
+      // Transform the form data to match the API request format
+      const request: API.DatabaseTask.t_create_request = {
+        task_name: data.task_name,
+        description: data.description,
+        database_selection: data.database_selection,
+        output_settings: {
+          database_filename: data.database_filename,
+          overwrite: false
+        }
+      }
+      return databaseTaskApi.createTask(request)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['database-tasks'] })

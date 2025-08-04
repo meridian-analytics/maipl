@@ -5,7 +5,7 @@ import * as RQ from "@tanstack/react-query"
 import * as MR from "@maipl/react"
 import { File } from "@maipl/api"
 import type { DatabaseTask, GroupConfig } from "../types"
-import { mockApi } from "../api/mockApi"
+import { createDatabaseTaskApi } from "../api/client"
 import TaskConfigurationView from "./TaskConfigurationView"
 import AddGroupDialog from "./AddGroupDialog"
 
@@ -13,10 +13,12 @@ export default function TaskWorkspace() {
   const params = RR.useParams()
   const taskId = params.taskId
   const navigate = RR.useNavigate()
+  const maipl = MR.useMaipl()
+  const databaseTaskApi = createDatabaseTaskApi(maipl.client)
   const [isAddGroupDialogOpen, setIsAddGroupDialogOpen] = R.useState(false)
   const { data: task, isLoading, error } = RQ.useQuery({
     queryKey: ['database-tasks', taskId],
-    queryFn: () => mockApi.getTask(taskId!),
+    queryFn: () => databaseTaskApi.getTask(parseInt(taskId!)),
     enabled: !!taskId
   })
   const queryClient = RQ.useQueryClient()
@@ -74,8 +76,12 @@ export default function TaskWorkspace() {
           </M.Box>
           <M.Box sx={{ flex: 1 }}>
             <M.Paper sx={{ p: 2, height: "fit-content" }}>
-              <M.Typography variant="h6" gutterBottom>Groups ({task.groups.length})</M.Typography>
-              {task.groups.length === 0 ? (
+              <M.Typography variant="h6" gutterBottom>
+                Groups ({task.groups.length + (task.database_metadata?.groups?.length || 0)}) - Total Samples: {task.database_metadata?.total_samples || 0}
+              </M.Typography>
+              
+              {/* Show all groups together */}
+              {task.groups.length === 0 && (!task.database_metadata?.groups || task.database_metadata.groups.length === 0) ? (
                 <M.Stack spacing={2} alignItems="center" sx={{ py: 4 }}>
                   <M.Typography variant="body1" color="text.secondary">No groups created yet</M.Typography>
                   <M.Typography variant="body2" color="text.secondary" textAlign="center">Start by adding your first group to the database</M.Typography>
@@ -83,6 +89,27 @@ export default function TaskWorkspace() {
                 </M.Stack>
               ) : (
                 <M.Stack spacing={1}>
+                  {/* Show database groups from existing database */}
+                  {task.database_metadata?.groups && task.database_metadata.groups.map((groupPath) => (
+                    <M.Paper key={groupPath} sx={{ p: 2, border: 1, borderColor: 'divider' }}>
+                      <M.Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <M.Typography variant="subtitle1">{groupPath}</M.Typography>
+                        <M.Chip 
+                          label="Imported" 
+                          size="small"
+                          color="default"
+                          variant="outlined"
+                        />
+                      </M.Stack>
+                      {task.database_metadata?.hdf5_structure[groupPath] && (
+                        <M.Typography variant="body2" color="text.secondary">
+                          {task.database_metadata.hdf5_structure[groupPath].samples} samples
+                        </M.Typography>
+                      )}
+                    </M.Paper>
+                  ))}
+                  
+                  {/* Show task groups */}
                   {task.groups.map((group) => (
                     <M.Paper key={group.id} sx={{ p: 2, border: 1, borderColor: 'divider' }}>
                       <M.Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -97,6 +124,9 @@ export default function TaskWorkspace() {
                       </M.Stack>
                       <M.Typography variant="body2" color="text.secondary">
                         {group.statistics.file_count} files, {group.statistics.total_samples} samples
+                        {task.database_metadata?.hdf5_structure[group.name] && (
+                          <span> (DB: {task.database_metadata.hdf5_structure[group.name].samples} samples)</span>
+                        )}
                       </M.Typography>
                     </M.Paper>
                   ))}

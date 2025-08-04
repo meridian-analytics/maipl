@@ -5,7 +5,7 @@ import * as RQ from "@tanstack/react-query"
 import * as RR from "react-router-dom"
 import * as R from "react"
 import type { DatabaseTask } from "../types"
-import { mockApi } from "../api/mockApi"
+import { createDatabaseTaskApi } from "../api/client"
 
 function DeleteTaskDialog(props: {
   open: boolean
@@ -33,7 +33,7 @@ function DeleteTaskDialog(props: {
           <M.ListItem>
             <M.ListItemText
               primary={`Task: ${props.task.task_name}`}
-              secondary={`Database: ${props.task.database_file.filename}`}
+              secondary={`Database: ${props.task.database_file?.filename || 'No database file'}`}
             />
           </M.ListItem>
         </M.List>
@@ -58,6 +58,7 @@ export default function TaskActions(props: { task: DatabaseTask }) {
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
   const [deleteModalOpen, setDeleteModalOpen] = R.useState(false)
+  const databaseTaskApi = createDatabaseTaskApi(maipl.client)
 
   const onDelete = () => {
     setDeleteModalOpen(true)
@@ -65,14 +66,14 @@ export default function TaskActions(props: { task: DatabaseTask }) {
 
   const handleDeleteConfirm = () => {
     if (deleteMutation.isIdle) {
-      deleteMutation.mutateAsync(props.task.task_id)
+      deleteMutation.mutateAsync(props.task.id)
     }
     setDeleteModalOpen(false)
   }
 
   const deleteMutation = RQ.useMutation({
-    mutationFn: async (taskId: string) => {
-      return mockApi.deleteTask(taskId)
+    mutationFn: async (taskId: number) => {
+      return databaseTaskApi.deleteTask(taskId)
     },
     onError: (err, taskId) => {
       notify(onClose => (
@@ -99,12 +100,12 @@ export default function TaskActions(props: { task: DatabaseTask }) {
 
   const onAddGroup = () => {
     // TODO: Navigate to add group page
-    console.log("Add group for task:", props.task.task_id)
+    console.log("Add group for task:", props.task.id)
   }
 
   const onDownload = () => {
     // TODO: Implement download functionality
-    console.log("Download database:", props.task.database_file.filename)
+    console.log("Download database:", props.task.database_file?.filename || 'No database file')
   }
 
   return (

@@ -5,8 +5,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import * as RQ from "@tanstack/react-query"
 import * as MR from "@maipl/react"
 import { File } from "@maipl/api"
+import * as API from "@maipl/api"
 import type { DatabaseTask, GroupConfig } from "../types"
-import { mockApi } from "../api/mockApi"
+import { createDatabaseTaskApi } from "../api/client"
 import { validateGroupName, getExistingGroups, trimGroupName } from "../utils/databaseMetadata"
 
 enum Tab {
@@ -45,6 +46,7 @@ interface GroupFormData {
 export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: AddGroupDialogProps) {
   const queryClient = useQueryClient()
   const maipl = MR.useMaipl()
+  const databaseTaskApi = createDatabaseTaskApi(maipl.client)
   const [activeTab, setActiveTab] = useState<Tab>(Tab.audio_files)
   const [formData, setFormData] = useState<GroupFormData>({
     name: "",
@@ -222,10 +224,22 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
 
   const addGroupMutation = useMutation({
     mutationFn: (data: GroupFormData) => {
-      return mockApi.addGroup(task.task_id, data)
+      // Transform the form data to match the API request format
+      const request: API.DatabaseTask.t_group_create_request = {
+        name: data.name,
+        source: "new_group",
+        config: {
+          audio_file_ids: data.audio_file_ids,
+          audio_representation_config_id: data.audio_representation_config_id,
+          annotations: data.annotations,
+          random_selections: data.random_selections,
+          avoid_annotations_file_id: data.avoid_annotations_file_id
+        }
+      }
+      return databaseTaskApi.createGroup(task.id, request)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['database-tasks', task.task_id] })
+      queryClient.invalidateQueries({ queryKey: ['database-tasks', task.id] })
       onGroupAdded()
       setFormData({
         name: "",
