@@ -101,7 +101,7 @@ export default function TaskWorkspace() {
                           variant="outlined"
                         />
                       </M.Stack>
-                      {task.database_metadata?.hdf5_structure[groupPath] && (
+                      {task.database_metadata?.hdf5_structure?.[groupPath] && (
                         <M.Typography variant="body2" color="text.secondary">
                           {task.database_metadata.hdf5_structure[groupPath].samples} samples
                         </M.Typography>
@@ -124,7 +124,7 @@ export default function TaskWorkspace() {
                       </M.Stack>
                       <M.Typography variant="body2" color="text.secondary">
                         {group.statistics.file_count} files, {group.statistics.total_samples} samples
-                        {task.database_metadata?.hdf5_structure[group.name] && (
+                        {task.database_metadata?.hdf5_structure?.[group.name] && (
                           <span> (DB: {task.database_metadata.hdf5_structure[group.name].samples} samples)</span>
                         )}
                       </M.Typography>

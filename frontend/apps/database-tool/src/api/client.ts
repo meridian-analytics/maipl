@@ -51,7 +51,12 @@ export const createDatabaseTaskApi = (client: MR.t_client) => ({
 
   // Create group within task
   async createGroup(taskId: number, groupConfig: API.DatabaseTask.t_group_create_request): Promise<API.DatabaseTask.t_group> {
-    return API.DatabaseTask.createGroup(client, taskId, groupConfig)
+    // Backend expects task field in request body
+    const requestWithTask = {
+      task: taskId,
+      ...groupConfig
+    }
+    return API.DatabaseTask.createGroup(client, taskId, requestWithTask)
   },
 
   // List groups within task
