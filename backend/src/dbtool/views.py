@@ -21,6 +21,7 @@ from .serializers import (
 )
 
 
+
 class DatabaseTaskListView(CreateListModelMixin, SortableMixin, DeleteByIdsMixin, generics.ListCreateAPIView):
     """List and create database tasks."""
     
@@ -170,7 +171,7 @@ class DatabaseTaskGroupsView(generics.ListCreateAPIView):
         return DatabaseGroupSerializer
     
     def perform_create(self, serializer):
-        """Set the task for the group being created."""
+        """Create the group - processing starts automatically via signal."""
         task_id = self.kwargs.get('task_id')
         task = DatabaseTask.objects.get(id=task_id, user=self.request.user.id)
         serializer.save(task=task)
@@ -225,26 +226,94 @@ class DatabaseTaskStatisticsView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         
+        # Calculate statistics directly
+        groups = task.groups.all()
+        
+        total_files = sum(group.file_count for group in groups)
+        total_samples = sum(group.total_samples for group in groups)
+        total_labels = sum(group.label_count for group in groups)
+        
+        status_counts = {}
+        for group in groups:
+            status = group.status
+            status_counts[status] = status_counts.get(status, 0) + 1
+        
         statistics = {
-            'task_id': task.id,
+            'task_id': task_id,
             'task_name': task.task_name,
             'status': task.status,
-            'groups_count': task.groups_count,
-            'total_samples': task.total_samples,
-            'groups': []
+            'total_groups': len(groups),
+            'total_files': total_files,
+            'total_samples': total_samples,
+            'total_labels': total_labels,
+            'status_counts': status_counts,
+            'database_metadata': task.database_metadata,
         }
         
-        # Add statistics for each group
-        for group in task.groups.all():
-            group_stats = {
-                'id': group.id,
-                'name': group.name,
-                'status': group.status,
-                'source': group.source,
-                'file_count': group.file_count,
-                'label_count': group.label_count,
-                'total_samples': group.total_samples,
-            }
-            statistics['groups'].append(group_stats)
-        
         return Response(statistics, status=status.HTTP_200_OK)
+
+
+class DatabaseGroupProcessingView(APIView):
+    """Manage database group processing operations."""
+    
+    def post(self, request, task_id, group_id):
+        """Start or restart processing for a specific group."""
+        try:
+            # Verify the group belongs to the user's task
+            group = DatabaseGroup.objects.get(
+                id=group_id, 
+                task_id=task_id, 
+                task__user=request.user.id
+            )
+        except DatabaseGroup.DoesNotExist:
+            return Response(
+                {"error": "Database group not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Start processing using model method
+        celery_task_id = group.start_processing()
+        
+        if celery_task_id:
+            return Response({
+                "message": "Processing started successfully",
+                "celery_task_id": celery_task_id,
+                "group_id": group_id
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {"error": "Failed to start processing"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def delete(self, request, task_id, group_id):
+        """Cancel processing for a specific group."""
+        try:
+            # Verify the group belongs to the user's task
+            group = DatabaseGroup.objects.get(
+                id=group_id, 
+                task_id=task_id, 
+                task__user=request.user.id
+            )
+        except DatabaseGroup.DoesNotExist:
+            return Response(
+                {"error": "Database group not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Cancel processing using model method
+        success = group.cancel_processing()
+        
+        if success:
+            return Response({
+                "message": "Processing cancelled successfully",
+                "group_id": group_id
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {"error": "Failed to cancel processing"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+

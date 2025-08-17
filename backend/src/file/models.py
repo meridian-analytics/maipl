@@ -165,10 +165,15 @@ def delete_file(sender, instance, **kwargs):
 
 @receiver(post_save, sender=File)
 def handle_h5_file_meta_post_save(sender, instance, **kwargs):
-    # Only trigger if this is a new file or if the file field was updated
+    # Only trigger if this is a new file that uploaded by the user
     update_fields = kwargs.get('update_fields', []) or []
-    if instance.file and instance.file.name and instance.file.name.endswith('.h5') and (kwargs.get('created', False) or 'file' in update_fields):
+    if (instance.file and instance.file.name and instance.file.name.endswith('.h5') and 
+        (kwargs.get('created', False) or 'file' in update_fields) and 
+        instance.meta is None):
         from .tasks import update_meta_from_h5_file
+        # set the meta to 'processing' to avoid race condition
+        instance.meta = {'processing': True}
+        instance.save(update_fields=['meta'])
         update_meta_from_h5_file.delay(instance.id)
     
     
