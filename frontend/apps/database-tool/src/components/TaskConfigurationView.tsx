@@ -89,14 +89,21 @@ export default function TaskConfigurationView({ task }: TaskConfigurationViewPro
             </M.Typography>
             <M.Stack spacing={1}>
               <M.Typography variant="body2">
-                <strong>Filename:</strong> {task.database_file.filename}
+                <strong>Database File ID:</strong> {String(task.database_file)}
               </M.Typography>
-              <M.Typography variant="body2">
-                <strong>Size:</strong> {formatFileSize(task.database_file.size)}
-              </M.Typography>
-              <M.Typography variant="body2">
-                <strong>Created:</strong> {formatDate(task.database_file.created_at)}
-              </M.Typography>
+              {task.groups && task.groups.length > 0 && task.groups[0].statistics && (
+                <>
+                  <M.Typography variant="body2">
+                    <strong>Output Filename:</strong> {task.groups[0].statistics.output_path?.split('/').pop() || 'N/A'}
+                  </M.Typography>
+                  <M.Typography variant="body2">
+                    <strong>File Size:</strong> {formatFileSize(task.groups[0].statistics.file_size || 0)}
+                  </M.Typography>
+                  <M.Typography variant="body2">
+                    <strong>Processed At:</strong> {task.groups[0].statistics.processed_at ? formatDate(task.groups[0].statistics.processed_at) : 'N/A'}
+                  </M.Typography>
+                </>
+              )}
             </M.Stack>
           </M.Box>
         )}
@@ -125,36 +132,37 @@ export default function TaskConfigurationView({ task }: TaskConfigurationViewPro
         <M.Divider />
 
         {/* Database Metadata */}
-        {task.database_metadata && (
-          <M.Box>
-            <M.Typography variant="subtitle2" color="primary" gutterBottom>
-              Database Metadata
+        <M.Box>
+          <M.Typography variant="subtitle2" color="primary" gutterBottom>
+            Database Metadata
+          </M.Typography>
+          <M.Stack spacing={1}>
+            <M.Typography variant="body2">
+              <strong>Total Samples:</strong> {task.database_metadata?.total_samples || 0}
             </M.Typography>
-            <M.Stack spacing={1}>
-              <M.Typography variant="body2">
-                <strong>Total Samples:</strong> {task.database_metadata.total_samples}
-              </M.Typography>
-              <M.Typography variant="body2">
-                <strong>Groups:</strong> {task.database_metadata.groups?.length || 0}
-              </M.Typography>
-              {task.database_metadata.groups && task.database_metadata.groups.length > 0 && (
-                <M.Stack spacing={0.5}>
-                  <M.Typography variant="body2" color="text.secondary">
-                    <strong>Group Details:</strong>
-                  </M.Typography>
-                  {task.database_metadata.groups.map(groupPath => {
-                    const groupInfo = task.database_metadata?.hdf5_structure?.[groupPath]
-                    return (
-                      <M.Typography key={groupPath} variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                        • {groupPath}: {groupInfo?.samples || 0} samples
-                      </M.Typography>
-                    )
-                  })}
-                </M.Stack>
-              )}
-            </M.Stack>
-          </M.Box>
-        )}
+            <M.Typography variant="body2">
+              <strong>Total Groups:</strong> {task.database_metadata?.groups?.length || 0}
+            </M.Typography>
+            
+            {/* All Groups with Proper Labeling */}
+            {task.database_metadata?.groups && task.database_metadata.groups.length > 0 && (
+              <M.Stack spacing={0.5}>
+                <M.Typography variant="body2" color="text.secondary">
+                  <strong>All Groups:</strong>
+                </M.Typography>
+                {task.database_metadata.groups.map(groupPath => {
+                  const platformGroup = task.groups?.find(g => g.name === groupPath)
+                  return (
+                    <M.Typography key={groupPath} variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                      • {groupPath}: {task.database_metadata?.hdf5_structure?.[groupPath]?.samples || 0} samples
+                      {platformGroup ? ` (${platformGroup.status})` : ' (uploaded)'}
+                    </M.Typography>
+                  )
+                })}
+              </M.Stack>
+            )}
+          </M.Stack>
+        </M.Box>
       </M.Stack>
     </M.Paper>
   )

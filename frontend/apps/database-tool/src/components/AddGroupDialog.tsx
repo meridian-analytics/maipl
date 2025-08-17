@@ -6,9 +6,9 @@ import * as RQ from "@tanstack/react-query"
 import * as MR from "@maipl/react"
 import { File } from "@maipl/api"
 import * as API from "@maipl/api"
-import type { DatabaseTask, GroupConfig } from "../types"
+import type { DatabaseTask } from "../types"
 import { createDatabaseTaskApi } from "../api/client"
-import { validateGroupName, getExistingGroups, trimGroupName } from "../utils/databaseMetadata"
+import { validateGroupName, trimGroupName } from "../utils/databaseMetadata"
 
 enum Tab {
   audio_files = "audio_files",
@@ -58,6 +58,10 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
       annotation_step: 0.5,
       step_min_overlap: 0.7,
       only_augmented: false
+    },
+    random_selections: {
+      num_samples: 100,
+      label: 0
     }
   })
 
@@ -125,14 +129,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
     initialData: new Map<number, File.t>(),
   })
 
-  function optionsForAudioConfigFiles(files: Map<number, File.t>): Record<string, string> {
-    return Object.fromEntries(
-      Array.from(
-        files.values(),
-        (f) => [`${f.maipl_folder}/${f.path}`, String(f.id)] as const
-      ).sort((a, b) => a[0].localeCompare(b[0]))
-    )
-  }
+
 
   // Set folder to audio_files when dialog opens
   R.useEffect(() => {
@@ -253,10 +250,16 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
           annotation_step: 0.5,
           step_min_overlap: 0.7,
           only_augmented: false
+        },
+        random_selections: {
+          num_samples: 100,
+          label: 0
         }
       })
       setSelection(new Map())
       setAnnotationSelection(new Map())
+      setActiveTab(Tab.audio_files)
+      onClose() // Close the dialog after successful group creation
     },
     onError: (error) => {
       console.error('Add group error:', error)
@@ -289,28 +292,38 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
           annotation_step: 0.5,
           step_min_overlap: 0.7,
           only_augmented: false
+        },
+        random_selections: {
+          num_samples: 100,
+          label: 0
         }
       })
       setSelection(new Map())
       setAnnotationSelection(new Map())
+      setActiveTab(Tab.audio_files)
     }
   }
 
-  // Determine processing mode first
-  const processingMode = formData.annotations ? "annotations" : "random"
+  // Determine processing mode - default to random mode initially
+  const processingMode = (formData.annotations?.file_id && formData.annotations.file_id > 0) ? "annotations" : "random"
   const isAnnotationMode = processingMode === "annotations"
 
   // Validation
-  const existingGroups = getExistingGroups(task.database_metadata)
+  const existingGroups = task.groups?.map(group => group.name) || []
   const nameValidation = validateGroupName(formData.name, existingGroups)
   const hasAudioFiles = formData.audio_file_ids.length > 0
   const hasAudioConfig = formData.audio_representation_config_id > 0
   
   // We always need audio files, audio config, and the specific configuration for the selected mode
   const isFormValid = nameValidation.isValid && hasAudioFiles && hasAudioConfig && (
-    (processingMode === "annotations" && formData.annotations?.file_id) ||
-    (processingMode === "random" && formData.random_selections?.num_samples)
+    (processingMode === "annotations" && formData.annotations?.file_id && formData.annotations.file_id > 0) ||
+    (processingMode === "random" && formData.random_selections?.num_samples && 
+     (formData.random_selections.num_samples === "same" || 
+      (typeof formData.random_selections.num_samples === "number" && formData.random_selections.num_samples > 0)) &&
+     formData.random_selections?.label !== undefined && formData.random_selections.label >= 0)
   )
+  
+
 
   return (
     <M.Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
@@ -503,28 +516,78 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
                   </M.Typography>
 
                   {formData.annotations?.file_id && (
-                    <M.TextField
-                      label="Labels (comma-separated key=value pairs)"
-                      placeholder="background=0,upcall=1,grunt=2"
-                      fullWidth
-                      helperText="Map annotation labels to numeric values for ML training. Format: label=number,label=number"
-                      onChange={(e) => {
-                        const labels: Record<string, number> = {}
-                        e.target.value.split(',').forEach(pair => {
-                          const [key, value] = pair.trim().split('=')
-                          if (key && value) {
-                            labels[key.trim()] = parseInt(value.trim())
-                          }
-                        })
-                        setFormData(prev => ({
+                    <M.Stack spacing={2}>
+                      <M.TextField
+                        label="Labels (comma-separated key=value pairs)"
+                        placeholder="background=0,upcall=1,grunt=2"
+                        fullWidth
+                        helperText="Map annotation labels to numeric values for ML training. Format: label=number,label=number"
+                        onChange={(e) => {
+                          const labels: Record<string, number> = {}
+                          e.target.value.split(',').forEach(pair => {
+                            const [key, value] = pair.trim().split('=')
+                            if (key && value) {
+                              labels[key.trim()] = parseInt(value.trim())
+                            }
+                          })
+                          setFormData(prev => ({
+                            ...prev,
+                            annotations: {
+                              ...prev.annotations!,
+                              labels
+                            }
+                          }))
+                        }}
+                      />
+                      
+                      <M.TextField
+                        label="Annotation Step (seconds)"
+                        type="number"
+                        value={formData.annotations.annotation_step}
+                        onChange={(e) => setFormData(prev => ({
                           ...prev,
                           annotations: {
                             ...prev.annotations!,
-                            labels
+                            annotation_step: parseFloat(e.target.value) || 0.5
                           }
-                        }))
-                      }}
-                    />
+                        }))}
+                        inputProps={{ min: 0.1, step: 0.1 }}
+                        fullWidth
+                        helperText="Time step between annotation windows (optional, default: 0.5s)"
+                      />
+                      
+                      <M.TextField
+                        label="Minimum Overlap Ratio"
+                        type="number"
+                        value={formData.annotations.step_min_overlap}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          annotations: {
+                            ...prev.annotations!,
+                            step_min_overlap: parseFloat(e.target.value) || 0.7
+                          }
+                        }))}
+                        inputProps={{ min: 0.1, max: 0.9, step: 0.1 }}
+                        fullWidth
+                        helperText="Minimum overlap between consecutive windows (optional, default: 0.7)"
+                      />
+                      
+                      <M.FormControlLabel
+                        control={
+                          <M.Checkbox
+                            checked={formData.annotations.only_augmented}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              annotations: {
+                                ...prev.annotations!,
+                                only_augmented: e.target.checked
+                              }
+                            }))}
+                          />
+                        }
+                        label="Only process augmented audio files (optional)"
+                      />
+                    </M.Stack>
                   )}
                 </M.Stack>
               )}
@@ -554,18 +617,36 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
                   />
                   
                   <M.TextField
-                    label="Label"
+                    label="Label *"
                     type="number"
-                    value={formData.random_selections?.label || ""}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      random_selections: {
-                        ...prev.random_selections,
-                        label: parseInt(e.target.value) || 0
+                    required
+                    inputProps={{ min: 0 }}
+                    value={formData.random_selections?.label !== undefined ? formData.random_selections.label : ""}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      let numValue: number
+                      if (value === "") {
+                        numValue = 0
+                      } else {
+                        const parsed = parseInt(value)
+                        numValue = isNaN(parsed) ? 0 : parsed
                       }
-                    }))}
+                      console.log('Label field change:', { value, numValue, currentLabel: formData.random_selections?.label })
+                      setFormData(prev => ({
+                        ...prev,
+                        random_selections: {
+                          ...prev.random_selections!,
+                          label: numValue
+                        }
+                      }))
+                    }}
                     fullWidth
-                    helperText="Label to assign to all randomly selected samples"
+                    error={formData.random_selections?.label === undefined || formData.random_selections.label < 0}
+                    helperText={
+                      formData.random_selections?.label === undefined || formData.random_selections.label < 0
+                        ? "Label must be 0 or a positive number"
+                        : "Label to assign to all randomly selected samples (0 or positive number)"
+                    }
                   />
 
                   <M.TextField

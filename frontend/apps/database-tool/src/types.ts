@@ -26,11 +26,17 @@ export interface DatabaseTask {
     custom_module_id?: number
     seed?: number
   }
-  // H5 Database metadata tracking
+  // Database file reference (the actual metadata is in the database file itself)
+  database_file?: number
+  // Database metadata from existing database files
   database_metadata?: {
-    hdf5_structure: Record<string, Record<string, string>>
-    total_samples: number
     groups: string[]
+    total_samples: number
+    hdf5_structure: Record<string, {
+      samples: number
+      datasets: Record<string, string>
+    }>
+    group_hierarchy?: Record<string, string[]>
   }
   // Celery task ID for processing
   celery_task_id?: string
@@ -44,9 +50,23 @@ export interface DatabaseGroup {
   source: "new_group" | "existing_database"
   config?: GroupConfig
   statistics: {
-    file_count: number
-    label_count: number
+    status: string
+    task_id: number
+    datasets: Record<string, string>
+    group_id: number
+    file_size: number
+    local_path: string
+    output_path: string
+    processed_at: string
     total_samples: number
+    processed_files: number
+    processing_time: number
+    database_file_id: number
+    upload_successful: boolean
+    command_successful: boolean
+    processing_successful: boolean
+    file_count?: number
+    label_count?: number
   }
   // Celery task ID for processing
   celery_task_id?: string

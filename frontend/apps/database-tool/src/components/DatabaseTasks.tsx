@@ -42,7 +42,7 @@ function useQuery() {
   return RQ.useQuery({
     queryKey: ['database-tasks'],
     queryFn: () => databaseTaskApi.getTasks(),
-    initialData: { data: [], count: 0, next: null, previous: null }
+    initialData: { data: [], count: 0, next: null, prev: null, page: 1, size: 25 }
   })
 }
 
@@ -54,18 +54,13 @@ const Table = BaseTable([
     id: "database_file",
     header: "Database File",
     size: 180,
-    cell: info => info.row.original.database_file?.filename || 'No database file'
+    cell: info => info.row.original.database_file ? `ID: ${info.row.original.database_file}` : 'No database file'
   }),
   column.display({
     id: "groups",
     header: "Groups",
     size: 100,
-    cell: info => {
-      const groups = info.row.original.groups
-      const metadataGroups = info.row.original.database_metadata?.groups
-      // Use groups array if available, otherwise fall back to metadata groups
-      return groups?.length || metadataGroups?.length || 0
-    }
+    cell: info => info.row.original.database_metadata?.groups?.length || 0
   }),
   column.display({
     id: "total_samples",
@@ -73,7 +68,7 @@ const Table = BaseTable([
     size: 120,
     cell: info => info.row.original.database_metadata?.total_samples || 0
   }),
-  column.accessor("created_at", { header: "Created", size: 120, cell: info => F.fuzzyTime(info.getValue()) }),
+  column.accessor("created_at", { header: "Created", size: 120, cell: info => F.fuzzyTime(new Date(info.getValue())) }),
   column.accessor("status", { header: "Status", size: 120, cell: info => (
     <M.Stack width={100}> <TaskStatus status={info.getValue()} /> </M.Stack>
   )}),
