@@ -149,6 +149,7 @@ def process_database_group(self, task_id: int, group_id: int) -> Dict[str, Any]:
         # Step 3: Download files and create symbolic links
         download_audio_files(task_context, file_utils)
         download_config_file(task_context, file_utils)
+        download_annotation_file(task_context, file_utils)
         download_database_file(task_context, file_utils)
         
         # Log completion of setup phase
@@ -158,6 +159,7 @@ def process_database_group(self, task_id: int, group_id: int) -> Dict[str, Any]:
             f"Group ID: {group_id}",
             f"Audio files: {len(os.listdir(os.path.join(local_path, f'audio_{group_id}')))} files",
             f"Audio representation config file: {'config' if os.path.exists(os.path.join(local_path, f'config_{group_id}')) else 'None'}",
+            f"Annotation file: {'annotation' if os.path.exists(os.path.join(local_path, f'annotation_{group_id}')) else 'None'}",
             f"Database file: {'database' if os.path.exists(os.path.join(local_path, 'database')) else 'None'}",
             "\n"
         ])
@@ -333,6 +335,64 @@ def download_config_file(task_context: Dict[str, Any], file_utils: FileUtils) ->
         dbtool_logger.error(f"Audio representation config file {config_file_id} not found in database")
     except Exception as e:
         dbtool_logger.error(f"Error downloading audio representation config file {config_file_id}: {e}")
+
+
+def download_annotation_file(task_context: Dict[str, Any], file_utils: FileUtils) -> None:
+    """
+    Download annotation file and create symbolic link in annotation folder.
+    
+    Args:
+        task_context: Dictionary containing task context
+        file_utils: FileUtils instance for file operations
+    """
+    group = task_context["group"]
+    local_path = task_context["local_path"]
+    console_output_file = task_context["console_output_file"]
+    
+    # Get annotation file ID from group config
+    config = group.config
+    annotations_file_id = config.get('annotations', {}).get('file_id')
+    
+    if not annotations_file_id:
+        # No annotations file to download
+        return
+    
+    try:
+        # Get file instance
+        file_instance = File.objects.get(id=annotations_file_id)
+        
+        # Download file to NFS server
+        downloaded_path = file_utils.download_file(annotations_file_id)
+        if not downloaded_path:
+            dbtool_logger.error(f"Failed to download annotation file {annotations_file_id}")
+            return
+        
+        # Create group-specific annotation directory
+        annotation_dir = os.path.join(local_path, f"annotation_{group.id}")
+        os.makedirs(annotation_dir, exist_ok=True)
+        
+        # Create symbolic link
+        target_path = os.path.join(annotation_dir, file_instance.basename)
+        if os.path.exists(target_path):
+            os.remove(target_path)  # Remove existing link if present
+        
+        os.symlink(downloaded_path, target_path)
+        
+        dbtool_logger.info(f"Downloaded and symlinked annotation file: {target_path}")
+        
+        # Write annotation file info to console output
+        file_utils.write_to_console(console_output_file, [
+            "Annotation file downloaded and symlinked:",
+            f"  - {file_instance.basename}",
+            "\n"
+        ])
+        
+        task_context["annotation_dir"] = annotation_dir
+        
+    except File.DoesNotExist:
+        dbtool_logger.error(f"Annotation file {annotations_file_id} not found in database")
+    except Exception as e:
+        dbtool_logger.error(f"Error downloading annotation file {annotations_file_id}: {e}")
 
 
 def create_group_console_output_file(task: DatabaseTask, group: DatabaseGroup, local_path: str) -> Optional[str]:
@@ -754,6 +814,11 @@ def construct_ketos_create_db_command(task_context: Dict[str, Any], output_path:
     """
     Construct the ketos-create-db command based on task configuration.
     
+    Working Directory Strategy:
+    - Command will be executed from the task root directory (e.g., /tasks/database/21/)
+    - All paths in the command are relative to the task root
+    - This allows ketos-create-db to properly resolve CSV filename paths relative to the audio directory
+    
     Args:
         task_context: Dictionary containing task context
         output_path: Path where the output database should be saved
@@ -767,13 +832,17 @@ def construct_ketos_create_db_command(task_context: Dict[str, Any], output_path:
     # Base command
     command = ['ketos-create-db']
     
-    # Add audio directory
+    # Add audio directory (relative to task root)
     audio_dir = task_context.get("audio_dir")
     if not audio_dir:
         raise Exception("Audio directory not found in task context. This usually means the audio files download failed or the group has no audio files configured.")
-    command.append(audio_dir)
     
-    # Add audio representation config file
+    # Get the relative path from task root to audio directory
+    task_root = task_context["local_path"]
+    audio_dir_rel = os.path.relpath(audio_dir, task_root)
+    command.append(audio_dir_rel)
+    
+    # Add audio representation config file (relative to task root)
     config_dir = task_context.get("config_dir")
     if not config_dir:
         raise Exception("Config directory not found in task context. This usually means the audio representation config file download failed or the group has no config file configured.")
@@ -784,7 +853,8 @@ def construct_ketos_create_db_command(task_context: Dict[str, Any], output_path:
         raise Exception(f"No config files found in config directory: {config_dir}")
     
     config_file_path = os.path.join(config_dir, config_files[0])
-    command.append(config_file_path)
+    config_file_rel = os.path.relpath(config_file_path, task_root)
+    command.append(config_file_rel)
     
     # Check if we have annotations or should use random selections
     config = group.config
@@ -793,19 +863,23 @@ def construct_ketos_create_db_command(task_context: Dict[str, Any], output_path:
     annotations_file_id = config.get('annotations', {}).get('file_id')
     
     if annotations_file_id:
-        # We have annotations - download and use them
-        file_utils = FileUtils()
-        annotations_path = file_utils.download_file(annotations_file_id)
-        if not annotations_path:
-            raise Exception(f"Failed to download annotations file {annotations_file_id}")
+        # We have annotations - use the downloaded file from annotation directory
+        annotation_dir = task_context.get("annotation_dir")
+        if not annotation_dir:
+            raise Exception("Annotation directory not found in task context. This usually means the annotation file download failed.")
         
-        command.extend(['--annotations', annotations_path])
+        # Get the annotation file path relative to task root
+        # The annotation file is in the annotation directory, so we need to include the filename
+        annotation_file_name = os.listdir(annotation_dir)[0]  # Get the first (and only) file
+        annotation_file_rel = os.path.join(os.path.relpath(annotation_dir, task_root), annotation_file_name)
+        command.extend(['--annotations', annotation_file_rel])
         
         # Add labels if specified
         labels = config.get('annotations', {}).get('labels', {})
         if labels:
-            labels_str = ' '.join([f"{k}={v}" for k, v in labels.items()])
-            command.extend(['--labels', labels_str])
+            # Pass each label separately to avoid parsing issues
+            for k, v in labels.items():
+                command.extend(['--labels', f"{k}={v}"])
         
         # Add annotation parameters
         annotation_step = config.get('annotations', {}).get('annotation_step', 0.5)
@@ -845,8 +919,10 @@ def construct_ketos_create_db_command(task_context: Dict[str, Any], output_path:
             file_utils = FileUtils()
             filename_filter_path = file_utils.download_file(filename_filter_file_id)
             if filename_filter_path:
-                command.append(filename_filter_path)
-                dbtool_logger.info(f"Added filename filter: {filename_filter_path}")
+                # Make filename filter path relative to task root
+                filename_filter_rel = os.path.relpath(filename_filter_path, task_root)
+                command.append(filename_filter_rel)
+                dbtool_logger.info(f"Added filename filter: {filename_filter_rel}")
             else:
                 dbtool_logger.warning(f"Failed to download filename filter file {filename_filter_file_id}")
     
@@ -856,13 +932,25 @@ def construct_ketos_create_db_command(task_context: Dict[str, Any], output_path:
         table_name = f"/{table_name}"
     command.extend(['--table_name', table_name])
     
-    # Add output path
-    command.extend(['--output', output_path])
+    # Add output path (relative to task root)
+    output_rel = os.path.relpath(output_path, task_root)
+    command.extend(['--output', output_rel])
     
     # Note: We don't specify --overwrite parameter, using default behavior
     # Default is --overwrite False, which means append to existing database
     # This is exactly what we want: preserve existing data and append new data
     dbtool_logger.info(f"Using default --overwrite False behavior (append to existing database)")
+    
+    # Log the final command for debugging
+    dbtool_logger.info(f"ketos-create-db command: {' '.join(command)}")
+    dbtool_logger.info(f"Working directory: {task_root}")
+    
+    # Log the directory structure for debugging
+    if annotations_file_id:
+        annotation_dir = task_context.get("annotation_dir")
+        if annotation_dir:
+            dbtool_logger.info(f"Annotation directory: {annotation_dir}")
+            dbtool_logger.info(f"Annotation files: {os.listdir(annotation_dir)}")
     
     # Add seed for reproducibility if specified
     seed = config.get('seed')
