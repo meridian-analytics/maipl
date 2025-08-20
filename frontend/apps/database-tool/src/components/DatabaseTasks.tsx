@@ -82,6 +82,8 @@ function TaskStatus(props: { status: DatabaseTask["status"] }) {
       return <M.Chip color="success" label="Completed" size="small" />
     case "failed":
       return <M.Chip color="error" label="Failed" size="small" />
+    case "error":
+      return <M.Chip color="error" label="Error" size="small" />
     case "in_progress":
       return <M.Chip color="warning" label="In Progress" size="small" />
     default:

@@ -27,7 +27,9 @@ function Layout() {
 }
 
 function TaskDetail() {
-  return <TaskWorkspace />
+  const params = RR.useParams()
+  const taskId = params['taskId']
+  return <TaskWorkspace taskId={taskId} />
 }
 
 const router: MR.t_router = () => [

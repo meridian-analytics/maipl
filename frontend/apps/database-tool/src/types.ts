@@ -4,7 +4,7 @@ export interface DatabaseTask {
   description: string
   created_at: string
   updated_at: string
-  status: "active" | "completed" | "failed" | "in_progress"
+  status: "active" | "completed" | "failed" | "error" | "in_progress"
   database_selection: {
     mode: "new_database" | "use_existing"
     database_file_id?: number
@@ -46,7 +46,7 @@ export interface DatabaseGroup {
   id: number
   name: string
   created_at: string
-  status: "completed" | "failed" | "in_progress" | "imported"
+  status: "completed" | "failed" | "error" | "in_progress" | "imported"
   source: "new_group" | "existing_database"
   config?: GroupConfig
   statistics: {

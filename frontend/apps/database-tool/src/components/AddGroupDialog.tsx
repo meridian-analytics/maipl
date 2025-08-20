@@ -233,8 +233,6 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
           avoid_annotations_file_id: data.avoid_annotations_file_id
         }
       }
-      console.log('Creating group with request:', request)
-      console.log('Task ID:', task.id)
       return databaseTaskApi.createGroup(task.id, request)
     },
     onSuccess: () => {

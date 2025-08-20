@@ -33,7 +33,7 @@ type t = {
     created_at: string
   }
   /** Groups within this task */
-  groups: DatabaseGroup[]
+  groups: t_group[]
   /** Output settings */
   output_settings: {
     database_filename: string
@@ -77,9 +77,23 @@ type t_group = {
   config?: GroupConfig
   /** Group statistics */
   statistics: {
-    file_count: number
-    label_count: number
+    status: string
+    task_id: number
+    datasets: Record<string, string>
+    group_id: number
+    file_size: number
+    local_path: string
+    output_path: string
+    processed_at: string
     total_samples: number
+    processed_files: number
+    processing_time: number
+    database_file_id: number
+    upload_successful: boolean
+    command_successful: boolean
+    processing_successful: boolean
+    file_count?: number
+    label_count?: number
   }
   /** Celery task ID for processing */
   celery_task_id?: string
@@ -220,6 +234,15 @@ type t_group_list_response = t_page<
   }
 >
 
+/** DatabaseGroup.t_log_response: group log response */
+type t_group_log_response = {
+  task_id: number
+  group_id: number
+  group_name: string
+  log_content: string
+  file_path: string
+}
+
 /** DatabaseTask.create: create a new database task */
 const create = async (client: Client.t, body: t_create_request): Promise<t> => {
   const response = await client
@@ -353,6 +376,16 @@ const getGroup = async (client: Client.t, taskId: number, groupId: number): Prom
   }
 }
 
+/** DatabaseGroup.getLog: get group log output within a task */
+const getGroupLog = async (client: Client.t, taskId: number, groupId: number): Promise<t_group_log_response> => {
+  const response = await client
+    .get<t_group_log_response>(
+      `${K.MAIPL_DATABASE_TOOL_BACKEND}/api/ketos/dbtool/tasks/${taskId}/groups/${groupId}/log/`
+    )
+    .then((r) => r.data)
+  return response
+}
+
 /** DatabaseGroup.update: update an existing group within a task */
 const updateGroup = (client: Client.t, taskId: number, groupId: number, body: t_group_update_request): Promise<void> => {
   return client.put(
@@ -470,6 +503,7 @@ export {
   type t_group_list_item,
   type t_group_list_request,
   type t_group_list_response,
+  type t_group_log_response,
   create,
   list,
   get,
@@ -480,6 +514,7 @@ export {
   createGroup,
   listGroups,
   getGroup,
+  getGroupLog,
   updateGroup,
   deleteGroup,
   updateGroupStatus,

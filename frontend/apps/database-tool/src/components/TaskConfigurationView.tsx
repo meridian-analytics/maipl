@@ -32,13 +32,9 @@ export default function TaskConfigurationView({ task }: TaskConfigurationViewPro
       <M.Typography variant="h6" gutterBottom>
         Task Configuration
       </M.Typography>
-      
       <M.Stack spacing={2}>
         {/* Task Details */}
         <M.Box>
-          <M.Typography variant="subtitle2" color="primary" gutterBottom>
-            Task Information
-          </M.Typography>
           <M.Stack spacing={1}>
             <M.Typography variant="body2">
               <strong>Created:</strong> {formatDate(task.created_at)}
@@ -52,7 +48,7 @@ export default function TaskConfigurationView({ task }: TaskConfigurationViewPro
                 label={task.status} 
                 size="small"
                 color={task.status === "completed" ? "success" : 
-                       task.status === "failed" ? "error" : 
+                       task.status === "failed" || task.status === "error" ? "error" : 
                        task.status === "in_progress" ? "warning" : "default"}
                 sx={{ ml: 1 }}
               />
@@ -64,9 +60,7 @@ export default function TaskConfigurationView({ task }: TaskConfigurationViewPro
 
         {/* Database Configuration */}
         <M.Box>
-          <M.Typography variant="subtitle2" color="primary" gutterBottom>
-            Database Configuration
-          </M.Typography>
+
           <M.Stack spacing={1}>
             <M.Typography variant="body2">
               <strong>Mode:</strong> {task.database_selection.mode === "new_database" ? "New Database" : "Existing Database"}

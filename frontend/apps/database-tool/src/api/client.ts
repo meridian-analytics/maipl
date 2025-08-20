@@ -1,5 +1,6 @@
 import * as API from "@maipl/api"
 import * as MR from "@maipl/react"
+import type { DatabaseTask } from "../types"
 
 // Create a function that returns the API with the authenticated client
 export const createDatabaseTaskApi = (client: MR.t_client) => ({
@@ -20,8 +21,10 @@ export const createDatabaseTaskApi = (client: MR.t_client) => ({
   },
 
   // Get single task by ID
-  async getTask(taskId: number): Promise<API.DatabaseTask.t> {
-    return API.DatabaseTask.get(client, taskId)
+  async getTask(taskId: number): Promise<DatabaseTask> {
+    const apiTask = await API.DatabaseTask.get(client, taskId)
+    // The API already returns strings for dates, so we can use them directly
+    return apiTask as unknown as DatabaseTask
   },
 
   // Create new task
@@ -67,6 +70,11 @@ export const createDatabaseTaskApi = (client: MR.t_client) => ({
   // Get group details within task
   async getGroup(taskId: number, groupId: number): Promise<API.DatabaseTask.t_group> {
     return API.DatabaseTask.getGroup(client, taskId, groupId)
+  },
+
+  // Get group log within task
+  async getGroupLog(taskId: number, groupId: number): Promise<API.DatabaseTask.t_group_log_response> {
+    return API.DatabaseTask.getGroupLog(client, taskId, groupId)
   },
 
   // Update group within task
