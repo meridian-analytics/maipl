@@ -15,8 +15,22 @@ import type {
 import { UploadStatus as UploadStatusChip } from "./UploadStatus"
 import { ActionButton } from "./ActionButton"
 
-const column = RT.createColumnHelper<FileState>()
-const AcceptedFiles = MR.Table<FileState, string>()
+// Type for table rows with cleaned paths
+type TableRow = {
+  id: string
+  name: string
+  path: string
+  size: number
+  status: string
+}
+
+const column = RT.createColumnHelper<TableRow>()
+const AcceptedFiles = MR.Table<TableRow, string>()
+
+// Helper function to clean file paths by removing leading slash and ./ prefix
+function cleanPath(path: string): string {
+  return path.replace(/^[\/\.]+/, '')
+}
 
 // Add this helper function at the top level
 async function processQueue<T>(
@@ -84,7 +98,7 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
   const sortedFiles = R.useMemo(
     () =>
       [...props.files].sort((a, b) =>
-        (a.path ?? a.name).localeCompare(b.path ?? b.name)
+        (a.path ?? a.name).replace(/^\//, '').localeCompare((b.path ?? b.name).replace(/^\//, ''))
       ),
     [props.files]
   )
@@ -100,13 +114,13 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
   const uploadMutation = RQ.useMutation({
     mutationFn: async () => {
       const filesToUpload = sortedFiles.filter((file) =>
-        table.selection.has(file.path ?? file.name)
+        table.selection.has(cleanPath(file.path ?? file.name))
       )
 
       return processQueue(
         filesToUpload,
         (file) => {
-          const path = file.path ?? file.name
+          const path = cleanPath(file.path ?? file.name)
           setActionStates((states) => {
             const newStates = new Map(states)
             newStates.set(path, "uploading")
@@ -281,7 +295,7 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
   const uploadSingleFile = R.useCallback(
     async (file: DZ.FileWithPath) => {
       const controller = new AbortController()
-      const path = file.path ?? file.name
+      const path = cleanPath(file.path ?? file.name)
 
       // Initialize upload status
       setStatus((status) => {
@@ -403,7 +417,7 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
   // Update handleRetry to be simpler
   const handleRetry = R.useCallback(
     (path: string) => {
-      const file = sortedFiles.find((f) => (f.path ?? f.name) === path)
+      const file = sortedFiles.find((f) => cleanPath(f.path ?? f.name) === path)
       if (file) {
         setActionStates((states) => {
           const newStates = new Map(states)
@@ -560,7 +574,7 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
     setActionStates((states) => {
       const newStates = new Map(states)
       sortedFiles.forEach((file) => {
-        const path = file.path ?? file.name
+        const path = cleanPath(file.path ?? file.name)
         if (states.get(path) === "uploading") {
           newStates.set(path, "cancelled")
         }
@@ -570,7 +584,7 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
     setStatus((status) => {
       const newStatus = new Map(status)
       sortedFiles.forEach((file) => {
-        const path = file.path ?? file.name
+        const path = cleanPath(file.path ?? file.name)
         if (status.get(path)?.status === "uploading") {
           newStatus.set(path, { status: "cancelled" })
         }
@@ -588,7 +602,7 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
           children={`${table.selection.size} files to be uploaded (${F.filesize(
             props.files.reduce(
               (r, f) =>
-                table.selection.has(f.path ?? f.name) ? r + f.size : r,
+                table.selection.has(cleanPath(f.path ?? f.name)) ? r + f.size : r,
               0
             )
           )})`}
@@ -598,15 +612,16 @@ export function FileUploadStep2(props: FileUploadStep2Props) {
           {...table}
           columns={columns}
           rows={sortedFiles.map((file) => {
-            const fileStatus = status.get(file.path ?? file.name)
+            const cleanFilePath = cleanPath(file.path ?? file.name)
+            const fileStatus = status.get(cleanFilePath)
             return {
-              id: file.path ?? file.name,
+              id: cleanFilePath,
               name: file.name,
-              path: file.path ?? file.name,
+              path: cleanFilePath,
               size: file.size,
               status:
                 fileStatus?.status ??
-                (table.selection.has(file.path ?? file.name)
+                (table.selection.has(cleanFilePath)
                   ? "pending"
                   : "none"),
             }

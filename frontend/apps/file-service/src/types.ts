@@ -38,6 +38,7 @@ export type ActionState =
   | "cancelled" // Upload cancelled
   | "error"     // Upload failed
   | "duplicate" // File already exists
+  | "timeout"   // Upload timed out
   | "ok"        // Upload completed
 
 // Props for the main FileUpload component
