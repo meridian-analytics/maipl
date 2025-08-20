@@ -218,6 +218,28 @@ class FileUtils:
             self.logger.error(f"Failed to write to console file: {e}")
             return False
 
+    def read_console_output(self, console_file: str) -> Optional[str]:
+        """
+        Reads the content of a console output file.
+        
+        Args:
+            console_file: Path to the console output file
+            
+        Returns:
+            str: Content of the console output file if successful, None otherwise
+        """
+        if not os.path.exists(console_file):
+            self.logger.error(f"Console file does not exist: {console_file}")
+            return None
+            
+        try:
+            with open(console_file, "r") as f:
+                content = f.read()
+            return content
+        except Exception as e:
+            self.logger.error(f"Failed to read console file: {e}")
+            return None
+
 # Create a singleton instance
 _file_utils = FileUtils()
 
@@ -235,3 +257,6 @@ def create_console_output_file(task) -> str:
 
 def write_to_console(console_file, lines):
     return _file_utils.write_to_console(console_file, lines)
+
+def read_console_output(console_file):
+    return _file_utils.read_console_output(console_file)

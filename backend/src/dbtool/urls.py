@@ -12,6 +12,7 @@ from .views import (
     DatabaseTaskGroupsDetailView,
     DatabaseTaskGroupsStatusView,
     DatabaseGroupProcessingView,
+    DatabaseGroupLogView,
 )
 
 app_name = 'dbtool'
@@ -34,4 +35,5 @@ urlpatterns = [
     path('tasks/<int:task_id>/groups/<int:pk>/', DatabaseTaskGroupsDetailView.as_view(), name='task-group-detail'),
     path('tasks/<int:task_id>/groups/<int:pk>/status/', DatabaseTaskGroupsStatusView.as_view(), name='task-group-status'),
     path('tasks/<int:task_id>/groups/<int:group_id>/processing/', DatabaseGroupProcessingView.as_view(), name='task-group-processing'),
+    path('tasks/<int:task_id>/groups/<int:group_id>/log/', DatabaseGroupLogView.as_view(), name='task-group-log'),
 ] 

@@ -19,6 +19,7 @@ class DatabaseTask(models.Model):
         ('completed', 'Completed'),
         ('failed', 'Failed'),
         ('in_progress', 'In Progress'),
+        ('error', 'Error'),
     ]
     
     DATABASE_SELECTION_MODE = [
@@ -134,6 +135,7 @@ class DatabaseGroup(models.Model):
         ('failed', 'Failed'),
         ('in_progress', 'In Progress'),
         ('imported', 'Imported'),
+        ('error', 'Error'),
     ]
     
     GROUP_SOURCE = [

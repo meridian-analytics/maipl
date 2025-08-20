@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import os
 
 from common.pagination import MaiplPagination
 from common.shared_mixins import CreateListModelMixin, DeleteByIdsMixin
@@ -19,7 +20,6 @@ from .serializers import (
     DatabaseGroupStatusUpdateSerializer,
     DatabaseGroupSummarySerializer,
 )
-
 
 
 class DatabaseTaskListView(CreateListModelMixin, SortableMixin, DeleteByIdsMixin, generics.ListCreateAPIView):
@@ -312,6 +312,74 @@ class DatabaseGroupProcessingView(APIView):
         else:
             return Response(
                 {"error": "Failed to cancel processing"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class DatabaseGroupLogView(APIView):
+    """Serve log files for database groups."""
+    
+    def get(self, request, task_id, group_id):
+        """Get the log content for a specific group."""
+        try:
+            # Verify the group belongs to the user's task
+            group = DatabaseGroup.objects.get(
+                id=group_id, 
+                task_id=task_id, 
+                task__user=request.user.id
+            )
+        except DatabaseGroup.DoesNotExist:
+            return Response(
+                {"error": "Database group not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get the task to access local_path
+        task = group.task
+        
+        if not task.local_path:
+            return Response(
+                {"error": "Task has no local path set"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Construct the path to the group's console output file
+        console_file_path = os.path.join(
+            task.local_path, 
+            "console_output", 
+            str(group_id), 
+            "console.txt"
+        )
+        
+        # Check if the console output file exists
+        if not os.path.exists(console_file_path):
+            return Response(
+                {"error": "Log file not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        try:
+            # Read the console output file
+            from common.file_utils import read_console_output
+            log_content = read_console_output(console_file_path)
+            
+            if log_content is None:
+                return Response(
+                    {"error": "Failed to read log file"}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            return Response({
+                "task_id": task_id,
+                "group_id": group_id,
+                "group_name": group.name,
+                "log_content": log_content,
+                "file_path": console_file_path
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Error reading log file: {str(e)}"}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

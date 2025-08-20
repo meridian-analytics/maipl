@@ -6,6 +6,11 @@ from typing import Optional, Dict, Any
 import time
 import hashlib
 
+
+class ValidationError(Exception):
+    """Custom exception for validation failures that should not trigger task retries."""
+    pass
+
 from celery import shared_task
 from django.db import transaction
 from django.utils import timezone
@@ -164,7 +169,21 @@ def process_database_group(self, task_id: int, group_id: int) -> Dict[str, Any]:
             "\n"
         ])
         
-        # Step 4: Implement actual database processing logic
+        # Step 4: Validate annotation files exist in audio folder
+        # This prevents the task from failing later with file not found errors
+        validation_successful = validate_annotation_files_exist(task_context, file_utils)
+        if not validation_successful:
+            error_msg = "Annotation file validation failed - some audio files referenced in CSV are missing from audio folder"
+            file_utils.write_to_console(console_output_file, [
+                "TASK TERMINATED: Annotation file validation failed",
+                "Please check the console output above for details on missing files",
+                "Fix the missing files and retry the task",
+                "\n"
+            ])
+            update_task_and_group_status(task_id, group_id, 'error', 'error')
+            raise ValidationError(error_msg)
+        
+        # Step 5: Implement actual database processing logic
         # This involves:
         # 1. Creating the output directory
         # 2. Handling existing vs. new database scenarios
@@ -188,6 +207,20 @@ def process_database_group(self, task_id: int, group_id: int) -> Dict[str, Any]:
         dbtool_logger.error(error_msg)
         update_task_and_group_status(task_id, group_id, 'failed', 'failed')
         raise self.retry(countdown=60, max_retries=3, exc=Exception(error_msg))
+        
+    except ValidationError as e:
+        # Validation errors should not trigger retries - task is already marked as 'error'
+        error_msg = f"Validation error for database group {group_id} in task {task_id}: {e}"
+        dbtool_logger.error(error_msg)
+        # Task status is already set to 'error' in the validation section
+        # Just return the error result without retrying
+        return {
+            'task_id': task_id,
+            'group_id': group_id,
+            'status': 'error',
+            'error': str(e),
+            'validation_failed': True
+        }
         
     except DatabaseGroup.DoesNotExist:
         error_msg = f"Database group {group_id} not found"
@@ -493,6 +526,159 @@ def download_database_file(task_context: Dict[str, Any], file_utils: FileUtils) 
         
     except Exception as e:
         dbtool_logger.error(f"Error downloading database file {task.database_file.id}: {e}")
+
+
+def validate_annotation_files_exist(task_context: Dict[str, Any], file_utils: FileUtils) -> bool:
+    """
+    Validate that all audio files referenced in the annotation CSV exist in the audio folder.
+    
+    Args:
+        task_context: Dictionary containing task context
+        file_utils: FileUtils instance for file operations
+        
+    Returns:
+        bool: True if all files exist, False if any are missing
+    """
+    group = task_context["group"]
+    local_path = task_context["local_path"]
+    console_output_file = task_context["console_output_file"]
+    audio_dir = task_context.get("audio_dir")
+    annotation_dir = task_context.get("annotation_dir")
+    
+    # Check if we have annotations to validate
+    config = group.config
+    annotations_file_id = config.get('annotations', {}).get('file_id')
+    
+    if not annotations_file_id or not annotation_dir or not audio_dir:
+        # No annotations to validate, or missing directories
+        dbtool_logger.info("No annotations to validate or missing directories")
+        return True
+    
+    try:
+        # Find the annotation file in the annotation directory
+        annotation_files = os.listdir(annotation_dir)
+        if not annotation_files:
+            dbtool_logger.error("No annotation files found in annotation directory")
+            return False
+        
+        annotation_file_path = os.path.join(annotation_dir, annotation_files[0])
+        
+        # Read the annotation CSV file
+        import csv
+        missing_files = []
+        
+        file_utils.write_to_console(console_output_file, [
+            "Validating annotation files...",
+            f"Annotation file: {annotation_file_path}",
+            f"Audio directory: {audio_dir}",
+            "\n"
+        ])
+        
+        with open(annotation_file_path, 'r', encoding='utf-8') as csvfile:
+            # Try to detect the delimiter
+            sample = csvfile.read(1024)
+            csvfile.seek(0)
+            
+            # Use csv.Sniffer to detect the delimiter
+            try:
+                dialect = csv.Sniffer().sniff(sample)
+                reader = csv.DictReader(csvfile, dialect=dialect)
+            except csv.Error:
+                # Fallback to comma delimiter
+                csvfile.seek(0)
+                reader = csv.DictReader(csvfile)
+            
+            # Find the filename column (common variations)
+            fieldnames = reader.fieldnames
+            filename_column = None
+            for possible_name in ['filename', 'file', 'file_path', 'path', 'audio_file', 'audio_path']:
+                if possible_name in fieldnames:
+                    filename_column = possible_name
+                    break
+            
+            if not filename_column:
+                # Try to find a column that contains file paths
+                for field in fieldnames:
+                    if field and ('file' in field.lower() or 'path' in field.lower()):
+                        filename_column = field
+                        break
+            
+            if not filename_column:
+                error_msg = f"Could not identify filename column in annotation CSV. Available columns: {fieldnames}"
+                file_utils.write_to_console(console_output_file, [
+                    f"ERROR: {error_msg}",
+                    "\n"
+                ])
+                dbtool_logger.error(error_msg)
+                return False
+            
+            file_utils.write_to_console(console_output_file, [
+                f"Using filename column: {filename_column}",
+                f"Total columns: {len(fieldnames)}",
+                f"Columns: {', '.join(fieldnames)}",
+                "\n"
+            ])
+            
+            # Process each row
+            line_number = 1  # CSV header is line 1
+            for row in reader:
+                line_number += 1
+                filename = row.get(filename_column, '').strip()
+                
+                if not filename:
+                    # Skip empty filename entries
+                    continue
+                
+                # Try to find the file in the audio directory
+                # The filename in CSV might be relative to the audio directory or absolute
+                # We'll try both approaches
+                
+                # First, try as relative path from audio directory
+                relative_path = filename.lstrip('/')
+                audio_file_path = os.path.join(audio_dir, relative_path)
+                
+                if not os.path.exists(audio_file_path):
+                    # Try with different path separators (handle Windows/Unix path differences)
+                    normalized_filename = filename.replace('\\', '/').replace('//', '/')
+                    relative_path = normalized_filename.lstrip('/')
+                    audio_file_path = os.path.join(audio_dir, relative_path)
+                    
+                    if not os.path.exists(audio_file_path):
+                        # File not found, add to missing files list
+                        missing_files.append({
+                            'line': line_number,
+                            'filename': filename
+                        })
+                        dbtool_logger.warning(f"Missing audio file at line {line_number}: {filename}")
+        
+        # Report validation results
+        if missing_files:
+            error_msg = f"Validation failed: {len(missing_files)} audio files referenced in annotation CSV are missing from audio folder"
+            file_utils.write_to_console(console_output_file, [
+                f"ERROR: {error_msg}",
+                f"Missing files:",
+                *[f"  Line {item['line']}: {item['filename']}" for item in missing_files],
+                "\n"
+            ])
+            dbtool_logger.error(error_msg)
+            return False
+        else:
+            success_msg = f"Validation successful: All {line_number - 1} audio files referenced in annotation CSV exist in audio folder"
+            file_utils.write_to_console(console_output_file, [
+                f"SUCCESS: {success_msg}",
+                "\n"
+            ])
+            dbtool_logger.info(success_msg)
+            return True
+            
+    except Exception as e:
+        error_msg = f"Error during annotation file validation: {e}"
+        file_utils.write_to_console(console_output_file, [
+            f"ERROR: {error_msg}",
+            "\n"
+        ])
+        dbtool_logger.error(error_msg)
+        return False
 
 
 def process_database_with_ketos(task_context: Dict[str, Any], file_utils: FileUtils) -> Dict[str, Any]:
