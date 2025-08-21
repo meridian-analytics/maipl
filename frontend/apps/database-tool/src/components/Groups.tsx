@@ -100,12 +100,17 @@ export default function Groups({ task, onGroupAdded }: GroupsProps) {
                                    platformGroup.status === "in_progress" ? "warning" : "default"}
                           />
                         ) : (
-                          <M.Chip 
-                            label="Uploaded" 
-                            size="small"
-                            color="default"
-                            variant="outlined"
-                          />
+                          <M.Tooltip 
+                            title="Group already exists in database (uploaded, generated, or from other tasks)"
+                            arrow
+                            placement="top"
+                          >
+                            <M.Chip 
+                              label="Existing" 
+                              size="small"
+                              color="info"
+                            />
+                          </M.Tooltip>
                         )}
                       </M.Stack>
                     </M.Stack>

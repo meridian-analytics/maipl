@@ -81,19 +81,21 @@ const Table = BaseTable([
 function TaskStatus(props: { status: TrainerTask.t_list_item["status"] }) {
   switch (props.status) {
     case "CREATED":
-      return <M.Chip color="default" label="Created" />
+      return <M.Chip color="default" label="Created" size="small" />
     case "FAILURE":
-      return <M.Chip color="error" label="Failure" />
+      return <M.Chip color="error" label="Failure" size="small" />
     case "PENDING":
-      return <M.Chip color="info" label="Pending" />
+      return <M.Chip color="error" label="Pending" size="small" />
     case "RETRY":
-      return <M.Chip color="warning" label="Retry" />
+      return <M.Chip color="warning" label="Retry" size="small" />
     case "REVOKED":
-      return <M.Chip color="error" label="Revoked" />
+      return <M.Chip color="error" label="Revoked" size="small" />
     case "STARTED":
-      return <M.Chip color="info" label="Started" />
+      return <M.Chip color="info" label="Started" size="small" />
     case "SUCCESS":
-      return <M.Chip color="success" label="Success" />
+      return <M.Chip color="success" label="Success" size="small" />
+    default:
+      return <M.Chip color="default" label={props.status} size="small" />
   }
 }
 

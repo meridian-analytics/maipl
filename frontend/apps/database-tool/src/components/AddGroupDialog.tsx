@@ -48,6 +48,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
   const maipl = MR.useMaipl()
   const databaseTaskApi = createDatabaseTaskApi(maipl.client)
   const [activeTab, setActiveTab] = useState<Tab>(Tab.audio_files)
+  const [switchMode, setSwitchMode] = useState<"annotations" | "random">("annotations")
   const [formData, setFormData] = useState<GroupFormData>({
     name: "",
     audio_file_ids: [],
@@ -212,6 +213,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
   // Handle switch toggle between annotation and random modes
   const handleSwitchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const useAnnotations = event.target.checked
+    setSwitchMode(useAnnotations ? "annotations" : "random")
     if (useAnnotations) {
       handleProcessingModeChange("annotations")
     } else {
@@ -257,6 +259,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
       setSelection(new Map())
       setAnnotationSelection(new Map())
       setActiveTab(Tab.audio_files)
+      setSwitchMode("annotations")
       onClose() // Close the dialog after successful group creation
     },
     onError: (error) => {
@@ -299,12 +302,13 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
       setSelection(new Map())
       setAnnotationSelection(new Map())
       setActiveTab(Tab.audio_files)
+      setSwitchMode("annotations")
     }
   }
 
-  // Determine processing mode - default to random mode initially
-  const processingMode = (formData.annotations?.file_id && formData.annotations.file_id > 0) ? "annotations" : "random"
-  const isAnnotationMode = processingMode === "annotations"
+  // Use switch state for processing mode instead of deriving from form data
+  const processingMode = switchMode
+  const isAnnotationMode = switchMode === "annotations"
 
   // Validation
   const existingGroups = task.groups?.map(group => group.name) || []
@@ -344,12 +348,12 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
                 <M.FormControlLabel
                   control={
                     <M.Switch
-                      checked={isAnnotationMode}
+                      checked={switchMode === "annotations"}
                       onChange={handleSwitchChange}
                       color="primary"
                     />
                   }
-                  label={isAnnotationMode ? "Annotation Config" : "Random Selection"}
+                  label={switchMode === "annotations" ? "Annotation Config" : "Random Selection"}
                   labelPlacement="start"
                 />
               </M.Box>
@@ -395,12 +399,12 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
                 <M.Tab 
                   label="Annotation Configuration" 
                   value={Tab.annotation_config}
-                  disabled={!isAnnotationMode}
+                  disabled={switchMode !== "annotations"}
                 />
                 <M.Tab 
                   label="Random Selection" 
                   value={Tab.random_selection}
-                  disabled={isAnnotationMode}
+                  disabled={switchMode !== "random"}
                 />
               </M.Tabs>
             </M.Box>

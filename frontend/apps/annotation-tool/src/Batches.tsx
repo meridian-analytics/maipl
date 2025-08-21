@@ -241,15 +241,17 @@ function BatchActions(props: { batch: Batch.t_list_item }) {
 function BatchStatus(props: { batch: Batch.t_list_item }) {
   switch (Batch.status(props.batch)) {
     case Batch.t_status.empty:
-      return <M.Chip label="Empty" />
+      return <M.Chip label="Empty" size="small" />
     case Batch.t_status.error:
-      return <M.Chip color="error" label="Error" />
+      return <M.Chip color="error" label="Error" size="small" />
     case Batch.t_status.processing:
-      return <M.Chip color="info" label="Processing" />
+      return <M.Chip color="info" label="Processing" size="small" />
     case Batch.t_status.success:
-      return <M.Chip color="success" label="Ready" />
+      return <M.Chip color="success" label="Ready" size="small" />
     case Batch.t_status.unprocessed:
-      return <M.Chip color="warning" label="Unprocessed" />
+      return <M.Chip color="warning" label="Unprocessed" size="small" />
+    default:
+      return <M.Chip color="default" label={Batch.status(props.batch)} size="small" />
   }
 }
 

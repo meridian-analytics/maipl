@@ -7,26 +7,27 @@ export function UploadStatus(props: { status: string }) {
     case "none":
       return <></>
     case "error":
-      return <M.Chip color="error" label="Error" />
+      return <M.Chip color="error" label="Error" size="small" />
     case "timeout":
-      return <M.Chip color="error" label="Timeout" />
+      return <M.Chip color="error" label="Timeout" size="small" />
     case "pending":
-      return <M.Chip color="warning" label="Pending" />
+      return <M.Chip color="warning" label="Pending" size="small" />
     case "ok":
-      return <M.Chip color="success" label="Ok" />
+      return <M.Chip color="success" label="Ok" size="small" />
     case "cancelled":
-      return <M.Chip color="default" label="Cancelled" />
+      return <M.Chip color="default" label="Cancelled" size="small" />
     case "cancelling":
       return (
         <M.Chip
           color="default"
           label="Cancelling"
+          size="small"
           icon={<M.CircularProgress size={16} />}
         />
       )
     case "duplicate":
-      return <M.Chip color="warning" label="Already exists" />
+      return <M.Chip color="warning" label="Already exists" size="small" />
     default:
-      return <M.Chip label={props.status} color="info" />
+      return <M.Chip label={props.status} color="info" size="small" />
   }
 } 
