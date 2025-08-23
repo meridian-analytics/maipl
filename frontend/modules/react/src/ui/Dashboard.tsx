@@ -65,7 +65,10 @@ export default function Dashboard() {
           label="Model Trainer"
           to={K.MAIPL_MODEL_TRAINER_FRONTEND}
         />
-        <NavButton icon={I.Storage} label="Database Tool" to={null} />
+        <NavButton 
+          icon={I.Storage} 
+          label="Database Tool" 
+          to={K.MAIPL_DATABASE_TOOL_FRONTEND} />
       </M.Stack>
     </M.Stack>
   )
