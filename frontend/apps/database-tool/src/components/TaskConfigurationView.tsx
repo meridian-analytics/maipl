@@ -42,17 +42,18 @@ export default function TaskConfigurationView({ task }: TaskConfigurationViewPro
             <M.Typography variant="body2">
               <strong>Last Updated:</strong> {formatDate(task.updated_at)}
             </M.Typography>
-            <M.Typography variant="body2">
-              <strong>Status:</strong> 
+            <M.Stack direction="row" spacing={1} alignItems="center">
+              <M.Typography variant="body2">
+                <strong>Status:</strong>
+              </M.Typography>
               <M.Chip 
                 label={task.status} 
                 size="small"
                 color={task.status === "completed" ? "success" : 
                        task.status === "failed" || task.status === "error" ? "error" : 
                        task.status === "in_progress" ? "warning" : "default"}
-                sx={{ ml: 1 }}
               />
-            </M.Typography>
+            </M.Stack>
           </M.Stack>
         </M.Box>
 
