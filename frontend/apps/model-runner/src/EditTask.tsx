@@ -201,6 +201,34 @@ function EditTask(props: {
     return h5Files === 1
   }, [selection, files?.data])
 
+  const availableGroups = R.useMemo(() => {
+    if (isTableNameEnabled && selection.size === 1) {
+      const selectedFileId = Array.from(selection.keys())[0]
+      const selectedFile = files?.data.find(f => f.id === selectedFileId)
+      
+      if (selectedFile && selectedFile.maipl_folder === File.t_maipl_folder.h5_databases) {
+        // Try to read H5 database metadata
+        if (selectedFile.meta && typeof selectedFile.meta === 'object') {
+          const meta = selectedFile.meta as any
+          
+          if (meta.hdf5_structure && typeof meta.hdf5_structure === 'object') {
+            // Extract groups from the H5 structure
+            const groups = Object.keys(meta.hdf5_structure)
+            return groups.length > 0 ? groups : ["/"]
+          }
+        }
+      }
+    }
+    return ["/"]
+  }, [selection, files?.data, isTableNameEnabled])
+
+  // Auto-select first group when available groups change
+  R.useEffect(() => {
+    if (availableGroups.length > 0 && availableGroups[0] !== "/" && tableName === "/") {
+      setTableName(availableGroups[0])
+    }
+  }, [availableGroups, tableName])
+
   return (
     <M.Stack sx={{ height: "80vh", overflow: "hidden" }}>
       <M.Typography variant="h6">
@@ -269,15 +297,22 @@ function EditTask(props: {
             onChange={(e) => setBuffer(F.safeParseNumber(e.target.value, 0))}
           />
         </M.Tooltip>
-        <M.Tooltip title="Table name within the HDF5 database where the data is stored. Must start with a forward slash. For instance '/test'. If not given, the root '/' path will be used." placement="top">
-          <M.TextField
-            fullWidth
-            label="Table Name"
-            value={tableName}
-            onChange={(e) => setTableName(e.target.value)}
-            placeholder="Enter table name"
-            disabled={!isTableNameEnabled}
-          />
+        <M.Tooltip title="Select the group within the HDF5 database where the data is stored. Groups are automatically extracted from the selected database file's metadata." placement="top">
+          <M.FormControl fullWidth disabled={!isTableNameEnabled}>
+            <M.InputLabel>Group</M.InputLabel>
+            <M.Select
+              label="Group"
+              value={tableName}
+              onChange={(e) => setTableName(e.target.value)}
+              disabled={!isTableNameEnabled}
+            >
+              {availableGroups.map((group) => (
+                <M.MenuItem key={group} value={group}>
+                  {group}
+                </M.MenuItem>
+              ))}
+            </M.Select>
+          </M.FormControl>
         </M.Tooltip>
       </M.Stack>
       <M.Typography variant="h6" pt={3}>
