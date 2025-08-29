@@ -102,7 +102,7 @@ class DetectionListExportView(generics.ListAPIView):
          'user_id': ['exact'],
          'label': ['exact'],
          'task': ['exact'],
-         'file': ['exact'],
+         'filename': ['exact'],
          'score': ['exact', 'gte', 'lte', 'gt', 'lt'],
    }
 

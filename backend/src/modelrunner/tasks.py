@@ -40,19 +40,22 @@ def run_model(self, model_task_id):
 
         model_task.status = 'RUNNING'
         model_task.save()
-        # run the command and write the output to the console output file
-        result = subprocess.run(command, capture_output=True, text=True)
+        
+        # run the command from the audios_database directory so filenames in CSV are relative to that folder
+        audios_database_dir = task_context.get("audios_database_dir")
+        if not audios_database_dir:
+            raise Exception("Audios database directory not found in task context")
+        
+        result = subprocess.run(command, capture_output=True, text=True, cwd=audios_database_dir)
+        
+        # Optimize console logging like dbtool
         file_utils.write_to_console(task_context["console_output_file"], [
-            "Command output:",
-            "=============",
-            "STDOUT:",
-            f"{result.stdout}",
-            "",
-            "STDERR:", 
-            f"{result.stderr}",
-            "",
+            "Command execution completed:",
             f"Return code: {result.returncode}",
-            "=============",
+            "STDOUT:",
+            result.stdout if result.stdout else "(no output)",
+            "STDERR:",
+            result.stderr if result.stderr else "(no errors)",
             "\n"
         ])
 
@@ -81,70 +84,169 @@ def run_model(self, model_task_id):
         modelrunner_logger.info("Files cleaned up")
 
 def download_audio_files(task_context, file_utils):
+    """
+    Download audio files and reconstruct directory structure using file.path.
+    
+    Args:
+        task_context: Dictionary containing task context
+        file_utils: FileUtils instance for file operations
+    """
     filelist = task_context["task"].filelist.all()
-    #create a audio directory
-    audio_dir = os.path.join(task_context["local_path"], "audio")
-    os.makedirs(audio_dir, exist_ok=True)
+    local_path = task_context["local_path"]
+    console_output_file = task_context["console_output_file"]
+    
+    # Create audios_database directory (similar to dbtool pattern)
+    audios_database_dir = os.path.join(local_path, "audios_database")
+    os.makedirs(audios_database_dir, exist_ok=True)
+    
+    downloaded_files = []
+    
     for file in filelist:
-        audio_file_path = file_utils.download_file(file.id)
-        os.symlink(audio_file_path, os.path.join(audio_dir, file.basename))
-    task_context["audio_dir"] = audio_dir
-    modelrunner_logger.info(f"Audio files downloaded and symlinked to {audio_dir}")
-
-    # write the audio files to the console output
-    file_utils.write_to_console(task_context["console_output_file"], [
-        "Audio files: ",
-        *[f"{file}" for file in os.listdir(task_context["audio_dir"])],
+        try:
+            # Download file to NFS server
+            downloaded_path = file_utils.download_file(file.id)
+            if not downloaded_path:
+                modelrunner_logger.error(f"Failed to download file {file.id}")
+                continue
+            
+            # Reconstruct directory structure using file.path (like dbtool)
+            # Remove leading slash if present
+            relative_path = file.path.lstrip('/')
+            
+            # Create full directory structure
+            target_dir = os.path.join(audios_database_dir, os.path.dirname(relative_path))
+            os.makedirs(target_dir, exist_ok=True)
+            
+            # Create symbolic link
+            target_path = os.path.join(target_dir, file.basename)
+            if os.path.exists(target_path):
+                os.remove(target_path)  # Remove existing link if present
+            
+            os.symlink(downloaded_path, target_path)
+            downloaded_files.append(target_path)
+            
+            modelrunner_logger.info(f"Downloaded and symlinked audio file: {target_path}")
+            
+        except Exception as e:
+            modelrunner_logger.error(f"Error downloading file {file.id}: {e}")
+    
+    # Write audio files info to console output (optimized like dbtool)
+    file_utils.write_to_console(console_output_file, [
+        "Audio files downloaded and symlinked:",
+        f"Total files: {len(downloaded_files)}",
+        *[f"  - {os.path.relpath(f, audios_database_dir)}" for f in downloaded_files],
         "\n"
     ])
+    
+    task_context["audios_database_dir"] = audios_database_dir
 
 def download_model_file(task_context, file_utils):
+    """
+    Download model file and create symbolic link in model folder.
+    
+    Args:
+        task_context: Dictionary containing task context
+        file_utils: FileUtils instance for file operations
+    """
     model_file = task_context["task"].model_file
-    model_dir = os.path.join(task_context["local_path"], "model")
+    local_path = task_context["local_path"]
+    console_output_file = task_context["console_output_file"]
+    
+    # Create model directory
+    model_dir = os.path.join(local_path, "model")
     os.makedirs(model_dir, exist_ok=True)
-    model_file_path = file_utils.download_file(model_file.id)
-    os.symlink(model_file_path, os.path.join(model_dir, model_file.basename))
-    task_context["model_dir"] = model_dir
-    modelrunner_logger.info(f"Model file downloaded and symlinked to {model_dir}")
-
-    # write the model file to the console output
-    file_utils.write_to_console(task_context["console_output_file"], [
-        "Model file: ",
-        f"{model_file.basename}",
-        "\n"
-    ])
+    
+    try:
+        # Download file to NFS server
+        downloaded_path = file_utils.download_file(model_file.id)
+        if not downloaded_path:
+            modelrunner_logger.error(f"Failed to download model file {model_file.id}")
+            return
+        
+        # Create symbolic link
+        target_path = os.path.join(model_dir, model_file.basename)
+        if os.path.exists(target_path):
+            os.remove(target_path)  # Remove existing link if present
+        
+        os.symlink(downloaded_path, target_path)
+        
+        modelrunner_logger.info(f"Downloaded and symlinked model file: {target_path}")
+        
+        # Write model file info to console output (optimized like dbtool)
+        file_utils.write_to_console(console_output_file, [
+            "Model file downloaded and symlinked:",
+            f"  - {model_file.basename}",
+            "\n"
+        ])
+        
+        task_context["model_dir"] = model_dir
+        
+    except Exception as e:
+        modelrunner_logger.error(f"Error downloading model file {model_file.id}: {e}")
 
 def construct_command_with_model_parameters(task_context):
+    """
+    Construct the ketos-run command based on model task configuration.
+    
+    Working Directory Strategy:
+    - Command will be executed from the audios_database directory
+    - Audio file paths in the command use relative paths from audios_database
+    - Model file and output folder use absolute paths
+    - This ensures CSV filenames are relative to audios_database (e.g., user_2/task_24/beluga_database.h5)
+    
+    Args:
+        task_context: Dictionary containing task context
+        
+    Returns:
+        List containing the command and arguments
+    """
     model_task = task_context["task"]
-    user = model_task.user_id
-    model_file_dir = task_context["model_dir"]
-    audio_dir = task_context["audio_dir"]
-
-    # create a detections directory
-    detections_dir = os.path.join(task_context["local_path"], "detections")
+    local_path = task_context["local_path"]
+    console_output_file = task_context["console_output_file"]
+    
+    # Create detections directory
+    detections_dir = os.path.join(local_path, "detections")
     os.makedirs(detections_dir, exist_ok=True)
     task_context["detections_dir"] = detections_dir
 
-    # base command
-    command = ['ketos-run', 
-               f'{model_file_dir}/{model_task.model_file.basename}']
-
-    # Check if the audio directory contains a single H5 file
-    audio_files = os.listdir(audio_dir)
-    modelrunner_logger.info(f"Audio files found in {audio_dir}: {audio_files}")
+    # Base command
+    command = ['ketos-run']
     
-    if len(audio_files) == 1 and audio_files[0].endswith('.h5'):
-        # For single H5 file, append the full path to the file
-        h5_path = f'{audio_dir}/{audio_files[0]}'
-        command.append(h5_path)
-        modelrunner_logger.info(f"Using single H5 file: {h5_path}")
+    # Add model file (absolute path since we're running from audios_database directory)
+    model_dir = task_context.get("model_dir")
+    if not model_dir:
+        raise Exception("Model directory not found in task context. This usually means the model file download failed.")
+    
+    # Get the absolute path to model file
+    model_file_abs = os.path.join(model_dir, model_task.model_file.basename)
+    command.append(model_file_abs)
+    
+    # Add audio input (relative paths from audios_database directory)
+    audios_database_dir = task_context.get("audios_database_dir")
+    if not audios_database_dir:
+        raise Exception("Audios database directory not found in task context. This usually means the audio files download failed.")
+    
+    # Check if we have a database file or audio files
+    filelist = model_task.filelist.all()
+    h5_files = [f for f in filelist if f.path.endswith('.h5')]
+    audio_files = os.listdir(audios_database_dir)
+    modelrunner_logger.info(f"Audio files found in {audios_database_dir}: {audio_files}")
+    modelrunner_logger.info(f"H5 files in filelist: {[f.path for f in h5_files]}")
+    
+    if len(h5_files) == 1:
+        # Single database file - use the relative path from audios_database directory
+        h5_file = h5_files[0]
+        relative_path = h5_file.path.lstrip('/')
+        command.append(relative_path)
+        modelrunner_logger.info(f"Using database file: {relative_path}")
     else:
-        # For multiple audio files, just append the directory
-        command.append(f'{audio_dir}')
-        modelrunner_logger.info(f"Using audio directory: {audio_dir}")
+        # Multiple audio files - use current directory (.)
+        command.append('.')
+        modelrunner_logger.info(f"Using audio files from current directory")
 
-    # Add output folder
-    command.extend(['--output_folder', f'{detections_dir}'])
+    # Add output folder (absolute path since we're running from audios_database directory)
+    detections_dir_abs = os.path.abspath(detections_dir)
+    command.extend(['--output_folder', detections_dir_abs])
 
     # adding optional arguments from the model task parameters
     parameters = model_task.parameters
@@ -159,84 +261,50 @@ def construct_command_with_model_parameters(task_context):
     if parameters.get('table_name', '/') != '/':
         command += ['--table_name', f"{parameters.get('table_name')}"]
 
-    # write the command to the console output
+    # write the command to the console output (optimized like dbtool)
     file_utils = FileUtils()
-    file_utils.write_to_console(task_context["console_output_file"], [
-        "Command for running the model: ",
-        f"{' '.join(command)}\n"
+    file_utils.write_to_console(console_output_file, [
+        "Command for running the model:",
+        f"  {' '.join(command)}",
+        f"Working directory: {audios_database_dir}",
+        "\n"
     ])
 
     return command
 
 
 def save_detections_to_db(task_context):
+    """
+    Save detections to database.
+    
+    Since we're reconstructing the original file structure in the audios_database folder,
+    the CSV already contains the correct relative paths and we can process it directly.
+    """
     model_task = task_context["task"]
     detections_dir = task_context["detections_dir"]
     user = User.objects.get(id=model_task.user_id.id)
 
     # get the local file path for the detections.csv
     local_file_path = os.path.join(detections_dir, "detections.csv")
-    # get the audio files from the task
-    filelist = model_task.filelist.all()
-
-    filename_to_file = {}
-    
-    modelrunner_logger.info(f"Filelist: {filelist}")
-
-    # if the filelist only contains one h5 file, create a dictionary to map the basename to the file instance
-    if len(filelist) == 1 and filelist[0].path.endswith('.h5'):
-        # read the detections.csv and create a file instance for each filename
-        modelrunner_logger.info(f"Filelist only contains one h5 file, reading detections.csv to create file instances")
-        modelrunner_logger.info(f"File path: {filelist[0].path}")
-        with open(local_file_path, 'r') as f:
-            reader = csv.reader(f)
-            next(reader, None)  # skip the header
-            for row in reader:
-                if row:  # ensure row is not empty
-                    filename = basename(row[0])
-                    # if the filename is already in the dictionary, skip
-                    if filename in filename_to_file:
-                        continue
-                    #query the file instance from the database, if not found, raise an error
-                    file_instance = File.objects.get(path__endswith=filename, user_id=user)
-                    if not file_instance:
-                        modelrunner_logger.error(f"No file found with name: {filename}")
-                        raise Exception(f"No file found with name: {filename}")
-                    else:
-                        modelrunner_logger.info(f"File found with name: {filename}")
-                        #add the file instance to the dictionary if it is found
-                        filename_to_file[filename] = file_instance
-    else:
-        modelrunner_logger.info(f"Filelist contains multiple files, creating dictionary to map basename to file instance")
-        filename_to_file = {file.basename: file for file in filelist}
 
     try:
         with open(local_file_path, 'r') as f:
             reader = csv.reader(f)
             next(reader, None)  # skip the header
 
-            # rewrite the rows to fix the paths
-            rewritten_rows = []
-
             for row in reader:
-                temp_path = row[0]
+                if not row:  # ensure row is not empty
+                    continue
+                    
+                filename = row[0]  # Use the full relative path from CSV
                 start = float(row[1])
                 end = float(row[2])
                 label = row[3]
                 score = round(float(row[4]), 3)
 
-                filename = basename(temp_path)
-
-                file_instance = filename_to_file.get(filename)
-                path = file_instance.path
-
-                if not file_instance:
-                    modelrunner_logger.error(f"No file found with name: {filename}")
-                    continue
-
                 try:
                     detection = Detection(
-                        file=file_instance,
+                        filename=filename,  # Store the relative path as-is
                         start=start,
                         end=end,
                         score=score,
@@ -246,17 +314,10 @@ def save_detections_to_db(task_context):
                     )
                     detection.save()
                 except Exception as e:
-                    modelrunner_logger.error(f"An error occurred: {e}")
+                    modelrunner_logger.error(f"An error occurred saving detection: {e}")
                     continue
 
-                rewritten_rows.append([path, start, end, label, score])
-
-        with open(local_file_path, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['filename', 'start', 'end', 'label', 'score'])
-            writer.writerows(rewritten_rows)
-
-        modelrunner_logger.info(f"Successfully saved detections to database and rewrote output file")
+        modelrunner_logger.info(f"Successfully saved detections to database")
         
         # Update task status to SUCCESS
         model_task.status = 'SUCCESS'
