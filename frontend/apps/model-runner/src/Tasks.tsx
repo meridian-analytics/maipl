@@ -215,9 +215,27 @@ export default function TasksTable(props: {
   const { pagination, selection, setPagination, setSelection } =
     MR.RunnerTasks.useTable()
   const [deleteModalOpen, setDeleteModalOpen] = R.useState(false)
-  const { data: tasks } = MR.RunnerTasks.useQuery()
+  const [pollingEnabled, setPollingEnabled] = R.useState(true)
+  const [lastRefreshTime, setLastRefreshTime] = R.useState<Date>(new Date())
+  const { data: tasks } = MR.RunnerTasks.useQuery({ polling: pollingEnabled })
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
+
+  // Toggle polling on/off
+  const togglePolling = () => {
+    setPollingEnabled(!pollingEnabled)
+    if (pollingEnabled) {
+      // Disable polling by refetching once and then stopping
+      queryClient.refetchQueries({ queryKey: ["runner-tasks"] })
+    }
+  }
+
+  // Update last refresh time when data changes
+  R.useEffect(() => {
+    if (tasks) {
+      setLastRefreshTime(new Date())
+    }
+  }, [tasks])
 
   const onDeleteSelected = () => {
     if (selection.size === 0) return
@@ -262,7 +280,6 @@ export default function TasksTable(props: {
       .filter(task => 
         task.status === "CREATED" || 
         task.status === "FAILURE" || 
-        task.status === "CANCELLED" || 
         task.status === "SUCCESS"
       )
       .map(task => task.id)
@@ -275,7 +292,7 @@ export default function TasksTable(props: {
 
   const selectedTasks = tasks?.filter(task => selection.has(task.id)) ?? []
   const deletableTasks = selectedTasks.filter(task => 
-    task.status === "CREATED" || task.status === "FAILURE" || task.status === "CANCELLED" || task.status === "SUCCESS"
+    task.status === "CREATED" || task.status === "FAILURE" || task.status === "SUCCESS"
   )
 
   return (
@@ -289,8 +306,13 @@ export default function TasksTable(props: {
       }}
     >
       <RR.Outlet />
-      <M.Stack direction="row">
+      <M.Stack direction="row" alignItems="center" spacing={2}>
         <M.Stack flexGrow={1} />
+        {pollingEnabled && (
+          <M.Typography variant="caption" color="text.secondary">
+            Auto-refreshing every 5s • Last: {lastRefreshTime.toLocaleTimeString()}
+          </M.Typography>
+        )}
         <MR.ActionButton
           children={<I.AddCircle />}
           component={RR.Link}
@@ -302,6 +324,12 @@ export default function TasksTable(props: {
           onClick={onDeleteSelected}
           title="Delete Selected"
           disabled={selection.size === 0}
+        />
+        <MR.ActionButton
+          children={pollingEnabled ? <I.Pause /> : <I.PlayArrow />}
+          onClick={togglePolling}
+          title={pollingEnabled ? "Disable Auto-refresh" : "Enable Auto-refresh"}
+          color={pollingEnabled ? "primary" : "default"}
         />
         <MR.ActionButton
           children={<I.Refresh />}

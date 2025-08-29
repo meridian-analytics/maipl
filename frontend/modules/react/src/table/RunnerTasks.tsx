@@ -33,12 +33,17 @@ function useTable(props?: {
   }
 }
 
-function useQuery(props?: Task.t_list_request) {
+function useQuery(props?: RunnerTask.t_list_request & { polling?: boolean }) {
   const { client } = useMaipl()
+  const { polling = true, ...queryProps } = props || {}
   return RQ.useQuery({
-    queryKey: ["runner-tasks", "list", props],
-    queryFn: () => RunnerTask.list(client, props),
+    queryKey: ["runner-tasks", "list", queryProps],
+    queryFn: () => RunnerTask.list(client, queryProps),
     initialData: [],
+    // Add automatic polling every 5 seconds to keep task status updated
+    refetchInterval: polling ? 5000 : false,
+    // Only poll when the window is focused
+    refetchIntervalInBackground: false,
   })
 }
 
@@ -68,9 +73,9 @@ const Table = BaseTable([
       </M.Stack>
     ),
   }),
-] as Array<ColumnDef<Task.t>>)
+] as Array<ColumnDef<RunnerTask.t>>)
 
-function TaskStatus(props: { status: Task.t["status"] }) {
+function TaskStatus(props: { status: RunnerTask.t["status"] }) {
   switch (props.status) {
     case "CREATED":
       return <M.Chip color="default" label="Created" size="small" />
@@ -82,8 +87,6 @@ function TaskStatus(props: { status: Task.t["status"] }) {
       return <M.Chip color="warning" label="Retry" size="small" />
     case "REVOKED":
       return <M.Chip color="error" label="Revoked" size="small" />
-    case "RUNNING":
-      return <M.Chip color="info" label="Running" size="small" />
     case "STARTED":
       return <M.Chip color="info" label="Started" size="small" />
     case "SUCCESS":
