@@ -47,14 +47,14 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
   const queryClient = useQueryClient()
   const maipl = MR.useMaipl()
   const databaseTaskApi = createDatabaseTaskApi(maipl.client)
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.audio_files)
+  const [activeTab, setActiveTab] = useState<Tab>(Tab.annotation_config)
   const [switchMode, setSwitchMode] = useState<"annotations" | "random">("annotations")
   const [formData, setFormData] = useState<GroupFormData>({
     name: "",
     audio_file_ids: [],
     audio_representation_config_id: 0,
     annotations: {
-      file_id: 0,
+      file_id: undefined as any,
       labels: {},
       annotation_step: 0.5,
       step_min_overlap: 0.7,
@@ -170,7 +170,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
     } else {
       setFormData(prev => ({
         ...prev,
-        annotations: prev.annotations ? { ...prev.annotations, file_id: 0 } : undefined
+        annotations: prev.annotations ? { ...prev.annotations, file_id: undefined as any } : undefined
       }))
     }
   }, [annotationSelection])
@@ -181,7 +181,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
       setFormData(prev => ({
         ...prev,
         annotations: {
-          file_id: 0,
+          file_id: undefined as any,
           labels: {},
           annotation_step: 0.5,
           step_min_overlap: 0.7,
@@ -199,7 +199,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
           label: 0
         }
       }))
-      setActiveTab(Tab.random_selection)
+      setActiveTab(Tab.audio_files) // Start with audio files tab in random mode
     } else {
       setFormData(prev => ({
         ...prev,
@@ -245,7 +245,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
         audio_file_ids: [],
         audio_representation_config_id: 0,
         annotations: {
-          file_id: 0,
+          file_id: undefined as any,
           labels: {},
           annotation_step: 0.5,
           step_min_overlap: 0.7,
@@ -258,7 +258,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
       })
       setSelection(new Map())
       setAnnotationSelection(new Map())
-      setActiveTab(Tab.audio_files)
+      setActiveTab(Tab.annotation_config)
       setSwitchMode("annotations")
       onClose() // Close the dialog after successful group creation
     },
@@ -288,7 +288,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
         audio_file_ids: [],
         audio_representation_config_id: 0,
         annotations: {
-          file_id: 0,
+          file_id: undefined as any,
           labels: {},
           annotation_step: 0.5,
           step_min_overlap: 0.7,
@@ -301,7 +301,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
       })
       setSelection(new Map())
       setAnnotationSelection(new Map())
-      setActiveTab(Tab.audio_files)
+      setActiveTab(Tab.annotation_config)
       setSwitchMode("annotations")
     }
   }
@@ -316,10 +316,12 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
   const hasAudioFiles = formData.audio_file_ids.length > 0
   const hasAudioConfig = formData.audio_representation_config_id > 0
   
-  // We always need audio files, audio config, and the specific configuration for the selected mode
-  const isFormValid = nameValidation.isValid && hasAudioFiles && hasAudioConfig && (
-    (processingMode === "annotations" && formData.annotations?.file_id && formData.annotations.file_id > 0) ||
-    (processingMode === "random" && formData.random_selections?.num_samples && 
+  // Different validation logic based on mode
+  const isFormValid = nameValidation.isValid && hasAudioConfig && (
+    // Annotation mode: only need annotation file
+    (processingMode === "annotations" && formData.annotations?.file_id && formData.annotations.file_id !== undefined) ||
+    // Random mode: need audio files and random selection config
+    (processingMode === "random" && hasAudioFiles && formData.random_selections?.num_samples && 
      (formData.random_selections.num_samples === "same" || 
       (typeof formData.random_selections.num_samples === "number" && formData.random_selections.num_samples > 0)) &&
      formData.random_selections?.label !== undefined && formData.random_selections.label >= 0)
@@ -392,27 +394,27 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
             {/* Tabs */}
             <M.Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <M.Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
-                <M.Tab 
-                  label="Audio Files" 
-                  value={Tab.audio_files}
-                />
-                <M.Tab 
-                  label="Annotation Configuration" 
-                  value={Tab.annotation_config}
-                  disabled={switchMode !== "annotations"}
-                />
-                <M.Tab 
-                  label="Random Selection" 
-                  value={Tab.random_selection}
-                  disabled={switchMode !== "random"}
-                />
+                {/* Show Annotation Configuration tab only in annotation mode */}
+                {switchMode === "annotations" && (
+                  <M.Tab 
+                    label="Annotation Configuration" 
+                    value={Tab.annotation_config}
+                  />
+                )}
+                {/* Show Audio Files & Random Selection tab only in random mode */}
+                {switchMode === "random" && (
+                  <M.Tab 
+                    label="Audio Files & Random Selection" 
+                    value={Tab.audio_files}
+                  />
+                )}
               </M.Tabs>
             </M.Box>
 
             {/* Tab Content */}
             <M.Box sx={{ minHeight: "400px" }}>
-              {/* Audio Files Tab */}
-              {activeTab === Tab.audio_files && (
+              {/* Audio Files & Random Selection Tab - only show in random mode */}
+              {activeTab === Tab.audio_files && switchMode === "random" && (
                 <M.Stack spacing={2}>
                   <M.Typography variant="h6" gutterBottom>
                     Select Audio Files
@@ -461,11 +463,84 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
                       "No audio files selected"
                     )}
                   </M.Typography>
+
+                  {/* Random Selection Configuration - only show when audio files are selected */}
+                  {formData.audio_file_ids.length > 0 && (
+                    <M.Stack spacing={2}>
+                      <M.Divider />
+                      <M.Typography variant="h6" gutterBottom>
+                        Random Selection Configuration
+                      </M.Typography>
+                      
+                      <M.TextField
+                        label="Number of Samples"
+                        type="number"
+                        value={formData.random_selections?.num_samples || ""}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          random_selections: {
+                            ...prev.random_selections,
+                            num_samples: parseInt(e.target.value) || 0
+                          }
+                        }))}
+                        fullWidth
+                        helperText="Number of random samples to generate from the selected audio files"
+                      />
+                      
+                      <M.TextField
+                        label="Label *"
+                        type="number"
+                        required
+                        inputProps={{ min: 0 }}
+                        value={formData.random_selections?.label !== undefined ? formData.random_selections.label : ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          let numValue: number
+                          if (value === "") {
+                            numValue = 0
+                          } else {
+                            const parsed = parseInt(value)
+                            numValue = isNaN(parsed) ? 0 : parsed
+                          }
+                          console.log('Label field change:', { value, numValue, currentLabel: formData.random_selections?.label })
+                          setFormData(prev => ({
+                            ...prev,
+                            random_selections: {
+                              ...prev.random_selections!,
+                              label: numValue
+                            }
+                          }))
+                        }}
+                        fullWidth
+                        error={formData.random_selections?.label === undefined || formData.random_selections.label < 0}
+                        helperText={
+                          formData.random_selections?.label === undefined || formData.random_selections.label < 0
+                            ? "Label must be 0 or a positive number"
+                            : "Label to assign to all randomly selected samples (0 or positive number)"
+                        }
+                      />
+
+                      <M.TextField
+                        label="Random Seed (optional)"
+                        type="number"
+                        value={formData.random_selections?.seed || ""}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          random_selections: {
+                            ...prev.random_selections,
+                            seed: e.target.value ? parseInt(e.target.value) : undefined
+                          }
+                        }))}
+                        fullWidth
+                        helperText="Seed for random number generator to ensure reproducible sampling. Leave empty for random seed."
+                      />
+                    </M.Stack>
+                  )}
                 </M.Stack>
               )}
 
-              {/* Annotation Configuration Tab */}
-              {activeTab === Tab.annotation_config && (
+              {/* Annotation Configuration Tab - only show in annotation mode */}
+              {activeTab === Tab.annotation_config && switchMode === "annotations" && (
                 <M.Stack spacing={2}>
                   <M.Typography variant="h6" gutterBottom>
                     Annotation Configuration
@@ -510,10 +585,12 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
                   </M.Paper>
 
                   <M.Typography variant="body2" color="text.secondary">
-                    {annotationSelection.size > 0 ? (
-                      `Selected: ${annotationSelection.size} annotation file${annotationSelection.size > 1 ? 's' : ''}`
+                    {annotationSelection.size === 0 ? (
+                      "No annotation files selected - please select one annotation file to configure labels and processing options"
+                    ) : annotationSelection.size === 1 ? (
+                      `Selected: ${annotationSelection.size} annotation file`
                     ) : (
-                      "No annotation files selected"
+                      `Selected: ${annotationSelection.size} annotation files - please select only one annotation file`
                     )}
                   </M.Typography>
 
@@ -594,79 +671,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
                 </M.Stack>
               )}
 
-              {/* Random Selection Tab */}
-              {activeTab === Tab.random_selection && (
-                <M.Stack spacing={2}>
-                  <M.Typography variant="h6" gutterBottom>
-                    Random Selection Configuration
-                  </M.Typography>
-                  
 
-
-                  <M.TextField
-                    label="Number of Samples"
-                    type="number"
-                    value={formData.random_selections?.num_samples || ""}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      random_selections: {
-                        ...prev.random_selections,
-                        num_samples: parseInt(e.target.value) || 0
-                      }
-                    }))}
-                    fullWidth
-                    helperText="Number of random samples to generate from the selected audio files"
-                  />
-                  
-                  <M.TextField
-                    label="Label *"
-                    type="number"
-                    required
-                    inputProps={{ min: 0 }}
-                    value={formData.random_selections?.label !== undefined ? formData.random_selections.label : ""}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      let numValue: number
-                      if (value === "") {
-                        numValue = 0
-                      } else {
-                        const parsed = parseInt(value)
-                        numValue = isNaN(parsed) ? 0 : parsed
-                      }
-                      console.log('Label field change:', { value, numValue, currentLabel: formData.random_selections?.label })
-                      setFormData(prev => ({
-                        ...prev,
-                        random_selections: {
-                          ...prev.random_selections!,
-                          label: numValue
-                        }
-                      }))
-                    }}
-                    fullWidth
-                    error={formData.random_selections?.label === undefined || formData.random_selections.label < 0}
-                    helperText={
-                      formData.random_selections?.label === undefined || formData.random_selections.label < 0
-                        ? "Label must be 0 or a positive number"
-                        : "Label to assign to all randomly selected samples (0 or positive number)"
-                    }
-                  />
-
-                  <M.TextField
-                    label="Random Seed (optional)"
-                    type="number"
-                    value={formData.random_selections?.seed || ""}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      random_selections: {
-                        ...prev.random_selections,
-                        seed: e.target.value ? parseInt(e.target.value) : undefined
-                      }
-                    }))}
-                    fullWidth
-                    helperText="Seed for random number generator to ensure reproducible sampling. Leave empty for random seed."
-                  />
-                </M.Stack>
-              )}
             </M.Box>
 
 
