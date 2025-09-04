@@ -281,6 +281,9 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
     setSelection,
   } = MR.Batches.useTable()
 
+  const [pollingEnabled, setPollingEnabled] = R.useState(true)
+  const [lastRefreshTime, setLastRefreshTime] = R.useState<Date>(new Date())
+
   const { data: batches } = MR.Batches.useQuery({
     // filters
     name: debouncedFilter.get("name"),
@@ -288,7 +291,20 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
     // pagination
     page: pagination.pageIndex + 1, // bug: when query changes, page needs to be reset
     size: pagination.pageSize,
+    // polling
+    polling: pollingEnabled,
   })
+
+  R.useEffect(() => {
+    if (batches) setLastRefreshTime(new Date())
+  }, [batches])
+
+  const togglePolling = () => {
+    setPollingEnabled(!pollingEnabled)
+    if (pollingEnabled) {
+      queryClient.refetchQueries({ queryKey: ["batches", "list"] })
+    }
+  }
 
   const columns = R.useMemo(
     () => [
@@ -331,7 +347,7 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
       }}
     >
       <RR.Outlet />
-      <M.Stack direction="row">
+      <M.Stack direction="row" alignItems="center" spacing={2}>
         <M.TextField
           label="Name"
           onChange={(e) => filter.set("name", e.currentTarget.value)}
@@ -339,12 +355,23 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
           value={filter.get("name")}
         />
         <M.Stack flexGrow={1} />
+        {pollingEnabled && (
+          <M.Typography variant="caption" color="text.secondary">
+            Auto-refreshing every 5s • Last: {lastRefreshTime.toLocaleTimeString()}
+          </M.Typography>
+        )}
         <MR.ActionButton
           children={<I.Refresh />}
           onClick={() => {
             queryClient.refetchQueries({ queryKey: ["batches", "list"] })
           }}
           title="Refresh"
+        />
+        <MR.ActionButton
+          children={pollingEnabled ? <I.Pause /> : <I.PlayArrow />}
+          onClick={togglePolling}
+          title={pollingEnabled ? "Disable Auto-refresh" : "Enable Auto-refresh"}
+          color={pollingEnabled ? "primary" : "default"}
         />
         <MR.ActionButton
           children={<I.AddCircle />}

@@ -41,20 +41,23 @@ function useTable(props?: {
   }
 }
 
-function useQuery(props: Batch.t_list_request) {
+function useQuery(props: Batch.t_list_request & { polling?: boolean }) {
   const { client, user } = useMaipl()
+  const { polling = true, ...queryProps } = props
   return RQ.useQuery({
     enabled: user != null,
-    queryKey: ["batches", "list", props],
-    queryFn: () => Batch.list(client, props),
+    queryKey: ["batches", "list", queryProps],
+    queryFn: () => Batch.list(client, queryProps),
     initialData: (): t_page<Batch.t_list_item> => ({
       data: [],
       page: 1,
-      size: props.size ?? 100,
+      size: queryProps.size ?? 100,
       count: 0,
       prev: null,
       next: null,
     }),
+    refetchInterval: polling ? 5000 : false,
+    refetchIntervalInBackground: false,
   })
 }
 

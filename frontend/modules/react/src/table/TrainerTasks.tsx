@@ -41,19 +41,22 @@ function useTable(props?: {
   }
 }
 
-function useQuery(props?: TrainerTask.t_list_request) {
+function useQuery(props?: (TrainerTask.t_list_request & { name?: string; polling?: boolean })) {
   const { client } = useMaipl()
+  const { polling = true, name, ...queryProps } = props || {}
   return RQ.useQuery({
-    queryKey: ["trainer_tasks", "list", props],
-    queryFn: () => TrainerTask.list(client, props),
+    queryKey: ["trainer_tasks", "list", { ...queryProps, name }],
+    queryFn: () => TrainerTask.list(client, queryProps),
     initialData: (): t_page<TrainerTask.t_list_item> => ({
       data: [],
       page: 1,
-      size: props.size ?? 100,
+      size: queryProps.size ?? 100,
       count: 0,
       prev: null,
       next: null,
     }),
+    refetchInterval: polling ? 5000 : false,
+    refetchIntervalInBackground: false,
   })
 }
 

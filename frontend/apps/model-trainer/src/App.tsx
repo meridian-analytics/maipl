@@ -20,36 +20,10 @@ function Layout() {
           maxHeight: "100vh",
         }}
       >
-        <MR.Navbar>
-          <LocalNavigation />
-        </MR.Navbar>
+        <MR.Navbar />
         <RR.Outlet />
       </M.Stack>
     </>
-  )
-}
-
-function LocalNavigation() {
-  const taskId = RR.useMatch("/edit-task/:taskId/*")?.params?.taskId
-  const tab = RR.useMatch("/:tab/*")?.params?.tab
-
-  return (
-    <M.Stack direction="row" flexGrow={1} justifyContent="center">
-      <M.Tabs value={tab ?? "new-tasks"} indicatorColor="primary">
-        <M.Tab
-          component={RR.Link}
-          label="New Tasks"
-          to="/new-tasks"
-          value="new-tasks"
-        />
-        <M.Tab
-          component={RR.Link}
-          label="Continue Tasks"
-          to="/continue-tasks"
-          value="continue-tasks"
-        />
-      </M.Tabs>
-    </M.Stack>
   )
 }
 
@@ -58,35 +32,12 @@ const router: MR.t_router = (context) => [
     element: <Layout />,
     children: [
       {
-        index: true,
-        element: <RR.Navigate to="/new-tasks" replace />,
-      },
-      {
-        path: "new-tasks",
+        path: "",
         element: <Tasks />,
         children: [
-          {
-            path: "edit-task",
-            element: <EditTaskLoader />,
-          },
-          {
-            path: "console/:taskId",
-            element: <ConsoleLoader />,
-          },
-          {
-            path: "log/:taskId",
-            element: <LogLoader />,
-          },
-        ],
-      },
-      {
-        path: "continue-tasks",
-        element: <Tasks />,
-        children: [
-          {
-            path: "edit-task",
-            element: <EditTaskLoader />,
-          },
+          { path: "edit-task", element: <EditTaskLoader /> },
+          { path: "console/:taskId", element: <ConsoleLoader /> },
+          { path: "log/:taskId", element: <LogLoader /> },
         ],
       },
     ],

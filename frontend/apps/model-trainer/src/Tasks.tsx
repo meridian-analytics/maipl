@@ -6,7 +6,7 @@ import * as RQ from "@tanstack/react-query"
 import * as RR from "react-router-dom"
 import * as R from "react"
 
-function TaskActions(props: { task: TrainerTask.t }) {
+function TaskActions(props: { task: TrainerTask.t_list_item }) {
   const queryClient = RQ.useQueryClient()
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
@@ -30,9 +30,7 @@ function TaskActions(props: { task: TrainerTask.t }) {
           Error: Could not delete task #{vars[1]}
         </M.Alert>
       ))
-      if (import.meta.env["DEV"]) {
-        console.error("TaskActions deleteMutation error", err, vars)
-      }
+      console.error("TaskActions deleteMutation error", err, vars)
     },
     onSettled: () => {
       deleteMutation.reset()
@@ -62,9 +60,7 @@ function TaskActions(props: { task: TrainerTask.t }) {
           Error: Could not start task #{vars[1]}
         </M.Alert>
       ))
-      if (import.meta.env["DEV"]) {
-        console.error("Tasks startMutation error", err, vars)
-      }
+      console.error("Tasks startMutation error", err, vars)
     },
     onSettled: () => {
       startMutation.reset()
@@ -89,12 +85,12 @@ function TaskActions(props: { task: TrainerTask.t }) {
       <M.MenuItem
         children="Console"
         component={RR.Link}
-        to={`/new-tasks/console/${props.task.id}`}
+        to={`/console/${props.task.id}`}
       />
       <M.MenuItem
         children="Log"
         component={RR.Link}
-        to={`/new-tasks/log/${props.task.id}`}
+        to={`/log/${props.task.id}`}
       />
       <M.MenuItem
         disabled={props.task.status != "CREATED" || startMutation.isPending}
@@ -108,11 +104,7 @@ function TaskActions(props: { task: TrainerTask.t }) {
         to={`/${props.task.id}/copy`}
       />
       <M.MenuItem
-        disabled={
-          props.task.status == "RUNNING" ||
-          props.task.status == "STARTED" ||
-          deleteMutation.isPending
-        }
+        disabled={props.task.status == "STARTED" || deleteMutation.isPending}
         onClick={onDelete}
         children="Delete"
       />
@@ -121,16 +113,17 @@ function TaskActions(props: { task: TrainerTask.t }) {
 }
 
 const Tasks = (props: { sx?: M.SxProps }) => {
-  const maipl = MR.useMaipl()
   const queryClient = RQ.useQueryClient()
   const {
-    filter,
     debouncedFilter,
     pagination,
     selection,
     setPagination,
     setSelection,
   } = MR.TrainerTasks.useTable()
+
+  const [pollingEnabled, setPollingEnabled] = R.useState(true)
+  const [lastRefreshTime, setLastRefreshTime] = R.useState<Date>(new Date())
 
   const {
     data: tasks,
@@ -140,8 +133,21 @@ const Tasks = (props: { sx?: M.SxProps }) => {
   } = MR.TrainerTasks.useQuery({
     size: pagination.pageSize,
     page: pagination.pageIndex + 1,
+    // name included only for query key stability; not sent to API
     name: debouncedFilter.get("name"),
+    polling: pollingEnabled,
   })
+
+  R.useEffect(() => {
+    if (tasks) setLastRefreshTime(new Date())
+  }, [tasks])
+
+  const togglePolling = () => {
+    setPollingEnabled(!pollingEnabled)
+    if (pollingEnabled) {
+      queryClient.refetchQueries({ queryKey: ["trainer_tasks", "list"] })
+    }
+  }
 
   if (isLoading) return <div>Loading...</div>
   if (isError) return <div>Error: {error.message}</div>
@@ -157,13 +163,24 @@ const Tasks = (props: { sx?: M.SxProps }) => {
       }}
     >
       <RR.Outlet />
-      <M.Stack direction="row">
+      <M.Stack direction="row" alignItems="center" spacing={2}>
         <M.Stack flexGrow={1} />
+        {pollingEnabled && (
+          <M.Typography variant="caption" color="text.secondary">
+            Auto-refreshing every 5s • Last: {lastRefreshTime.toLocaleTimeString()}
+          </M.Typography>
+        )}
         <MR.ActionButton
           children={<I.AddCircle />}
           component={RR.Link}
           title="Create Task"
-          to="/new-tasks/edit-task"
+          to="/edit-task"
+        />
+        <MR.ActionButton
+          children={pollingEnabled ? <I.Pause /> : <I.PlayArrow />}
+          onClick={togglePolling}
+          title={pollingEnabled ? "Disable Auto-refresh" : "Enable Auto-refresh"}
+          color={pollingEnabled ? "primary" : "default"}
         />
         <MR.ActionButton
           children={<I.Refresh />}
