@@ -69,14 +69,28 @@ export default function TasksTable(props: {
   const queryClient = RQ.useQueryClient()
   const { pagination, selection, setPagination, setSelection } = useTable()
   const [deleteModalOpen, setDeleteModalOpen] = R.useState(false)
-  const { data: tasks } = useQuery()
+  const [pollingEnabled, setPollingEnabled] = R.useState(true)
+  const [lastRefreshTime, setLastRefreshTime] = R.useState<Date>(new Date())
+  const { data: tasks } = useQuery({ polling: pollingEnabled })
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
   const databaseTaskApi = createDatabaseTaskApi(maipl.client)
 
+  // Update last refresh time when data changes
+  R.useEffect(() => {
+    if (tasks) setLastRefreshTime(new Date())
+  }, [tasks])
+
   const onDeleteSelected = () => {
     if (selection.size === 0) return
     setDeleteModalOpen(true)
+  }
+
+  const togglePolling = () => {
+    setPollingEnabled(!pollingEnabled)
+    if (pollingEnabled) {
+      queryClient.refetchQueries({ queryKey: ['database-tasks'] })
+    }
   }
 
   const deleteMutation = RQ.useMutation({
@@ -119,8 +133,14 @@ export default function TasksTable(props: {
     setDeleteModalOpen(false)
   }
 
-  const selectedTasks = tasks?.data?.filter(task => selection.has(task.id)) ?? []
-  const deletableTasks = selectedTasks.filter(task => task.status !== "in_progress")
+  // Normalize API tasks (Dates) to local DatabaseTask shape (strings)
+  const rows: DatabaseTask[] = R.useMemo(() => {
+    return (tasks?.data ?? []).map((t: any) => ({
+      ...t,
+      created_at: (t.created_at instanceof Date ? t.created_at.toISOString() : t.created_at) as string,
+      updated_at: (t.updated_at instanceof Date ? t.updated_at.toISOString() : t.updated_at) as string,
+    })) as DatabaseTask[]
+  }, [tasks])
 
   return (
     <M.Stack
@@ -133,14 +153,25 @@ export default function TasksTable(props: {
       }}
     >
       <RR.Outlet />
-      <M.Stack direction="row">
+      <M.Stack direction="row" alignItems="center" spacing={2}>
         <M.Stack flexGrow={1} />
+        {pollingEnabled && (
+          <M.Typography variant="caption" color="text.secondary">
+            Auto-refreshing every 5s • Last: {lastRefreshTime.toLocaleTimeString()}
+          </M.Typography>
+        )}
         <CreateTaskButton />
         <MR.ActionButton
           children={<I.Delete />}
           onClick={onDeleteSelected}
           title="Delete Selected"
           disabled={selection.size === 0}
+        />
+        <MR.ActionButton
+          children={pollingEnabled ? <I.Pause /> : <I.PlayArrow />}
+          onClick={togglePolling}
+          title={pollingEnabled ? "Disable Auto-refresh" : "Enable Auto-refresh"}
+          color={pollingEnabled ? "primary" : "default"}
         />
         <MR.ActionButton
           children={<I.Refresh />}
@@ -158,7 +189,7 @@ export default function TasksTable(props: {
             cell: ({ row }) => <TaskActions task={row.original} />,
           }),
         ]}
-        rows={tasks?.data ?? []}
+        rows={rows}
         count={tasks?.count ?? 0}
         pagination={pagination}
         selection={selection}
@@ -172,8 +203,8 @@ export default function TasksTable(props: {
         open={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}
-        tasks={selectedTasks}
-        deletableTasks={deletableTasks}
+        tasks={rows.filter(task => selection.has(task.id))}
+        deletableTasks={rows.filter(task => selection.has(task.id) && task.status !== "in_progress")}
         isPending={deleteMutation.isPending}
       />
     </M.Stack>

@@ -35,14 +35,17 @@ function useTable(props?: {
   }
 }
 
-function useQuery() {
+function useQuery(props?: { polling?: boolean }) {
   const maipl = useMaipl()
   const databaseTaskApi = createDatabaseTaskApi(maipl.client)
+  const { polling = true } = props || {}
   
   return RQ.useQuery({
     queryKey: ['database-tasks'],
     queryFn: () => databaseTaskApi.getTasks(),
-    initialData: { data: [], count: 0, next: null, prev: null, page: 1, size: 25 }
+    initialData: { data: [], count: 0, next: null, prev: null, page: 1, size: 25 },
+    refetchInterval: polling ? 5000 : false,
+    refetchIntervalInBackground: false,
   })
 }
 

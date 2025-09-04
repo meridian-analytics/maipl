@@ -255,6 +255,7 @@ interface GroupLogModalProps {
 }
 
 function GroupLogModal({ open, onClose, taskId, groupId, groupName, databaseTaskApi }: GroupLogModalProps) {
+  const queryClient = RQ.useQueryClient()
   const { data: logData, isLoading, error } = RQ.useQuery({
     queryKey: ['group-log', taskId, groupId],
     queryFn: () => databaseTaskApi.getGroupLog(taskId, groupId),
@@ -262,67 +263,13 @@ function GroupLogModal({ open, onClose, taskId, groupId, groupName, databaseTask
   })
 
   return (
-    <MR.Modal onClose={onClose}>
-      <M.Stack spacing={3} sx={{ maxWidth: "1000px", maxHeight: "80vh", overflow: "auto" }}>
-        <M.Stack direction="row" justifyContent="space-between" alignItems="center">
-          <M.Typography variant="h5">Group Log: {groupName}</M.Typography>
-          <M.Button onClick={onClose}>Close</M.Button>
-        </M.Stack>
-        
-        {isLoading && (
-          <M.Stack spacing={2} alignItems="center" sx={{ py: 4 }}>
-            <M.CircularProgress />
-            <M.Typography>Loading log...</M.Typography>
-          </M.Stack>
-        )}
-
-        {error && (
-          <M.Stack spacing={2} alignItems="center" sx={{ py: 4 }}>
-            <M.Typography color="error">Failed to load log</M.Typography>
-            <M.Button onClick={onClose}>Close</M.Button>
-          </M.Stack>
-        )}
-
-        {logData && (
-          <>
-            <M.Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
-              <M.Stack spacing={1}>
-                <M.Typography variant="body2" color="text.secondary">
-                  <strong>Task ID:</strong> {logData.task_id}
-                </M.Typography>
-                <M.Typography variant="body2" color="text.secondary">
-                  <strong>Group ID:</strong> {logData.group_id}
-                </M.Typography>
-                <M.Typography variant="body2" color="text.secondary">
-                  <strong>File Path:</strong> {logData.file_path}
-                </M.Typography>
-              </M.Stack>
-            </M.Paper>
-
-            <M.Paper sx={{ p: 2 }}>
-              <M.Typography variant="h6" gutterBottom>Log Content</M.Typography>
-              <M.Box
-                component="pre"
-                sx={{
-                  bgcolor: 'black',
-                  color: 'lime',
-                  p: 2,
-                  borderRadius: 1,
-                  overflow: 'auto',
-                  maxHeight: '400px',
-                  fontFamily: 'monospace',
-                  fontSize: '0.875rem',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word'
-                }}
-              >
-                {logData.log_content}
-              </M.Box>
-            </M.Paper>
-          </>
-        )}
-      </M.Stack>
-    </MR.Modal>
+    <MR.Terminal
+      consoleOutput={logData?.log_content || ''}
+      onClose={onClose}
+      onRefresh={() => queryClient.refetchQueries({ queryKey: ['group-log', taskId, groupId] })}
+      isLoading={isLoading}
+      error={(error as Error) || null}
+    />
   )
 }
 
