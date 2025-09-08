@@ -77,6 +77,8 @@ function EditTask(props: {
   const [valDatasetOptions, setValDatasetOptions] = R.useState<
     Record<string, { annotation: string; batchSize: number }>
   >({})
+  const [startFromExistingModel, setStartFromExistingModel] = R.useState(false)
+  const [isModelNameAuto, setIsModelNameAuto] = R.useState(true)
 
   const openModal = () => setIsModalOpen(true)
   const closeModal = () => setIsModalOpen(false)
@@ -127,6 +129,18 @@ function EditTask(props: {
     size: pagination.pageSize,
   })
 
+  // Fetch audio configuration files for dropdown in Options tab
+  const { data: audioConfigFiles } = RQ.useQuery({
+    queryKey: ["files", File.t_maipl_folder.audio_configs],
+    queryFn: () =>
+      File.list(maipl.client, {
+        maipl_folder: File.t_maipl_folder.audio_configs,
+        page: 1,
+        size: 100,
+      }).then((page) => new Map(page.data.map((f) => [f.id, f]))),
+    initialData: new Map<number, File.t>(),
+  })
+
   const createMutation = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof TrainerTask.create>) => {
       return TrainerTask.create(...vars)
@@ -174,7 +188,11 @@ function EditTask(props: {
 
     const selectedDataset = datasetFiles[0]
     const selectedRecipe = recipeFiles[0]
-    const selectedModel = modelFiles.length > 0 ? modelFiles[0] : undefined
+    if (startFromExistingModel && modelFiles.length !== 1) {
+      console.error("Model file must be selected in existing model mode")
+      return
+    }
+    const selectedModel = startFromExistingModel ? modelFiles[0] : undefined
 
     const task = {
       name,
@@ -184,8 +202,8 @@ function EditTask(props: {
       recipe_file: selectedRecipe.id,
       model_file: selectedModel?.id,
       dataset_config: {
-        train: selectedTrainDatasets.filter((dataset) => dataset.includes("/")),
-        val: selectedValDatasets.filter((dataset) => dataset.includes("/")),
+        train: selectedTrainDatasets.filter((dataset) => isDatasetItemId(dataset)),
+        val: selectedValDatasets.filter((dataset) => isDatasetItemId(dataset)),
         train_options: trainDatasetOptions,
         val_options: valDatasetOptions,
       },
@@ -216,19 +234,50 @@ function EditTask(props: {
     }
   }, [selection])
 
+  R.useEffect(() => {
+    if (!startFromExistingModel && tab === Tab.model_files) {
+      setTab(Tab.dataset_files)
+    }
+  }, [startFromExistingModel, tab])
+
+  const computeDefaultModelName = (taskName: string) => {
+    const trimmed = (taskName || "").trim()
+    if (!trimmed) return ""
+    const base = trimmed
+      .replace(/[\s/\\]+/g, "_")
+      .replace(/[^\w.-]+/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "")
+    return base ? `${base}_model.kt` : ""
+  }
+
+  R.useEffect(() => {
+    if (isModelNameAuto) {
+      const next = computeDefaultModelName(name)
+      if (options.model_name !== next) {
+        setOptions({ ...options, model_name: next })
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, isModelNameAuto])
+
   const transformHDF5Groups = (
     hdf5_groups: Record<string, any>
   ): Array<any> => {
     return Object.entries(hdf5_groups).map(([groupName, groupContent]) => {
+      const datasets =
+        groupContent && typeof groupContent === "object"
+          ? groupContent["datasets"]
+          : undefined
+      const datasetNames =
+        datasets && typeof datasets === "object" ? Object.keys(datasets) : []
       return {
         id: groupName,
         name: groupName,
-        children: Object.entries(groupContent).map(
-          ([datasetName, datasetType]) => ({
-            id: `${groupName}/${datasetName}`,
-            name: `${datasetName}`,
-          })
-        ),
+        children: datasetNames.map((datasetName) => ({
+          id: `${groupName}/${datasetName}`,
+          name: `${datasetName}`,
+        })),
       }
     })
   }
@@ -242,14 +291,8 @@ function EditTask(props: {
       </TreeItem>
     ))
 
-  const getItemDescendantsIds = (item: TreeViewBaseItem) => {
-    const ids: string[] = []
-    item.children?.forEach((child) => {
-      ids.push(child.id)
-      ids.push(...getItemDescendantsIds(child))
-    })
-    return ids
-  }
+  const isDatasetItemId = (id: string) =>
+    typeof id === "string" && id.startsWith("/") && id.slice(1).includes("/")
 
   const handleItemSelectionToggle = (
     event: React.SyntheticEvent,
@@ -268,38 +311,8 @@ function EditTask(props: {
     >,
     currentOptions: Record<string, { annotation: string; batchSize: number }>
   ) => {
-    return (event: React.SyntheticEvent, newSelectedItems: string[]) => {
-      const itemsToSelect: string[] = []
-      const itemsToUnSelect: { [itemId: string]: boolean } = {}
-
-      Object.entries(toggledItemRef.current).forEach(([itemId, isSelected]) => {
-        const item =
-          groups.find((group) => group.id === itemId) ||
-          groups
-            .flatMap((group) => group.children)
-            .find((child) => child.id === itemId)
-
-        if (item) {
-          const descendants = getItemDescendantsIds(item)
-          if (isSelected) {
-            itemsToSelect.push(itemId, ...descendants)
-          } else {
-            itemsToUnSelect[itemId] = true
-            descendants.forEach((descendantId) => {
-              itemsToUnSelect[descendantId] = true
-            })
-          }
-        }
-      })
-
-      const finalSelectedItems = Array.from(
-        new Set(
-          [...newSelectedItems, ...itemsToSelect].filter(
-            (itemId) => !itemsToUnSelect[itemId]
-          )
-        )
-      )
-
+    return (_event: React.SyntheticEvent, newSelectedItems: string[]) => {
+      const finalSelectedItems = Array.from(new Set(newSelectedItems))
       setSelectedDatasets(finalSelectedItems)
 
       const newOptions: Record<
@@ -307,12 +320,14 @@ function EditTask(props: {
         { annotation: string; batchSize: number }
       > = {}
 
-      finalSelectedItems.forEach((itemId) => {
-        newOptions[itemId] = currentOptions[itemId] || {
-          annotation: "",
-          batchSize: 32,
-        }
-      })
+      finalSelectedItems
+        .filter((itemId) => isDatasetItemId(itemId))
+        .forEach((itemId) => {
+          newOptions[itemId] = currentOptions[itemId] || {
+            annotation: "",
+            batchSize: 32,
+          }
+        })
       setDatasetOptions(newOptions)
 
       toggledItemRef.current = {}
@@ -333,7 +348,23 @@ function EditTask(props: {
   return (
     <MR.Modal onClose={props.onClose} sx={{ minWidth: 800 }}>
       <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
-        <M.Typography variant="h6">Create new training task ...</M.Typography>
+        <M.Stack direction="row" alignItems="center">
+          <M.Typography variant="h6">Create new training task ...</M.Typography>
+          <M.Stack sx={{ flexGrow: 1 }} />
+          <M.FormControlLabel
+            control={
+              <M.Switch
+                checked={startFromExistingModel}
+                onChange={(e) => {
+                  const checked = e.target.checked
+                  setStartFromExistingModel(checked)
+                  if (checked) setTab(Tab.model_files)
+                }}
+              />
+            }
+            label={startFromExistingModel ? "With existing model" : "New model"}
+          />
+        </M.Stack>
         <M.Stack component={M.Paper} padding={2}>
           <M.TextField
             label="Task Name"
@@ -354,7 +385,9 @@ function EditTask(props: {
           >
             <M.Tab label="Dataset Files" value={Tab.dataset_files} />
             <M.Tab label="Recipe Files" value={Tab.recipe_files} />
-            <M.Tab label="Model Files" value={Tab.model_files} />
+            {startFromExistingModel && (
+              <M.Tab label="Model Files" value={Tab.model_files} />
+            )}
             <M.Tab label="Train Table" value={Tab.train_table} />
             <M.Tab label="Validation Table" value={Tab.val_table} />
             <M.Tab label="Options" value={Tab.options} />
@@ -504,7 +537,7 @@ function EditTask(props: {
               {renderTree(groups)}
             </SimpleTreeView>
             {selectedTrainDatasets
-              .filter((dataset) => dataset.includes("/"))
+              .filter((dataset) => isDatasetItemId(dataset))
               .map((dataset) => (
                 <M.Box key={dataset} sx={{ mt: 2 }}>
                   <M.Stack direction="row" spacing={2} alignItems="center">
@@ -566,7 +599,7 @@ function EditTask(props: {
               {renderTree(groups)}
             </SimpleTreeView>
             {selectedValDatasets
-              .filter((dataset) => dataset.includes("/"))
+              .filter((dataset) => isDatasetItemId(dataset))
               .map((dataset) => (
                 <M.Box key={dataset} sx={{ mt: 2 }}>
                   <M.Stack direction="row" spacing={2} alignItems="center">
@@ -625,13 +658,51 @@ function EditTask(props: {
                 <M.TextField
                   label="Model Name"
                   value={options.model_name || ""}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setOptions({ ...options, model_name: e.target.value })
-                  }
+                    setIsModelNameAuto(false)
+                  }}
                   sx={{ flexGrow: 1 }}
                   required
                 />
                 <M.Tooltip title="Filename to save the trained model.">
+                  <HelpOutlineIcon fontSize="small" />
+                </M.Tooltip>
+              </M.Stack>
+            </M.FormControl>
+
+            {/* Audio Representation Configuration (optional) */}
+            <M.FormControl fullWidth>
+              <M.Stack direction="row" alignItems="center" spacing={1}>
+                <M.TextField
+                  label="Audio Representation Configuration"
+                  value={
+                    options.audio_representation_config_id
+                      ? String(options.audio_representation_config_id)
+                      : ""
+                  }
+                  onChange={(e) =>
+                    setOptions({
+                      ...options,
+                      audio_representation_config_id: Number(e.target.value),
+                    })
+                  }
+                  select
+                  fullWidth
+                  helperText="Select the audio configuration (optional)"
+                >
+                  <M.MenuItem value="">
+                    <M.Typography color="text.secondary">
+                      Select audio configuration...
+                    </M.Typography>
+                  </M.MenuItem>
+                  {Array.from(audioConfigFiles?.values() || []).map((file) => (
+                    <M.MenuItem key={file.id} value={file.id}>
+                      {`${file.maipl_folder}/${file.path}`}
+                    </M.MenuItem>
+                  ))}
+                </M.TextField>
+                <M.Tooltip title="Audio preprocessing config to apply during training.">
                   <HelpOutlineIcon fontSize="small" />
                 </M.Tooltip>
               </M.Stack>
@@ -687,7 +758,9 @@ function EditTask(props: {
           <M.Button
             children="Create"
             disabled={
-              selection.size < 2 || selectedTrainDatasetFiles.length !== 1
+              selectedTrainDatasetFiles.length !== 1 ||
+              selectedRecipeFiles.length !== 1 ||
+              (startFromExistingModel && selectedModelFiles.length !== 1)
             }
             onClick={onCreate}
             variant="contained"
