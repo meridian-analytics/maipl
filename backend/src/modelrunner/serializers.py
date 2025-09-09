@@ -21,15 +21,9 @@ class ModelRunnerTaskSerializer(CreatorMixin, serializers.ModelSerializer):
 
 class DetectionSerializer(CreatorMixin, serializers.ModelSerializer):
     # handle the GET request for retrieving a model task
-    file_path = serializers.SerializerMethodField('get_filename')
     task = serializers.PrimaryKeyRelatedField(queryset=ModelRunnerTask.objects.all())
 
     class Meta:
         model = Detection
-        exclude = ('updated_at',)
+        fields = '__all__'
         read_only_fields = ('id', 'created_at', 'updated_at', 'user_id')
-
-    def get_filename(self, obj):
-      # return the filename of the file associated with the detection
-      # Note: file field was removed, so we return the filename field directly
-      return obj.filename 
