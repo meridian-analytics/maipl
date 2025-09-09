@@ -25,5 +25,13 @@ export default function LogLoader() {
 
   const logOutput = typeof data === 'string' ? data : ''
 
-  return <Terminal consoleOutput={logOutput} onClose={onClose} onRefresh={refetch} />
+  return (
+    <Terminal
+      consoleOutput={logOutput}
+      onClose={onClose}
+      onRefresh={refetch}
+      isLoading={isLoading}
+      error={error as Error | null}
+    />
+  )
 }

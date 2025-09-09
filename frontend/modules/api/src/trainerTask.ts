@@ -154,7 +154,11 @@ const start = async (client: Client.t, id: number): Promise<t> => {
 const get_console = async (client: Client.t, id: number): Promise<string> => {
   const response = await client
     .get<string>(
-      `${K.MAIPL_MODEL_TRAINER_BACKEND}/api/ketos/train/tasks/${id}/console/`
+      `${K.MAIPL_MODEL_TRAINER_BACKEND}/api/ketos/train/tasks/${id}/console/`,
+      {
+        responseType: "text" as any,
+        headers: { Accept: "text/plain, */*" },
+      }
     )
     .then((r) => r.data)
   return response
@@ -164,7 +168,11 @@ const get_console = async (client: Client.t, id: number): Promise<string> => {
 const get_log = async (client: Client.t, id: number): Promise<string> => {
   const response = await client
     .get<string>(
-      `${K.MAIPL_MODEL_TRAINER_BACKEND}/api/ketos/train/tasks/${id}/log/`
+      `${K.MAIPL_MODEL_TRAINER_BACKEND}/api/ketos/train/tasks/${id}/log/`,
+      {
+        responseType: "text" as any,
+        headers: { Accept: "text/plain, */*" },
+      }
     )
     .then((r) => r.data)
   return response

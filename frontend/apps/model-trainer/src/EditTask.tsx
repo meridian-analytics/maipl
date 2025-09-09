@@ -21,7 +21,7 @@ export default function EditTaskLoader() {
     navigate(-1)
   }
 
-  const { data: task, error } = RQ.useQuery({
+  const { data: task } = RQ.useQuery({
     enabled: taskId != null,
     queryKey: ["trainer-tasks", taskId],
     queryFn: () => {
@@ -45,10 +45,18 @@ enum Tab {
   options = "options",
 }
 
+type TrainerOptions = {
+  model_name?: string
+  audio_representation_config_id?: number
+  epochs?: number
+  seed?: number
+  start_from_existing_model?: boolean
+  existing_model_file_id?: number
+}
+
 function EditTask(props: {
   task?: TrainerTask.t
   onClose: () => void
-  addTask: (task: TrainerTask.t) => void
 }) {
   const queryClient = RQ.useQueryClient()
   const maipl = MR.useMaipl()
@@ -60,10 +68,7 @@ function EditTask(props: {
   const [tab, setTab] = R.useState<Tab>(Tab.dataset_files)
   const [name, setName] = R.useState("")
   const [description, setDescription] = R.useState("")
-  const [datasetFile, setDatasetFile] = R.useState<File.t>()
-  const [recipeFile, setRecipeFile] = R.useState<File.t>()
-  const [modelFile, setModelFile] = R.useState<File.t>()
-  const [options, setOptions] = R.useState<TrainerTask.t_options>({})
+  const [options, setOptions] = R.useState<TrainerOptions>({})
   const [groups, setGroups] = R.useState<Array<string>>([])
   const [isModalOpen, setIsModalOpen] = R.useState(false)
   const [error, setError] = R.useState<string | null>(null)
@@ -151,7 +156,8 @@ function EditTask(props: {
           Error: Could not create task
         </M.Alert>
       ))
-      if (import.meta.env["DEV"]) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (import.meta && (import.meta as any).env && (import.meta as any).env["DEV"]) {
         console.error("EditTask createMutation error", err, vars)
       }
     },
@@ -194,18 +200,34 @@ function EditTask(props: {
     }
     const selectedModel = startFromExistingModel ? modelFiles[0] : undefined
 
+    const optionsWithMode = {
+      ...options,
+      start_from_existing_model: startFromExistingModel,
+      existing_model_file_id: startFromExistingModel ? selectedModel?.id : undefined,
+    }
+
+    const filteredTrainOptions = Object.fromEntries(
+      Object.entries(trainDatasetOptions).filter(([, opt]) =>
+        Boolean(opt && typeof opt.annotation === "string" && opt.annotation.trim() !== "")
+      )
+    )
+    const filteredValOptions = Object.fromEntries(
+      Object.entries(valDatasetOptions).filter(([, opt]) =>
+        Boolean(opt && typeof opt.annotation === "string" && opt.annotation.trim() !== "")
+      )
+    )
+
     const task = {
       name,
       description,
-      options,
+      options: optionsWithMode,
       dataset_file: selectedDataset.id,
       recipe_file: selectedRecipe.id,
-      model_file: selectedModel?.id,
       dataset_config: {
-        train: selectedTrainDatasets.filter((dataset) => isDatasetItemId(dataset)),
-        val: selectedValDatasets.filter((dataset) => isDatasetItemId(dataset)),
-        train_options: trainDatasetOptions,
-        val_options: valDatasetOptions,
+        train: selectedTrainDatasets.filter((dataset) => isGroupItemId(dataset)),
+        val: selectedValDatasets.filter((dataset) => isGroupItemId(dataset)),
+        train_options: filteredTrainOptions,
+        val_options: filteredValOptions,
       },
     }
     createMutation.mutateAsync([maipl.client, task])
@@ -213,7 +235,11 @@ function EditTask(props: {
 
   R.useEffect(() => {
     if (selectedTrainDatasetFiles.length == 1) {
-      const hdf5_groups = selectedTrainDatasetFiles[0].meta["hdf5_structure"]
+      const meta = selectedTrainDatasetFiles[0].meta
+      const hdf5_groups =
+        meta && (meta as any).hdf5_structure && typeof (meta as any).hdf5_structure === "object"
+          ? (meta as any).hdf5_structure as Record<string, unknown>
+          : {}
       const transformedGroups = transformHDF5Groups(hdf5_groups)
       setGroups(transformedGroups)
     } else if (selectedTrainDatasetFiles.length == 0) {
@@ -264,22 +290,37 @@ function EditTask(props: {
   const transformHDF5Groups = (
     hdf5_groups: Record<string, any>
   ): Array<any> => {
-    return Object.entries(hdf5_groups).map(([groupName, groupContent]) => {
-      const datasets =
-        groupContent && typeof groupContent === "object"
-          ? groupContent["datasets"]
-          : undefined
-      const datasetNames =
-        datasets && typeof datasets === "object" ? Object.keys(datasets) : []
-      return {
-        id: groupName,
-        name: groupName,
-        children: datasetNames.map((datasetName) => ({
-          id: `${groupName}/${datasetName}`,
-          name: `${datasetName}`,
-        })),
+    const groupPaths = Object.keys(hdf5_groups || {})
+    type Node = { id: string; name: string; children: Node[]; parentId: string }
+    const nodeMap: Record<string, Node> = {}
+    const ensureNode = (path: string, parentId: string) => {
+      if (!nodeMap[path]) {
+        const name = path.split("/").filter(Boolean).slice(-1)[0] || "/"
+        nodeMap[path] = { id: path, name, children: [], parentId }
       }
-    })
+      return nodeMap[path]
+    }
+    const normalize = (path: string) =>
+      path.startsWith("/") ? path : `/${path}`
+    for (const gp of groupPaths) {
+      const normalized = normalize(gp)
+      const segments = normalized.split("/").filter(Boolean)
+      let parent = "/"
+      let current = ""
+      for (const seg of segments) {
+        current = parent === "/" ? `/${seg}` : `${parent}/${seg}`
+        const node = ensureNode(current, parent)
+        if (parent !== "/") {
+          const parentNode = nodeMap[parent]
+          if (parentNode && !parentNode.children.find((c) => c.id === node.id)) {
+            parentNode.children.push(node)
+          }
+        }
+        parent = current
+      }
+    }
+    // Top-level nodes have parentId "/"
+    return Object.values(nodeMap).filter((n) => n.parentId === "/")
   }
 
   const renderTree = (nodes: Array<any>): React.ReactNode =>
@@ -291,8 +332,20 @@ function EditTask(props: {
       </TreeItem>
     ))
 
-  const isDatasetItemId = (id: string) =>
-    typeof id === "string" && id.startsWith("/") && id.slice(1).includes("/")
+  const flattenGroups = (nodes: Array<any>): Array<{ id: string; name: string }> => {
+    const result: Array<{ id: string; name: string }> = []
+    const walk = (ns: Array<any>) => {
+      ns.forEach((n) => {
+        result.push({ id: n.id, name: n.name })
+        if (n.children && n.children.length > 0) walk(n.children)
+      })
+    }
+    walk(nodes)
+    return result
+  }
+
+  const isGroupItemId = (id: string) =>
+    typeof id === "string" && id.startsWith("/") && id.length > 1
 
   const handleItemSelectionToggle = (
     event: React.SyntheticEvent,
@@ -321,7 +374,7 @@ function EditTask(props: {
       > = {}
 
       finalSelectedItems
-        .filter((itemId) => isDatasetItemId(itemId))
+        .filter((itemId) => isGroupItemId(itemId))
         .forEach((itemId) => {
           newOptions[itemId] = currentOptions[itemId] || {
             annotation: "",
@@ -537,7 +590,7 @@ function EditTask(props: {
               {renderTree(groups)}
             </SimpleTreeView>
             {selectedTrainDatasets
-              .filter((dataset) => isDatasetItemId(dataset))
+              .filter((dataset) => isGroupItemId(dataset))
               .map((dataset) => (
                 <M.Box key={dataset} sx={{ mt: 2 }}>
                   <M.Stack direction="row" spacing={2} alignItems="center">
@@ -557,13 +610,11 @@ function EditTask(props: {
                           }))
                         }
                       >
-                        {groups.flatMap((group) =>
-                          group.children.map((child) => (
-                            <M.MenuItem key={child.id} value={child.id}>
-                              {`${group.name}/${child.name}`}
-                            </M.MenuItem>
-                          ))
-                        )}
+                        {flattenGroups(groups).map((node) => (
+                          <M.MenuItem key={node.id} value={node.id}>
+                            {node.id}
+                          </M.MenuItem>
+                        ))}
                       </M.Select>
                     </M.FormControl>
                     <M.TextField
@@ -599,7 +650,7 @@ function EditTask(props: {
               {renderTree(groups)}
             </SimpleTreeView>
             {selectedValDatasets
-              .filter((dataset) => isDatasetItemId(dataset))
+              .filter((dataset) => isGroupItemId(dataset))
               .map((dataset) => (
                 <M.Box key={dataset} sx={{ mt: 2 }}>
                   <M.Stack direction="row" spacing={2} alignItems="center">
@@ -619,13 +670,11 @@ function EditTask(props: {
                           }))
                         }
                       >
-                        {groups.flatMap((group) =>
-                          group.children.map((child) => (
-                            <M.MenuItem key={child.id} value={child.id}>
-                              {`${group.name}/${child.name}`}
-                            </M.MenuItem>
-                          ))
-                        )}
+                        {flattenGroups(groups).map((node) => (
+                          <M.MenuItem key={node.id} value={node.id}>
+                            {node.id}
+                          </M.MenuItem>
+                        ))}
                       </M.Select>
                     </M.FormControl>
                     <M.TextField

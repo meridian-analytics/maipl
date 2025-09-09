@@ -1,11 +1,6 @@
-import React, { useState, useEffect } from "react"
-import model_recipe from "./schema/model_recipe.json"
-import audio_repr from "./schema/audio_repr.json"
-import recipe from "./schema/recipe.json"
+import { useState, useEffect, useMemo } from "react"
 import Form from "@rjsf/mui"
 import validator from "@rjsf/validator-ajv8"
-import recipe_ui_schema from "./schema/recipe_ui_schema.json"
-import ui_schema from "./schema/ui_schema.json"
 import {
   Box,
   TextField,
@@ -22,9 +17,7 @@ import * as MR from "@maipl/react"
 import * as RQ from "@tanstack/react-query"
 import { RecipeSchema, File } from "@maipl/api"
 
-const schemas = [recipe]
-
-const EditRecipe = ({ onClose }) => {
+const EditRecipe = ({ onClose }: { onClose: () => void }) => {
   const maipl = MR.useMaipl()
   const queryClient = RQ.useQueryClient()
   const { data: recipeSchemas } = RQ.useQuery({
@@ -36,22 +29,20 @@ const EditRecipe = ({ onClose }) => {
 
   const [name, setName] = useState("")
   const [tag, setTag] = useState("")
-  const [selectedInterface, setSelectedInterface] = useState(null)
+  const [selectedInterface, setSelectedInterface] = useState<string | null>(null)
   const [showAdvancedFields, setShowAdvancedFields] = useState(false)
 
   useEffect(() => {
-    const advancedFieldsSection = document.querySelector(".advanced_fields")
+    const advancedFieldsSection = document.querySelector(".advanced_fields") as HTMLElement | null
     if (advancedFieldsSection) {
-      advancedFieldsSection.style.display = showAdvancedFields
-        ? "block"
-        : "none"
+      advancedFieldsSection.style.display = showAdvancedFields ? "block" : "none"
     }
   }, [showAdvancedFields, selectedInterface])
 
   const uploadFile = RQ.useMutation({
     mutationFn: (vars: Parameters<typeof File.create>) => File.create(...vars),
     onError: (err, vars) => {
-      if (import.meta.env["DEV"]) {
+      if ((import.meta as any)?.env?.["DEV"]) {
         console.error("FileUpload uploadMutation error", err, vars)
       }
     },
@@ -63,7 +54,7 @@ const EditRecipe = ({ onClose }) => {
     },
   })
 
-  const handleSubmit = async (data) => {
+  const handleSubmit = async (data: any) => {
     try {
       const file_data = {
         ...data.formData["essential_fields"],
@@ -72,15 +63,16 @@ const EditRecipe = ({ onClose }) => {
       }
 
       const file_json = JSON.stringify(file_data)
-
-      const blob = new Blob([file_json], { type: "application/json" })
+      const fileForUpload = new globalThis.File([file_json], `${name}.json`, {
+        type: "application/json",
+      })
 
       await uploadFile.mutateAsync([
         maipl.client,
         {
-          file: blob,
-          maipl_folder: "recipe",
-          meta: {},
+          file: fileForUpload,
+          maipl_folder: File.t_maipl_folder.model_recipes,
+          meta: null,
           path: `${name}.json`,
           tag,
         },
@@ -90,9 +82,13 @@ const EditRecipe = ({ onClose }) => {
     }
   }
 
-  const handleError = (errors) => {
+  const handleError = (errors: any) => {
     console.log(errors)
   }
+
+  const selectedSchema = useMemo(() => {
+    return recipeSchemas?.find((s) => s.interface === selectedInterface)
+  }, [recipeSchemas, selectedInterface])
 
   return (
     <div>
@@ -121,7 +117,7 @@ const EditRecipe = ({ onClose }) => {
           <Select
             label="Interface"
             value={selectedInterface || ""}
-            onChange={(e) => setSelectedInterface(e.target.value)}
+            onChange={(e) => setSelectedInterface(e.target.value as string)}
           >
             {interfaces?.map((i) => (
               <MenuItem key={i} value={i}>
@@ -140,18 +136,13 @@ const EditRecipe = ({ onClose }) => {
           label="Show Advanced Fields"
         />
       </Box>
-      {selectedInterface && (
+      {selectedSchema && (
         <Form
-          schema={
-            recipeSchemas.find((s) => s.interface === selectedInterface)?.schema
-          }
+          schema={selectedSchema.schema as any}
           validator={validator}
           onError={handleError}
           onSubmit={handleSubmit}
-          uiSchema={
-            recipeSchemas.find((s) => s.interface === selectedInterface)
-              ?.ui_schema
-          }
+          uiSchema={selectedSchema.ui_schema as any}
         />
       )}
     </div>
