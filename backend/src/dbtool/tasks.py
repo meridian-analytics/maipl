@@ -13,6 +13,7 @@ class ValidationError(Exception):
 
 from celery import shared_task
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -158,30 +159,77 @@ def process_database_group(self, task_id: int, group_id: int) -> Dict[str, Any]:
         download_database_file(task_context, file_utils)
         
         # Log completion of setup phase
+        audio_dir_path = os.path.join(local_path, f'audio_{group_id}')
+        audio_file_count = len(os.listdir(audio_dir_path)) if os.path.exists(audio_dir_path) else 0
+        
         file_utils.write_to_console(console_output_file, [
             "Database processing setup completed successfully",
             f"Local path: {local_path}",
             f"Group ID: {group_id}",
-            f"Audio files: {len(os.listdir(os.path.join(local_path, f'audio_{group_id}')))} files",
+            f"Audio files: {audio_file_count} files",
             f"Audio representation config file: {'config' if os.path.exists(os.path.join(local_path, f'config_{group_id}')) else 'None'}",
             f"Annotation file: {'annotation' if os.path.exists(os.path.join(local_path, f'annotation_{group_id}')) else 'None'}",
             f"Database file: {'database' if os.path.exists(os.path.join(local_path, 'database')) else 'None'}",
             "\n"
         ])
         
-        # Step 4: Validate annotation files exist in audio folder
-        # This prevents the task from failing later with file not found errors
-        validation_successful = validate_annotation_files_exist(task_context, file_utils)
-        if not validation_successful:
-            error_msg = "Annotation file validation failed - some audio files referenced in CSV are missing from audio folder"
+        # Step 4: Handle annotation file workflow
+        # Check if this is an annotation-only workflow
+        config = group.config
+        annotations_file_id = config.get('annotations', {}).get('file_id')
+        audio_file_ids = config.get('audio_file_ids', [])
+        
+        # Debug logging for workflow detection
+        file_utils.write_to_console(console_output_file, [
+            "Workflow detection:",
+            f"  - annotations_file_id: {annotations_file_id}",
+            f"  - audio_file_ids: {audio_file_ids}",
+            f"  - audio_file_ids length: {len(audio_file_ids) if audio_file_ids else 0}",
+            "\n"
+        ])
+        
+        if annotations_file_id and not audio_file_ids:
+            # New annotation-only workflow: parse annotation file and query database
             file_utils.write_to_console(console_output_file, [
-                "TASK TERMINATED: Annotation file validation failed",
-                "Please check the console output above for details on missing files",
-                "Fix the missing files and retry the task",
+                "Using new annotation-only workflow:",
+                "1. Parse annotation file line by line",
+                "2. Query database for matching audio files",
+                "3. Download only the files that exist",
+                "4. Report missing files to console",
                 "\n"
             ])
-            update_task_and_group_status(task_id, group_id, 'error', 'error')
-            raise ValidationError(error_msg)
+            
+            parse_result = parse_annotation_file_and_query_database(task_context, file_utils)
+            if not parse_result['success']:
+                error_msg = "Annotation file parsing failed - some audio files referenced in CSV are missing from database"
+                file_utils.write_to_console(console_output_file, [
+                    "TASK TERMINATED: Annotation file parsing failed",
+                    "Please check the console output above for details on missing files",
+                    "Fix the missing files and retry the task",
+                    "\n"
+                ])
+                update_task_and_group_status(task_id, group_id, 'error', 'error')
+                raise ValidationError(error_msg)
+        else:
+            # Original workflow: validate annotation files exist in audio folder
+            # This prevents the task from failing later with file not found errors
+            file_utils.write_to_console(console_output_file, [
+                "Using original workflow:",
+                "1. Audio files downloaded from audio_file_ids",
+                "2. Validate annotation files exist in audio folder",
+                "\n"
+            ])
+            validation_successful = validate_annotation_files_exist(task_context, file_utils)
+            if not validation_successful:
+                error_msg = "Annotation file validation failed - some audio files referenced in CSV are missing from audio folder"
+                file_utils.write_to_console(console_output_file, [
+                    "TASK TERMINATED: Annotation file validation failed",
+                    "Please check the console output above for details on missing files",
+                    "Fix the missing files and retry the task",
+                    "\n"
+                ])
+                update_task_and_group_status(task_id, group_id, 'error', 'error')
+                raise ValidationError(error_msg)
         
         # Step 5: Implement actual database processing logic
         # This involves:
@@ -239,6 +287,9 @@ def download_audio_files(task_context: Dict[str, Any], file_utils: FileUtils) ->
     """
     Download audio files and reconstruct directory structure using file.path.
     
+    For annotation-only workflow, this function will be skipped as audio files
+    are downloaded during annotation file parsing.
+    
     Args:
         task_context: Dictionary containing task context
         file_utils: FileUtils instance for file operations
@@ -247,9 +298,20 @@ def download_audio_files(task_context: Dict[str, Any], file_utils: FileUtils) ->
     local_path = task_context["local_path"]
     console_output_file = task_context["console_output_file"]
     
-    # Get audio file IDs from group config
+    # Check if this is an annotation-only workflow
+    config = group.config
+    annotations_file_id = config.get('annotations', {}).get('file_id')
     audio_file_ids = group.config.get('audio_file_ids', [])
     
+    # If we have annotations but no audio_file_ids, this is the new annotation-only workflow
+    if annotations_file_id and not audio_file_ids:
+        file_utils.write_to_console(console_output_file, [
+            "Annotation-only workflow detected - audio files will be downloaded during annotation parsing",
+            "\n"
+        ])
+        return
+    
+    # Original workflow: download audio files from audio_file_ids
     if not audio_file_ids:
         file_utils.write_to_console(console_output_file, [
             "No audio files found in group config",
@@ -374,6 +436,9 @@ def download_annotation_file(task_context: Dict[str, Any], file_utils: FileUtils
     """
     Download annotation file and create symbolic link in annotation folder.
     
+    For annotation-only workflow, this function will be skipped as annotation file
+    is downloaded during annotation file parsing.
+    
     Args:
         task_context: Dictionary containing task context
         file_utils: FileUtils instance for file operations
@@ -385,9 +450,19 @@ def download_annotation_file(task_context: Dict[str, Any], file_utils: FileUtils
     # Get annotation file ID from group config
     config = group.config
     annotations_file_id = config.get('annotations', {}).get('file_id')
+    audio_file_ids = group.config.get('audio_file_ids', [])
     
     if not annotations_file_id:
         # No annotations file to download
+        return
+    
+    # If we have annotations but no audio_file_ids, this is the new annotation-only workflow
+    # Skip downloading here as it will be done in parse_annotation_file_and_query_database
+    if annotations_file_id and not audio_file_ids:
+        file_utils.write_to_console(console_output_file, [
+            "Annotation-only workflow detected - annotation file will be downloaded during parsing",
+            "\n"
+        ])
         return
     
     try:
@@ -463,11 +538,15 @@ def download_database_file(task_context: Dict[str, Any], file_utils: FileUtils) 
     """
     Download database file (if any) and create symbolic link in database folder.
     
+    For subsequent groups, this function will skip downloading if the database
+    file already exists locally from previous group processing.
+    
     Args:
         task_context: Dictionary containing task context
         file_utils: FileUtils instance for file operations
     """
     task = task_context["task"]
+    group = task_context["group"]
     local_path = task_context["local_path"]
     console_output_file = task_context["console_output_file"]
     
@@ -479,9 +558,17 @@ def download_database_file(task_context: Dict[str, Any], file_utils: FileUtils) 
         ])
         return
     
+    # Check if this is the first group or a subsequent group
+    is_first_group = group.id == task.groups.order_by('id').first().id if task.groups.exists() else True
+    
     # Check if we already have the database file locally (from previous groups)
     database_dir = os.path.join(local_path, "database")
     local_database_path = os.path.join(database_dir, task.database_file.basename)
+    
+    # Also check if there's a working database in the output directory from previous groups
+    output_dir = os.path.join(local_path, "output")
+    database_filename = task.output_settings.get('database_filename', f"database_{task.id}.h5")
+    output_database_path = os.path.join(output_dir, database_filename)
     
     if os.path.exists(local_database_path):
         # Database file already exists locally, no need to download again
@@ -495,6 +582,35 @@ def download_database_file(task_context: Dict[str, Any], file_utils: FileUtils) 
         task_context["database_dir"] = database_dir
         dbtool_logger.info(f"Using existing local database file: {local_database_path}")
         return
+    elif os.path.exists(output_database_path) and not is_first_group:
+        # Working database exists in output directory from previous groups
+        file_utils.write_to_console(console_output_file, [
+            "Working database file already exists in output directory (from previous group processing)",
+            f"  - {database_filename}",
+            "No need to download database file again",
+            "\n"
+        ])
+        
+        task_context["database_dir"] = database_dir
+        dbtool_logger.info(f"Using existing working database file: {output_database_path}")
+        return
+    
+    # For subsequent groups, if no local database exists, this might indicate a problem
+    if not is_first_group:
+        file_utils.write_to_console(console_output_file, [
+            "WARNING: This is not the first group but no local database file found",
+            "This might indicate that previous groups failed or were not properly processed",
+            "Will download the database file as fallback",
+            "\n"
+        ])
+        dbtool_logger.warning(f"Group {group.id} is not the first group but no local database file found at {local_database_path}")
+    
+    # For first group or fallback case, download the database file
+    file_utils.write_to_console(console_output_file, [
+        f"Downloading database file (first group: {is_first_group})",
+        f"  - {task.database_file.basename}",
+        "\n"
+    ])
     
     try:
         # Download file to NFS server
@@ -526,6 +642,272 @@ def download_database_file(task_context: Dict[str, Any], file_utils: FileUtils) 
         
     except Exception as e:
         dbtool_logger.error(f"Error downloading database file {task.database_file.id}: {e}")
+
+
+def parse_annotation_file_and_query_database(task_context: Dict[str, Any], file_utils: FileUtils) -> Dict[str, Any]:
+    """
+    Parse annotation file and query database for matching audio files.
+    This is the new workflow for annotation-only processing.
+    
+    Args:
+        task_context: Dictionary containing task context
+        file_utils: FileUtils instance for file operations
+        
+    Returns:
+        Dict containing:
+        - 'success': bool - True if all files found, False if any missing
+        - 'missing_files': list - List of missing files with line numbers
+        - 'found_files': list - List of found file instances
+        - 'downloaded_files': list - List of downloaded file paths
+    """
+    group = task_context["group"]
+    task = task_context["task"]
+    local_path = task_context["local_path"]
+    console_output_file = task_context["console_output_file"]
+    
+    # Check if we have annotations to process
+    config = group.config
+    annotations_file_id = config.get('annotations', {}).get('file_id')
+    
+    if not annotations_file_id:
+        # No annotations to process
+        return {
+            'success': True,
+            'missing_files': [],
+            'found_files': [],
+            'downloaded_files': []
+        }
+    
+    try:
+        # Download annotation file first
+        file_instance = File.objects.get(id=annotations_file_id)
+        downloaded_annotation_path = file_utils.download_file(annotations_file_id)
+        if not downloaded_annotation_path:
+            raise Exception(f"Failed to download annotation file {annotations_file_id}")
+        
+        # Create group-specific annotation directory
+        annotation_dir = os.path.join(local_path, f"annotation_{group.id}")
+        os.makedirs(annotation_dir, exist_ok=True)
+        
+        # Create symbolic link for annotation file
+        annotation_target_path = os.path.join(annotation_dir, file_instance.basename)
+        if os.path.exists(annotation_target_path):
+            os.remove(annotation_target_path)
+        os.symlink(downloaded_annotation_path, annotation_target_path)
+        
+        file_utils.write_to_console(console_output_file, [
+            "Annotation file downloaded and symlinked:",
+            f"  - {file_instance.basename}",
+            "\n"
+        ])
+        
+        task_context["annotation_dir"] = annotation_dir
+        
+        # Parse annotation file and query database
+        import csv
+        missing_files = []
+        found_files = []
+        downloaded_files = []
+        
+        file_utils.write_to_console(console_output_file, [
+            "Parsing annotation file and querying database for matching files...",
+            f"Annotation file: {annotation_target_path}",
+            f"Checking file permissions for user: {task.user.email}",
+            "\n"
+        ])
+        
+        with open(annotation_target_path, 'r', encoding='utf-8') as csvfile:
+            # Try to detect the delimiter
+            sample = csvfile.read(1024)
+            csvfile.seek(0)
+            
+            # Use csv.Sniffer to detect the delimiter
+            try:
+                dialect = csv.Sniffer().sniff(sample)
+                reader = csv.DictReader(csvfile, dialect=dialect)
+            except csv.Error:
+                # Fallback to comma delimiter
+                csvfile.seek(0)
+                reader = csv.DictReader(csvfile)
+            
+            # Find the filename column (common variations)
+            fieldnames = reader.fieldnames
+            filename_column = None
+            for possible_name in ['filename', 'file', 'file_path', 'path', 'audio_file', 'audio_path']:
+                if possible_name in fieldnames:
+                    filename_column = possible_name
+                    break
+            
+            if not filename_column:
+                # Try to find a column that contains file paths
+                for field in fieldnames:
+                    if field and ('file' in field.lower() or 'path' in field.lower()):
+                        filename_column = field
+                        break
+            
+            if not filename_column:
+                error_msg = f"Could not identify filename column in annotation CSV. Available columns: {fieldnames}"
+                file_utils.write_to_console(console_output_file, [
+                    f"ERROR: {error_msg}",
+                    "\n"
+                ])
+                dbtool_logger.error(error_msg)
+                return {
+                    'success': False,
+                    'missing_files': [{'line': 0, 'filename': 'COLUMN_NOT_FOUND', 'error': error_msg}],
+                    'found_files': [],
+                    'downloaded_files': []
+                }
+            
+            file_utils.write_to_console(console_output_file, [
+                f"Using filename column: {filename_column}",
+                f"Total columns: {len(fieldnames)}",
+                f"Columns: {', '.join(fieldnames)}",
+                "\n"
+            ])
+            
+            # Create group-specific audio directory
+            audio_dir = os.path.join(local_path, f"audio_{group.id}")
+            os.makedirs(audio_dir, exist_ok=True)
+            
+            # Process each row
+            line_number = 1  # CSV header is line 1
+            for row in reader:
+                line_number += 1
+                filename = row.get(filename_column, '').strip()
+                
+                if not filename:
+                    # Skip empty filename entries
+                    continue
+                
+                # Query database for file with matching path
+                # The filename in CSV might include relative path, so we need to match against file.path
+                # Also ensure the user has permission to access this file (owner or shared)
+                try:
+                    # Try exact match first with permission check
+                    file_instance = File.objects.filter(
+                        path=filename
+                    ).filter(
+                        Q(user_id=task.user) | Q(shared_to=task.user)
+                    ).distinct().get()
+                    found_files.append(file_instance)
+                    
+                    # Download the file
+                    downloaded_path = file_utils.download_file(file_instance.id)
+                    if not downloaded_path:
+                        missing_files.append({
+                            'line': line_number,
+                            'filename': filename,
+                            'error': f"Failed to download file {file_instance.id}"
+                        })
+                        dbtool_logger.error(f"Failed to download file {file_instance.id} for {filename}")
+                        continue
+                    
+                    # Reconstruct directory structure using file.path
+                    relative_path = file_instance.path.lstrip('/')
+                    target_dir = os.path.join(audio_dir, os.path.dirname(relative_path))
+                    os.makedirs(target_dir, exist_ok=True)
+                    
+                    # Create symbolic link
+                    target_path = os.path.join(target_dir, file_instance.basename)
+                    if os.path.exists(target_path):
+                        os.remove(target_path)
+                    
+                    os.symlink(downloaded_path, target_path)
+                    downloaded_files.append(target_path)
+                    
+                    dbtool_logger.debug(f"Downloaded and symlinked audio file: {target_path}")
+                    
+                except File.DoesNotExist:
+                    # File not found in database or user doesn't have permission
+                    missing_files.append({
+                        'line': line_number,
+                        'filename': filename,
+                        'error': "File not found in database or you don't have permission to access it"
+                    })
+                    dbtool_logger.warning(f"Missing or inaccessible audio file at line {line_number}: {filename}")
+                except Exception as e:
+                    # Other error
+                    missing_files.append({
+                        'line': line_number,
+                        'filename': filename,
+                        'error': str(e)
+                    })
+                    dbtool_logger.error(f"Error processing file at line {line_number}: {filename} - {e}")
+        
+        # Report results
+        if missing_files:
+            error_msg = f"Found {len(missing_files)} missing files out of {line_number - 1} total files"
+            
+            # Aggregate missing files by filename with list of line numbers
+            aggregated_missing = {}
+            for item in missing_files:
+                filename_key = item.get('filename') or 'UNKNOWN'
+                entry = aggregated_missing.setdefault(filename_key, { 'lines': [], 'error': item.get('error') })
+                entry['lines'].append(item.get('line', 0))
+                # Prefer the first non-empty error message if multiple
+                if not entry.get('error') and item.get('error'):
+                    entry['error'] = item.get('error')
+            
+            # Build console-friendly aggregated lines
+            aggregated_lines = []
+            for filename_key, info in aggregated_missing.items():
+                sorted_lines = sorted(info['lines'])
+                lines_str = ", ".join(str(l) for l in sorted_lines)
+                error_str = f" - {info['error']}" if info.get('error') else ""
+                aggregated_lines.append(f"  {filename_key}: lines {lines_str}{error_str}")
+            
+            file_utils.write_to_console(console_output_file, [
+                f"ERROR: {error_msg}",
+                "Missing files (aggregated by filename):",
+                *aggregated_lines,
+                "\n"
+            ])
+            dbtool_logger.error(error_msg)
+            return {
+                'success': False,
+                'missing_files': missing_files,
+                'found_files': found_files,
+                'downloaded_files': downloaded_files
+            }
+        else:
+            # Aggregate downloaded files (unique, relative paths)
+            downloaded_unique_rel = sorted({ os.path.relpath(f, audio_dir) for f in downloaded_files })
+            success_msg = (
+                f"Successfully found and downloaded all {len(downloaded_unique_rel)} audio files "
+                f"referenced in annotation CSV (with permission checking)"
+            )
+            file_utils.write_to_console(console_output_file, [
+                f"SUCCESS: {success_msg}",
+                "Downloaded files (unique):",
+                *[f"  - {p}" for p in downloaded_unique_rel],
+                "\n"
+            ])
+            dbtool_logger.info(success_msg)
+            
+            # Store audio directory in task context for later use
+            task_context["audio_dir"] = audio_dir
+            
+            return {
+                'success': True,
+                'missing_files': [],
+                'found_files': found_files,
+                'downloaded_files': downloaded_files
+            }
+            
+    except Exception as e:
+        error_msg = f"Error during annotation file parsing and database query: {e}"
+        file_utils.write_to_console(console_output_file, [
+            f"ERROR: {error_msg}",
+            "\n"
+        ])
+        dbtool_logger.error(error_msg)
+        return {
+            'success': False,
+            'missing_files': [{'line': 0, 'filename': 'PARSE_ERROR', 'error': error_msg}],
+            'found_files': [],
+            'downloaded_files': []
+        }
 
 
 def validate_annotation_files_exist(task_context: Dict[str, Any], file_utils: FileUtils) -> bool:
@@ -723,12 +1105,15 @@ def process_database_with_ketos(task_context: Dict[str, Any], file_utils: FileUt
         "\n"
     ])
     
-    # Safety warning if this might not be the first group
+    # Informational note: selected database is optional; we can append to existing or create new
     if not is_first_group and not has_selected_database:
-        dbtool_logger.warning(f"Group {group.id} is not the first group but task has no selected database. This might indicate a problem.")
+        dbtool_logger.info(
+            f"Group {group.id} is not the first group and no selected database is configured. "
+            "Proceeding to use existing working database if present, otherwise create a new one."
+        )
         file_utils.write_to_console(console_output_file, [
-            "WARNING: This group is not the first group but no selected database is configured.",
-            "This might indicate that previous groups failed or were not properly processed.",
+            "No selected database configured for this subsequent group.",
+            "Proceeding to use existing working database if present, otherwise create a new database.",
             "\n"
         ])
     
