@@ -224,8 +224,8 @@ function EditTask(props: {
       dataset_file: selectedDataset.id,
       recipe_file: selectedRecipe.id,
       dataset_config: {
-        train: selectedTrainDatasets.filter((dataset) => isGroupItemId(dataset)),
-        val: selectedValDatasets.filter((dataset) => isGroupItemId(dataset)),
+        train: selectedTrainDatasets.filter((dataset) => isDatasetItemId(dataset)),
+        val: selectedValDatasets.filter((dataset) => isDatasetItemId(dataset)),
         train_options: filteredTrainOptions,
         val_options: filteredValOptions,
       },
@@ -291,17 +291,25 @@ function EditTask(props: {
     hdf5_groups: Record<string, any>
   ): Array<any> => {
     const groupPaths = Object.keys(hdf5_groups || {})
-    type Node = { id: string; name: string; children: Node[]; parentId: string }
+    type Node = { 
+      id: string; 
+      name: string; 
+      children: Node[]; 
+      parentId: string;
+      isDataset?: boolean;
+    }
     const nodeMap: Record<string, Node> = {}
-    const ensureNode = (path: string, parentId: string) => {
+    const ensureNode = (path: string, parentId: string, isDataset = false) => {
       if (!nodeMap[path]) {
         const name = path.split("/").filter(Boolean).slice(-1)[0] || "/"
-        nodeMap[path] = { id: path, name, children: [], parentId }
+        nodeMap[path] = { id: path, name, children: [], parentId, isDataset }
       }
       return nodeMap[path]
     }
     const normalize = (path: string) =>
       path.startsWith("/") ? path : `/${path}`
+    
+    // First, create all group nodes
     for (const gp of groupPaths) {
       const normalized = normalize(gp)
       const segments = normalized.split("/").filter(Boolean)
@@ -319,13 +327,38 @@ function EditTask(props: {
         parent = current
       }
     }
+    
+    // Then, add dataset nodes for groups that have datasets
+    for (const [groupPath, groupData] of Object.entries(hdf5_groups)) {
+      if (groupData && typeof groupData === 'object' && 'datasets' in groupData) {
+        const datasets = (groupData as any).datasets
+        if (datasets && typeof datasets === 'object') {
+          const groupNode = nodeMap[normalize(groupPath)]
+          if (groupNode) {
+            // Add dataset nodes as children
+            for (const [datasetName, _datasetInfo] of Object.entries(datasets)) {
+              const datasetPath = `${normalize(groupPath)}/${datasetName}`
+              const datasetNode = ensureNode(datasetPath, groupNode.id, true)
+              if (!groupNode.children.find((c) => c.id === datasetNode.id)) {
+                groupNode.children.push(datasetNode)
+              }
+            }
+          }
+        }
+      }
+    }
+    
     // Top-level nodes have parentId "/"
     return Object.values(nodeMap).filter((n) => n.parentId === "/")
   }
 
   const renderTree = (nodes: Array<any>): React.ReactNode =>
     nodes.map((node) => (
-      <TreeItem key={node.id} itemId={node.id} label={node.name}>
+      <TreeItem 
+        key={node.id} 
+        itemId={node.id} 
+        label={node.name}
+      >
         {node.children && node.children.length > 0
           ? renderTree(node.children)
           : null}
@@ -344,15 +377,101 @@ function EditTask(props: {
     return result
   }
 
-  const isGroupItemId = (id: string) =>
-    typeof id === "string" && id.startsWith("/") && id.length > 1
+  const isDatasetItemId = (id: string) =>
+    typeof id === "string" && id.startsWith("/") && id.length > 1 && id.includes("/data")
 
-  const handleItemSelectionToggle = (
-    event: React.SyntheticEvent,
-    itemId: string,
-    isSelected: boolean
+  const isGroupSelected = (groupId: string, selectedItems: string[]): boolean => {
+    const childDatasets = getAllChildDatasets(groupId, groups)
+    return childDatasets.length > 0 && childDatasets.every(datasetId => selectedItems.includes(datasetId))
+  }
+
+  const createItemSelectionToggleHandler = (
+    selectedDatasets: string[],
+    setSelectedDatasets: React.Dispatch<React.SetStateAction<string[]>>,
+    datasetOptions: Record<string, { annotation: string; batchSize: number }>,
+    setDatasetOptions: React.Dispatch<React.SetStateAction<Record<string, { annotation: string; batchSize: number }>>>
   ) => {
-    toggledItemRef.current[itemId] = isSelected
+    return (event: React.SyntheticEvent, itemId: string, isSelected: boolean) => {
+      // Only handle groups in toggle handler, let datasets use normal selection flow
+      if (!isDatasetItemId(itemId)) {
+        const currentSelected = isGroupSelected(itemId, selectedDatasets)
+        const shouldSelect = !currentSelected // Toggle the group state
+        
+        // Get all child datasets for this group
+        const childDatasets = getAllChildDatasets(itemId, groups)
+        
+        // Update the current selection directly
+        let newSelection: string[]
+        if (shouldSelect) {
+          // Add all child datasets to selection
+          newSelection = Array.from(new Set([...selectedDatasets, ...childDatasets]))
+        } else {
+          // Remove all child datasets from selection
+          newSelection = selectedDatasets.filter(id => !childDatasets.includes(id))
+        }
+        
+        // Update the state directly
+        setSelectedDatasets(newSelection)
+        
+        // Update options for new datasets
+        const newOptions: Record<string, { annotation: string; batchSize: number }> = {}
+        newSelection.forEach((datasetId) => {
+          newOptions[datasetId] = datasetOptions[datasetId] || {
+            annotation: "",
+            batchSize: 32,
+          }
+        })
+        setDatasetOptions(newOptions)
+        
+        // Update toggled ref for UI feedback (only for groups)
+        toggledItemRef.current[itemId] = shouldSelect
+        childDatasets.forEach(childId => {
+          toggledItemRef.current[childId] = shouldSelect
+        })
+      }
+      // For datasets, do nothing - let the normal selection change handler handle it
+    }
+  }
+
+  const handleTrainItemSelectionToggle = createItemSelectionToggleHandler(
+    selectedTrainDatasets,
+    setSelectedTrainDatasets,
+    trainDatasetOptions,
+    setTrainDatasetOptions
+  )
+
+  const handleValItemSelectionToggle = createItemSelectionToggleHandler(
+    selectedValDatasets,
+    setSelectedValDatasets,
+    valDatasetOptions,
+    setValDatasetOptions
+  )
+
+  const getAllChildDatasets = (nodeId: string, nodes: Array<any>): string[] => {
+    const findNode = (id: string, nodeList: Array<any>): any => {
+      for (const node of nodeList) {
+        if (node.id === id) return node
+        const found = findNode(id, node.children || [])
+        if (found) return found
+      }
+      return null
+    }
+
+    const node = findNode(nodeId, nodes)
+    if (!node) return []
+
+    const childDatasets: string[] = []
+    const collectDatasets = (n: any) => {
+      if (n.isDataset) {
+        childDatasets.push(n.id)
+      }
+      if (n.children) {
+        n.children.forEach(collectDatasets)
+      }
+    }
+
+    collectDatasets(node)
+    return childDatasets
   }
 
   const createSelectionChangeHandler = (
@@ -365,7 +484,20 @@ function EditTask(props: {
     currentOptions: Record<string, { annotation: string; batchSize: number }>
   ) => {
     return (_event: React.SyntheticEvent, newSelectedItems: string[]) => {
-      const finalSelectedItems = Array.from(new Set(newSelectedItems))
+      // Check if this change was triggered by our toggle handler
+      const hasToggledItems = Object.keys(toggledItemRef.current).length > 0
+      
+      if (hasToggledItems) {
+        // If toggle handler was involved, don't override the selection
+        // Just clear the toggle ref and return
+        toggledItemRef.current = {}
+        return
+      }
+      
+      // Otherwise, handle normal selection changes (filter to only include dataset selections)
+      const datasetSelections = newSelectedItems.filter((itemId) => isDatasetItemId(itemId))
+      const finalSelectedItems = Array.from(new Set(datasetSelections))
+      
       setSelectedDatasets(finalSelectedItems)
 
       const newOptions: Record<
@@ -373,14 +505,12 @@ function EditTask(props: {
         { annotation: string; batchSize: number }
       > = {}
 
-      finalSelectedItems
-        .filter((itemId) => isGroupItemId(itemId))
-        .forEach((itemId) => {
-          newOptions[itemId] = currentOptions[itemId] || {
-            annotation: "",
-            batchSize: 32,
-          }
-        })
+      finalSelectedItems.forEach((itemId) => {
+        newOptions[itemId] = currentOptions[itemId] || {
+          annotation: "",
+          batchSize: 32,
+        }
+      })
       setDatasetOptions(newOptions)
 
       toggledItemRef.current = {}
@@ -398,6 +528,27 @@ function EditTask(props: {
     setValDatasetOptions,
     valDatasetOptions
   )
+
+  // Compute which items should appear selected in the tree (datasets + groups with all children selected)
+  const getVisibleSelectedItems = (selectedDatasets: string[]) => {
+    const visibleItems = [...selectedDatasets]
+    
+    // Add groups that have all their children selected
+    const addSelectedGroups = (nodes: Array<any>) => {
+      nodes.forEach(node => {
+        if (!node.isDataset && node.children) {
+          const childDatasets = getAllChildDatasets(node.id, groups)
+          if (childDatasets.length > 0 && childDatasets.every(datasetId => selectedDatasets.includes(datasetId))) {
+            visibleItems.push(node.id)
+          }
+          addSelectedGroups(node.children)
+        }
+      })
+    }
+    
+    addSelectedGroups(groups)
+    return Array.from(new Set(visibleItems))
+  }
   return (
     <MR.Modal onClose={props.onClose} sx={{ minWidth: 800 }}>
       <M.Stack sx={{ maxHeight: "100%", overflow: "hidden" }}>
@@ -583,14 +734,14 @@ function EditTask(props: {
               multiSelect
               checkboxSelection
               apiRef={apiRef}
-              selectedItems={selectedTrainDatasets}
+              selectedItems={getVisibleSelectedItems(selectedTrainDatasets)}
               onSelectedItemsChange={handleTrainSelectionChange}
-              onItemSelectionToggle={handleItemSelectionToggle}
+              onItemSelectionToggle={handleTrainItemSelectionToggle}
             >
               {renderTree(groups)}
             </SimpleTreeView>
             {selectedTrainDatasets
-              .filter((dataset) => isGroupItemId(dataset))
+              .filter((dataset) => isDatasetItemId(dataset))
               .map((dataset) => (
                 <M.Box key={dataset} sx={{ mt: 2 }}>
                   <M.Stack direction="row" spacing={2} alignItems="center">
@@ -643,14 +794,14 @@ function EditTask(props: {
               multiSelect
               checkboxSelection
               apiRef={apiRef}
-              selectedItems={selectedValDatasets}
+              selectedItems={getVisibleSelectedItems(selectedValDatasets)}
               onSelectedItemsChange={handleValSelectionChange}
-              onItemSelectionToggle={handleItemSelectionToggle}
+              onItemSelectionToggle={handleValItemSelectionToggle}
             >
               {renderTree(groups)}
             </SimpleTreeView>
             {selectedValDatasets
-              .filter((dataset) => isGroupItemId(dataset))
+              .filter((dataset) => isDatasetItemId(dataset))
               .map((dataset) => (
                 <M.Box key={dataset} sx={{ mt: 2 }}>
                   <M.Stack direction="row" spacing={2} alignItems="center">
