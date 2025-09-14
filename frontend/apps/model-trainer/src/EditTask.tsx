@@ -91,10 +91,8 @@ function EditTask(props: {
   const {
     debouncedFilter,
     filter,
-    folder,
     pagination,
     selection,
-    setFolder,
     setPagination,
     setSelection,
   } = MR.Files.useTable()
@@ -297,6 +295,7 @@ function EditTask(props: {
       children: Node[]; 
       parentId: string;
       isDataset?: boolean;
+      samples?: number;
     }
     const nodeMap: Record<string, Node> = {}
     const ensureNode = (path: string, parentId: string, isDataset = false) => {
@@ -328,17 +327,26 @@ function EditTask(props: {
       }
     }
     
-    // Then, add dataset nodes for groups that have datasets
+    // Then, add dataset nodes for groups that have datasets and include sample information
     for (const [groupPath, groupData] of Object.entries(hdf5_groups)) {
-      if (groupData && typeof groupData === 'object' && 'datasets' in groupData) {
-        const datasets = (groupData as any).datasets
-        if (datasets && typeof datasets === 'object') {
-          const groupNode = nodeMap[normalize(groupPath)]
-          if (groupNode) {
-            // Add dataset nodes as children
+      if (groupData && typeof groupData === 'object') {
+        // Add sample count to group nodes
+        const groupNode = nodeMap[normalize(groupPath)]
+        if (groupNode && 'samples' in groupData) {
+          groupNode.samples = (groupData as any).samples
+        }
+        
+        // Add dataset nodes as children
+        if ('datasets' in groupData) {
+          const datasets = (groupData as any).datasets
+          if (datasets && typeof datasets === 'object' && groupNode) {
             for (const [datasetName, _datasetInfo] of Object.entries(datasets)) {
               const datasetPath = `${normalize(groupPath)}/${datasetName}`
               const datasetNode = ensureNode(datasetPath, groupNode.id, true)
+              // For datasets, inherit the sample count from their parent group
+              if (groupData && typeof groupData === 'object' && 'samples' in groupData) {
+                datasetNode.samples = (groupData as any).samples
+              }
               if (!groupNode.children.find((c) => c.id === datasetNode.id)) {
                 groupNode.children.push(datasetNode)
               }
@@ -352,18 +360,47 @@ function EditTask(props: {
     return Object.values(nodeMap).filter((n) => n.parentId === "/")
   }
 
+  const CustomTreeItem = ({ node }: { node: any }) => (
+    <TreeItem 
+      key={node.id} 
+      itemId={node.id} 
+      label={
+        <M.Box sx={{ display: 'flex', alignItems: 'center', width: '100%', pr: 2 }}>
+          <M.Typography 
+            variant="body2" 
+            sx={{ 
+              flexGrow: 1,
+              fontWeight: node.isDataset ? 'normal' : 'medium',
+              color: node.isDataset ? 'text.secondary' : 'text.primary'
+            }}
+          >
+            {node.name}
+          </M.Typography>
+          {node.isDataset && node.samples !== undefined && (
+            <M.Typography 
+              variant="caption" 
+              sx={{ 
+                color: 'text.secondary',
+                minWidth: '60px',
+                textAlign: 'right'
+              }}
+            >
+              {node.samples.toLocaleString()} samples
+            </M.Typography>
+          )}
+        </M.Box>
+      }
+    >
+      {node.children && node.children.length > 0
+        ? node.children.map((childNode: any) => (
+            <CustomTreeItem key={childNode.id} node={childNode} />
+          ))
+        : null}
+    </TreeItem>
+  )
+
   const renderTree = (nodes: Array<any>): React.ReactNode =>
-    nodes.map((node) => (
-      <TreeItem 
-        key={node.id} 
-        itemId={node.id} 
-        label={node.name}
-      >
-        {node.children && node.children.length > 0
-          ? renderTree(node.children)
-          : null}
-      </TreeItem>
-    ))
+    nodes.map((node) => <CustomTreeItem key={node.id} node={node} />)
 
   const flattenGroups = (nodes: Array<any>): Array<{ id: string; name: string }> => {
     const result: Array<{ id: string; name: string }> = []
@@ -730,6 +767,24 @@ function EditTask(props: {
         )}
         {tab == Tab.train_table && (
           <M.Stack sx={{ height: 400, overflow: "auto" }}>
+            {/* Header row */}
+            <M.Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              px: 2, 
+              py: 1, 
+              borderBottom: 1, 
+              borderColor: 'divider',
+              backgroundColor: 'grey.50',
+              fontWeight: 'medium'
+            }}>
+              <M.Typography variant="caption" sx={{ flexGrow: 1, fontWeight: 'medium' }}>
+                Dataset
+              </M.Typography>
+              <M.Typography variant="caption" sx={{ minWidth: '60px', textAlign: 'right', fontWeight: 'medium' }}>
+                Samples
+              </M.Typography>
+            </M.Box>
             <SimpleTreeView
               multiSelect
               checkboxSelection
@@ -790,6 +845,24 @@ function EditTask(props: {
         )}
         {tab == Tab.val_table && (
           <M.Stack sx={{ height: 400, overflow: "auto" }}>
+            {/* Header row */}
+            <M.Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              px: 2, 
+              py: 1, 
+              borderBottom: 1, 
+              borderColor: 'divider',
+              backgroundColor: 'grey.50',
+              fontWeight: 'medium'
+            }}>
+              <M.Typography variant="caption" sx={{ flexGrow: 1, fontWeight: 'medium' }}>
+                Dataset
+              </M.Typography>
+              <M.Typography variant="caption" sx={{ minWidth: '60px', textAlign: 'right', fontWeight: 'medium' }}>
+                Samples
+              </M.Typography>
+            </M.Box>
             <SimpleTreeView
               multiSelect
               checkboxSelection
