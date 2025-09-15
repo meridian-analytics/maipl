@@ -185,13 +185,18 @@ function EditTask(props: {
       (file) => file.maipl_folder === File.t_maipl_folder.models
     )
 
-    if (datasetFiles.length !== 1 || recipeFiles.length !== 1) {
-      console.error("Invalid number of files selected")
+    if (datasetFiles.length !== 1) {
+      console.error("Invalid number of dataset files selected")
+      return
+    }
+
+    if (!startFromExistingModel && recipeFiles.length !== 1) {
+      console.error("Recipe file is required for new model mode")
       return
     }
 
     const selectedDataset = datasetFiles[0]
-    const selectedRecipe = recipeFiles[0]
+    const selectedRecipe = startFromExistingModel ? undefined : recipeFiles[0]
     if (startFromExistingModel && modelFiles.length !== 1) {
       console.error("Model file must be selected in existing model mode")
       return
@@ -218,16 +223,16 @@ function EditTask(props: {
     const task = {
       name,
       description,
-      options: optionsWithMode,
       dataset_file: selectedDataset.id,
-      recipe_file: selectedRecipe.id,
+      ...(selectedRecipe ? { recipe_file: selectedRecipe.id } : {}),
       dataset_config: {
         train: selectedTrainDatasets.filter((dataset) => isDatasetItemId(dataset)),
         val: selectedValDatasets.filter((dataset) => isDatasetItemId(dataset)),
         train_options: filteredTrainOptions,
         val_options: filteredValOptions,
       },
-    }
+      options: optionsWithMode,
+    } as TrainerTask.t_create_request
     createMutation.mutateAsync([maipl.client, task])
   }
 
@@ -246,11 +251,12 @@ function EditTask(props: {
       setError("Only one dataset file can be selected.")
     }
 
-    if (selectedRecipeFiles.length > 1) {
+    if (!startFromExistingModel && selectedRecipeFiles.length > 1) {
       setError("Only one recipe file can be selected.")
     }
 
     if (
+      !startFromExistingModel &&
       selectedRecipeFiles.length > 1 &&
       selectedTrainDatasetFiles.length > 1
     ) {
@@ -625,7 +631,9 @@ function EditTask(props: {
             value={tab}
           >
             <M.Tab label="Dataset Files" value={Tab.dataset_files} />
-            <M.Tab label="Recipe Files" value={Tab.recipe_files} />
+            {!startFromExistingModel && (
+              <M.Tab label="Recipe Files" value={Tab.recipe_files} />
+            )}
             {startFromExistingModel && (
               <M.Tab label="Model Files" value={Tab.model_files} />
             )}
@@ -957,7 +965,7 @@ function EditTask(props: {
                   onChange={(e) =>
                     setOptions({
                       ...options,
-                      audio_representation_config_id: Number(e.target.value),
+                      audio_representation_config_id: e.target.value ? Number(e.target.value) : undefined,
                     })
                   }
                   select
@@ -1032,7 +1040,7 @@ function EditTask(props: {
             children="Create"
             disabled={
               selectedTrainDatasetFiles.length !== 1 ||
-              selectedRecipeFiles.length !== 1 ||
+              (!startFromExistingModel && selectedRecipeFiles.length !== 1) ||
               (startFromExistingModel && selectedModelFiles.length !== 1)
             }
             onClick={onCreate}

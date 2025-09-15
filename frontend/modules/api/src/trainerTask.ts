@@ -47,19 +47,14 @@ type t_get_response = Omit<t, "created_at" | "updated_at"> & {
 }
 
 /** TrainerTask.t_create_request */
-type t_create_request = Omit<
-  t,
-  | "id"
-  | "celery_task_id"
-  | "created_at"
-  | "updated_at"
-  | "user"
-  | "status"
-  | "local_path"
-  | "model_file"
-  | "options"
-  | "dataset_config"
->
+type t_create_request = {
+  name: string
+  description: string
+  dataset_file: number
+  recipe_file?: number
+  dataset_config: Record<string, unknown>
+  options: Record<string, unknown>
+}
 
 /** TrainerTask.t_create_response */
 type t_create_response = t_get_response
