@@ -7,7 +7,7 @@ from .models import TrainingTask
 class TrainingTaskSerializer(serializers.ModelSerializer):
 
     dataset_file = serializers.PrimaryKeyRelatedField(queryset=File.objects.all())
-    recipe_file = serializers.PrimaryKeyRelatedField(queryset=File.objects.all())
+    recipe_file = serializers.PrimaryKeyRelatedField(queryset=File.objects.all(), required=False)
     model_file = serializers.PrimaryKeyRelatedField(queryset=File.objects.all(), required=False)
     
     class Meta:

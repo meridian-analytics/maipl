@@ -92,6 +92,18 @@ def download_recipe_file(task_context: Dict[str, Any], file_utils: FileUtils) ->
     console_file = task_context["console_output_file"]
     recipe_dir = task_context["recipe_dir"]
 
+    # Check if we should skip recipe file download when starting from existing model
+    options = task.options or {}
+    start_from_existing = bool(options.get("start_from_existing_model", False))
+    
+    if start_from_existing:
+        file_utils.write_to_console(console_file, [
+            "Skipping recipe file download - using existing model instead",
+            "\n",
+        ])
+        modeltrainer_logger.info(f"Skipping recipe file download for task {task.id} - using existing model")
+        return
+
     if not task.recipe_file:
         file_utils.write_to_console(console_file, [
             "ERROR: No recipe file configured for this training task",
@@ -151,11 +163,13 @@ def download_audio_representation_file(task_context: Dict[str, Any], file_utils:
         raise
 
 
-def prepare_existing_model_if_requested(task_context: Dict[str, Any], file_utils: FileUtils) -> None:
+def prepare_existing_model_if_requested(task_context: Dict[str, Any], file_utils: FileUtils) -> Optional[str]:
     """
-    If options.start_from_existing_model is True and a model file is present on the task,
-    download and place it in the output folder under the target model name so training tools
-    may continue from it if supported.
+    If options.start_from_existing_model is True and a model file is present in options,
+    download and symlink it in the model directory for use as the starting point for training.
+    
+    Returns:
+        Optional[str]: Path to the symbolic link of the existing model file, or None if not applicable
     """
     task: TrainingTask = task_context["task"]
     console_file = task_context["console_output_file"]
@@ -165,45 +179,54 @@ def prepare_existing_model_if_requested(task_context: Dict[str, Any], file_utils
     options = task.options or {}
     start_from_existing = bool(options.get("start_from_existing_model", False))
     model_output_name = options.get("model_name") or f"trained_model_{task.id}.kt"
+    existing_model_file_id = options.get("existing_model_file_id")
 
     if not start_from_existing:
         file_utils.write_to_console(console_file, [
             "Training will start from a clean slate (no existing model).",
             "\n",
         ])
-        return
+        return None
 
-    if not task.model_file:
+    if not existing_model_file_id:
         file_utils.write_to_console(console_file, [
-            "WARNING: start_from_existing_model=True but no existing model file is linked to the task.",
+            "WARNING: start_from_existing_model=True but no existing_model_file_id provided in options.",
             "Proceeding to train from scratch.",
             "\n",
         ])
         modeltrainer_logger.warning(
-            f"Task {task.id} requested start_from_existing_model but no model_file is set"
+            f"Task {task.id} requested start_from_existing_model but no existing_model_file_id in options"
         )
-        return
+        return None
 
     try:
-        downloaded_path = file_utils.download_file(task.model_file.id)
+        # Get the File instance for better logging
+        file_instance = File.objects.get(id=existing_model_file_id)
+        downloaded_path = file_utils.download_file(existing_model_file_id)
         if not downloaded_path:
-            raise Exception(f"Failed to download existing model file {task.model_file.id}")
+            raise Exception(f"Failed to download existing model file {existing_model_file_id}")
 
         # Symlink existing checkpoint into model_dir for visibility
-        _symlink_downloaded_file(downloaded_path, model_dir, task.model_file.basename)
-
-        # Copy to output folder under target name to maximize chances of resume support
-        os.makedirs(output_dir, exist_ok=True)
-        resume_target = os.path.join(output_dir, model_output_name)
-        shutil.copy2(downloaded_path, resume_target)
+        symlink_path = _symlink_downloaded_file(downloaded_path, model_dir, file_instance.basename)
 
         file_utils.write_to_console(console_file, [
-            "Existing model prepared for resume:",
-            f"  - Source: {task.model_file.basename}",
-            f"  - Copied to: {model_output_name}",
+            "Existing model prepared for training:",
+            f"  - Source: {file_instance.basename}",
+            f"  - Will be used as starting point for training",
             "\n",
         ])
-        modeltrainer_logger.info(f"Existing model copied to {resume_target} for potential resume")
+        modeltrainer_logger.info(f"Existing model ready at {symlink_path} for training")
+        
+        # Return the path to the symbolic link for use in command
+        return symlink_path
+    except File.DoesNotExist:
+        file_utils.write_to_console(console_file, [
+            f"WARNING: Existing model file {existing_model_file_id} not found.",
+            "Training will proceed from scratch.",
+            "\n",
+        ])
+        modeltrainer_logger.warning(f"Existing model file {existing_model_file_id} not found")
+        return None
     except Exception as e:
         file_utils.write_to_console(console_file, [
             f"WARNING: Failed to prepare existing model for resume: {e}",
@@ -211,9 +234,10 @@ def prepare_existing_model_if_requested(task_context: Dict[str, Any], file_utils
             "\n",
         ])
         modeltrainer_logger.warning(f"Failed to prepare existing model for resume: {e}")
+        return None
 
 
-def construct_ketos_train_command(task_context: Dict[str, Any]) -> List[str]:
+def construct_ketos_train_command(task_context: Dict[str, Any], existing_model_path: Optional[str] = None) -> List[str]:
     task: TrainingTask = task_context["task"]
     local_path = task_context["local_path"]
 
@@ -229,16 +253,34 @@ def construct_ketos_train_command(task_context: Dict[str, Any]) -> List[str]:
             raise Exception(f"No files found in {path}")
         return os.path.join(path, files[0])
 
-    recipe_path = _first_file(recipe_dir)
     dataset_path = _first_file(dataset_dir)
     audio_repr_path = _first_file(audio_repr_dir)
 
-    # Build base command (audio representation provided via flag per current CLI)
-    command: List[str] = [
-        "ketos-train",
-        os.path.relpath(recipe_path, local_path),
-        os.path.relpath(dataset_path, local_path),
-    ]
+    # Check if we should use existing model instead of recipe
+    options = task.options or {}
+    start_from_existing = bool(options.get("start_from_existing_model", False))
+    
+    if start_from_existing:
+        # Use existing model file instead of recipe
+        if not existing_model_path or not os.path.exists(existing_model_path):
+            raise Exception(f"Expected existing model file not found at {existing_model_path}")
+        
+        # Build base command with existing model instead of recipe
+        command: List[str] = [
+            "ketos-train",
+            os.path.relpath(existing_model_path, local_path),
+            os.path.relpath(dataset_path, local_path),
+        ]
+    else:
+        # Use recipe file as before
+        recipe_path = _first_file(recipe_dir)
+        
+        # Build base command (audio representation provided via flag per current CLI)
+        command: List[str] = [
+            "ketos-train",
+            os.path.relpath(recipe_path, local_path),
+            os.path.relpath(dataset_path, local_path),
+        ]
 
     # Dataset config
     dataset_config = task.dataset_config or {}
@@ -359,12 +401,24 @@ def train_model(self, training_task_id: int):
         ])
 
         download_dataset_file(task_context, file_utils)
-        download_recipe_file(task_context, file_utils)
+        
+        # Only download recipe file if not starting from existing model
+        options = task.options or {}
+        start_from_existing = bool(options.get("start_from_existing_model", False))
+        if not start_from_existing:
+            download_recipe_file(task_context, file_utils)
+        else:
+            # Skip recipe download and log the reason
+            file_utils.write_to_console(task_context["console_output_file"], [
+                "Skipping recipe file download - using existing model instead",
+                "\n",
+            ])
+        
         download_audio_representation_file(task_context, file_utils)
-        prepare_existing_model_if_requested(task_context, file_utils)
+        existing_model_path = prepare_existing_model_if_requested(task_context, file_utils)
 
         # Construct command
-        command = construct_ketos_train_command(task_context)
+        command = construct_ketos_train_command(task_context, existing_model_path)
 
         # Log the command and working directory
         file_utils.write_to_console(task_context["console_output_file"], [
