@@ -1,0 +1,88 @@
+version: '3'
+
+services:
+  # Redis, file cache management
+  redis:
+    image: "redis:latest"
+    container_name: maipl_redis
+    hostname: redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # RabbitMQ, message broker
+  rabbit:
+    image: "rabbitmq:3-management"
+    hostname: "rabbit"
+    container_name: maipl_message_broker
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
+      RABBITMQ_DEFAULT_USER: "rabbitmq"
+      RABBITMQ_DEFAULT_PASS: "rabbitmq"
+      RABBITMQ_DEFAULT_VHOST: "/"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    restart: unless-stopped
+
+  # Backend
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: maipl_backend
+    hostname: ${HOSTNAME:-maipl-backend-dev}
+    ports:
+      - "${DJANGO_PORT:-8000}:8000"
+    volumes:
+      - ../src:/backend
+      - ../logs:/logs
+      - ${FILE_CACHE_LOCATION:-/mnt/file_cache}:/cache
+      - ${TASKS_LOCAL_STORAGE:-/mnt/tasks}:/tasks
+    env_file:
+      - ../config/.env
+    command: /backend/entrypoint.backend.sh
+    restart: unless-stopped
+    depends_on:
+      - rabbit
+      - redis
+
+  # Celery worker
+  worker:
+    restart: unless-stopped
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    hostname: ${HOSTNAME:-maipl-backend-dev}
+    command: /backend/entrypoint.worker.sh
+    volumes:
+      - ../src:/backend
+      - ../logs:/logs
+      - ${FILE_CACHE_LOCATION:-/mnt/file_cache}:/cache
+      - ${TASKS_LOCAL_STORAGE:-/mnt/tasks}:/tasks
+    env_file:
+      - ../config/.env
+    container_name: maipl_ketos_worker
+    depends_on:
+      - rabbit
+      - backend
+      - redis
+
+  # Promtail for log collection
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: promtail-dev
+    hostname: ${HOSTNAME:-maipl-backend-dev}
+    volumes:
+      - ../logs:/logs
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml --config.expand-env=true
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=development
+
+volumes:
+  redis_data:
+    name: redis_data

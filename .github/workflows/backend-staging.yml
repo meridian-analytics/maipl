@@ -1,0 +1,153 @@
+name: Backend and Worker Build and Deploy to Live instance
+
+on:
+  push:
+    branches:
+      - backend-dev
+    paths:
+      - backend/**
+      - .github/workflows/backend-staging.yml
+
+jobs:
+  build:
+    runs-on: self-hosted
+    env:
+      # Infrastructure variables
+      REGISTRY_URL: ${{ vars.REGISTRY_URL }}
+      STAGING_HOST: ${{ vars.STAGING_HOST }}
+      REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+      REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+
+      # Email variables
+      EMAIL_HOST: ${{ vars.EMAIL_HOST }}
+      EMAIL_PORT: ${{ vars.EMAIL_PORT }}
+      EMAIL_HOST_USER: ${{ vars.EMAIL_HOST_USER }}
+      DEFAULT_FROM_EMAIL: ${{ vars.DEFAULT_FROM_EMAIL }}
+      EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+
+      # Redis variables
+      REDIS_HOST: ${{ vars.REDIS_HOST }}
+
+      # minio variables
+      MINIO_ENDPOINT: ${{ vars.MINIO_ENDPOINT }}
+      MINIO_EXTERNAL_ENDPOINT: ${{ vars.MINIO_EXTERNAL_ENDPOINT }}
+
+      # postgres variables
+      POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
+      
+      FILE_CACHE_LOCATION: /data/file_cache
+      TASKS_LOCAL_STORAGE: /data/tasks
+
+      # Environment-specific variables (STAGING)
+      ENVIRONMENT: "staging"
+      DJANGO_PORT: 8000
+      DEBUG: 1
+      DJANGO_ALLOWED_HOSTS: ${{ vars.STAGING_DJANGO_ALLOWED_HOSTS }}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${{ vars.STAGING_DJANGO_CSRF_TRUSTED_ORIGINS }}
+      CORS_ALLOWED_ORIGINS: ${{ vars.STAGING_CORS_ALLOWED_ORIGINS }}
+      POSTGRES_DB: ${{ vars.STAGING_POSTGRES_DB }}
+      MINIO_BUCKET_NAME: ${{ vars.STAGING_MINIO_BUCKET_NAME }}
+      ALLOWED_REDIRECT_URLS: ${{ vars.STAGING_ALLOWED_REDIRECT_URLS }}
+      REDIS_DB: ${{ vars.STAGING_REDIS_DB }}
+
+    
+      # Environment-specific secrets
+      POSTGRES_USER: ${{ secrets.STAGING_POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.STAGING_POSTGRES_PASSWORD }}
+      MINIO_ACCESS_KEY: ${{ secrets.STAGING_MINIO_ACCESS_KEY }}
+      MINIO_SECRET_KEY: ${{ secrets.STAGING_MINIO_SECRET_KEY }}
+      DJANGO_SECRET_KEY: ${{ secrets.STAGING_DJANGO_SECRET_KEY }}
+      
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: login to registry
+        run: |
+          echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin 
+
+      - name: Build backend and worker
+        working-directory: backend/compose
+        run: docker compose -f docker-compose.build.yml build
+
+      - name: Push backend and worker to registry
+        run: |
+          docker push $REGISTRY_URL/maipl-backend/ketos-backend:dev
+          docker push $REGISTRY_URL/maipl-backend/ketos-worker:dev
+
+      - name: Generate environment file
+        run: |
+          # Create .env file by combining variables and secrets
+          cat > backend/.env << EOL
+          # Environment
+          DJANGO_ENV=${ENVIRONMENT}
+          
+          # Django settings
+          DJANGO_PORT=${DJANGO_PORT:-8000}
+          DEBUG=${DEBUG:-0}
+          DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost}
+          DJANGO_CSRF_TRUSTED_ORIGINS=${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost}
+          DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+          
+          # Cors settings
+          CORS_ALLOW_ALL_ORIGINS=false
+          CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+          
+          # Database connection
+          POSTGRES_DB=${POSTGRES_DB:-maipl-backend-testing}
+          POSTGRES_USER=${POSTGRES_USER}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          POSTGRES_HOST=${POSTGRES_HOST:-maipl-database-prod-1}
+          POSTGRES_PORT=${POSTGRES_PORT:-5432}
+          
+          # Minio settings
+          MINIO_ENDPOINT=${MINIO_ENDPOINT:-maipl-minio-prod-1:9000}
+          MINIO_USE_HTTPS=False
+          MINIO_EXTERNAL_ENDPOINT=${MINIO_EXTERNAL_ENDPOINT:-minio.maipl-dev.com}
+          MINIO_EXTERNAL_ENDPOINT_USE_HTTPS=True
+          MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+          MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+          MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-maipl-dev}
+          
+          # Email settings
+          EMAIL_HOST=${EMAIL_HOST}
+          EMAIL_PORT=${EMAIL_PORT}
+          EMAIL_HOST_USER=${EMAIL_HOST_USER}
+          EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+          DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}
+          EMAIL_USE_TLS=False
+          EMAIL_USE_SSL=True
+          
+          # Other configuration
+          ALLOWED_REDIRECT_URLS=${ALLOWED_REDIRECT_URLS:-localhost:3000}
+          
+          # File cache
+          FILE_CACHE_LOCATION=${FILE_CACHE_LOCATION:-/data/file_cache}
+          TASKS_LOCAL_STORAGE=${TASKS_LOCAL_STORAGE:-/data/tasks}
+          
+          # Redis
+          REDIS_HOST=${REDIS_HOST:-maipl-redis} 
+          REDIS_DB=${REDIS_DB:-0}
+          EOL
+
+      - name: Deploy backend and worker
+        run: |
+          # Create directory if it doesn't exist
+          ssh ubuntu@$STAGING_HOST "mkdir -p ~/backend"
+
+          # Create /data/logs, /data/file_cache and /data/tasks directories
+          ssh ubuntu@$STAGING_HOST "sudo mkdir -p /data/logs /data/file_cache /data/tasks"
+
+          # Copy compose files and environment file
+          scp backend/compose/docker-compose.staging.yml ubuntu@$STAGING_HOST:~/backend/docker-compose.yml
+          scp backend/.env ubuntu@$STAGING_HOST:~/backend/.env
+          scp backend/compose/promtail-config.yml ubuntu@$STAGING_HOST:~/backend/promtail-config.yml
+
+          # Deploy
+          ssh ubuntu@$STAGING_HOST "cd ~/backend && \
+            export HOSTNAME=backend-staging && \
+            echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
+            docker compose pull && \
+            docker compose down --remove-orphans && \
+            docker compose up -d && \
+            docker system prune -f"
+    
