@@ -1,0 +1,16 @@
+# Environment files
+.env/.env
+apps/*/.env
+node_modules
+dist
+
+
+*.log
+
+.vscode
+
+*.tsbuildinfo
+
+apps/model-trainer/src/data/
+
+.DS_Store

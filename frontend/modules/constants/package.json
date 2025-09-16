@@ -1,0 +1,12 @@
+{
+  "name": "@maipl/constants",
+  "private": false,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@maipl/format": "workspace:^"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "@maipl/pkce",
+  "private": false,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@maipl/buffer": "workspace:^"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
