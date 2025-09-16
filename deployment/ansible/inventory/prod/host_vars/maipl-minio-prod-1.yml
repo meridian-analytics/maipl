@@ -1,0 +1,21 @@
+---
+# Host-specific variables for maipl-minio-prod-1
+
+# Monitoring configuration
+monitoring:
+  server_ip: "192.168.239.67"
+  grafana:
+    port: 3000
+  prometheus:
+    port: 9090
+  loki:
+    port: 3100
+
+# Full URLs constructed from components
+monitoring_urls:
+  grafana: "http://{{ monitoring.server_ip }}:{{ monitoring.grafana.port }}"
+  prometheus: "http://{{ monitoring.server_ip }}:{{ monitoring.prometheus.port }}"
+  loki: "http://{{ monitoring.server_ip }}:{{ monitoring.loki.port }}"
+
+# Other host-specific settings
+environment: "prod" 

@@ -1,0 +1,29 @@
+---
+- hosts: backends,workers,maipl-backend-dev
+  vars:
+    nfs_server: 192.168.239.27
+  tasks:
+    - name: Unmount NFS share /mnt/dev_storage
+      command: umount /mnt/dev_storage
+      ignore_errors: yes
+
+    - name: Unmount NFS share /mnt/prod_storage
+      command: umount /mnt/prod_storage
+      ignore_errors: yes
+
+    - name: Remove entries from fstab
+      lineinfile:
+        path: /etc/fstab
+        state: absent
+        regexp: "{{ nfs_server }}:/mnt/{{ item | basename }}"
+      loop:
+        - /mnt/dev_storage
+        - /mnt/prod_storage
+
+    - name: Remove directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /mnt/dev_storage
+        - /mnt/prod_storage

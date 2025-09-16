@@ -1,0 +1,68 @@
+---
+- name: Install required packages
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - python3-pip
+      - python3-docker
+    state: present
+    update_cache: yes
+
+- name: Install Docker Compose via pip
+  pip:
+    name: 
+      - docker-compose
+      - docker
+    state: present
+
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: Install Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+
+- name: Check if Loki plugin is installed
+  command: docker plugin ls
+  register: plugin_ls
+  changed_when: false
+
+- name: Install Docker Loki plugin
+  command: docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+  when: "'grafana/loki-docker-driver' not in plugin_ls.stdout and 'loki:latest' not in plugin_ls.stdout"
+  register: plugin_install
+  failed_when:
+    - plugin_install.rc != 0
+    - "'already exists' not in plugin_install.stderr"
+
+- name: Install Docker Compose
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-x86_64"
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+
+- name: Ensure docker group exists
+  group:
+    name: docker
+    state: present
+
+- name: Add ubuntu user to docker group
+  user:
+    name: ubuntu
+    groups: docker
+    append: yes

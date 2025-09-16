@@ -1,0 +1,16 @@
+.env
+
+# Ignore credentials directory
+credentials/
+
+# Terraform files
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Kubernetes secrets
+kubernetes/overlays/*/minio/secrets/
+
+# Kubernetes cloud config
+kubernetes/base/cloud-config/cloud.conf

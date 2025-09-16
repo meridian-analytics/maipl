@@ -1,0 +1,6 @@
+- targets:
+  - '{{ ansible_host }}:9000'
+  labels:
+    job: minio
+    instance: '{{ inventory_hostname }}'
+    __metrics_path__: /minio/v2/metrics/cluster

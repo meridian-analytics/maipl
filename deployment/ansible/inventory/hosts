@@ -1,0 +1,23 @@
+[infrastructure]
+maipl-file-cache ansible_host=192.168.239.27 
+maipl-load-balancer ansible_host=192.168.239.80
+
+[backends]
+maipl-backend-1 ansible_host=192.168.239.79
+maipl-backend-2 ansible_host=192.168.239.138
+
+[workers]
+maipl-worker-a ansible_host=192.168.239.240
+maipl-worker-b ansible_host=192.168.239.125
+maipl-worker-c ansible_host=192.168.239.170
+
+[development]
+maipl-backend-dev ansible_host=192.168.239.20
+
+[mailcow_server]
+maipl-mail ansible_host=192.168.239.55
+
+[all:vars]
+ansible_user=ubuntu
+python_interpreter=/usr/bin/python3
+ansible_become=true
