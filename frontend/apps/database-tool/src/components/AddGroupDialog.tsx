@@ -95,7 +95,6 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
   // File browser state for annotation files
   const {
     debouncedFilter: annotationFilter,
-    filter: annotationFilterState,
     folder: annotationFolder,
     pagination: annotationPagination,
     selection: annotationSelection,
@@ -308,7 +307,6 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
 
   // Use switch state for processing mode instead of deriving from form data
   const processingMode = switchMode
-  const isAnnotationMode = switchMode === "annotations"
 
   // Validation
   const existingGroups = task.groups?.map(group => group.name) || []
@@ -397,7 +395,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
                 {/* Show Annotation Configuration tab only in annotation mode */}
                 {switchMode === "annotations" && (
                   <M.Tab 
-                    label="Annotation Configuration" 
+                    label="Annotation File" 
                     value={Tab.annotation_config}
                   />
                 )}
@@ -542,12 +540,6 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
               {/* Annotation Configuration Tab - only show in annotation mode */}
               {activeTab === Tab.annotation_config && switchMode === "annotations" && (
                 <M.Stack spacing={2}>
-                  <M.Typography variant="h6" gutterBottom>
-                    Annotation Configuration
-                  </M.Typography>
-                  
-
-
                   <M.Stack direction="row" spacing={2}>
                     <M.TextField
                       label="Path"
@@ -651,7 +643,8 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
                         helperText="Minimum overlap between consecutive windows (optional, default: 0.7)"
                       />
                       
-                      <M.FormControlLabel
+                      {/* Hidden for now - not used */}
+                      {/* <M.FormControlLabel
                         control={
                           <M.Checkbox
                             checked={formData.annotations.only_augmented}
@@ -665,7 +658,7 @@ export default function AddGroupDialog({ open, onClose, onGroupAdded, task }: Ad
                           />
                         }
                         label="Only process augmented audio files (optional)"
-                      />
+                      /> */}
                     </M.Stack>
                   )}
                 </M.Stack>
