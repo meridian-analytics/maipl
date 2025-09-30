@@ -10,6 +10,7 @@ type t = {
   end: number
   file: number
   file_path: string
+  filename: string
   id: number
   label: string
   score: number
