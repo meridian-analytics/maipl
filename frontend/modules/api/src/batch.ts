@@ -1,9 +1,5 @@
 import * as K from "@maipl/constants"
-import * as CSV from "@maipl/csv"
-import * as F from "@maipl/format"
-import * as Annotation from "./annotation"
 import type * as Client from "./client"
-import * as File from "./file"
 import type * as Segment from "./segment"
 import type { t_page, t_page_params } from "./types"
 import type * as User from "./user"
@@ -273,6 +269,18 @@ const delete_ = (client: Client.t, id: number): Promise<void> => {
   )
 }
 
+/** Batch.deleteBulk: delete multiple batches by IDs */
+const deleteBulk = (client: Client.t, ids: number[]): Promise<void> => {
+  return client.delete(
+    `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/`,
+    {
+      params: {
+        ids: ids.join(","),
+      },
+    }
+  )
+}
+
 /** Batch.images: get list of batch images */
 const images = (
   client: Client.t,
@@ -427,6 +435,7 @@ export {
   create,
   preview,
   delete_ as delete,
+  deleteBulk,
   export_ as export,
   get,
   images,

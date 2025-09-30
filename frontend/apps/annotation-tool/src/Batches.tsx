@@ -271,6 +271,7 @@ function ShareAvatars(props: { batch: Batch.t_list_item }) {
 export default function BatchesTable(props: { sx?: M.SxProps }) {
   const maipl = MR.useMaipl()
   const queryClient = RQ.useQueryClient()
+  const notify = MR.useNotify()
 
   const {
     filter,
@@ -283,6 +284,7 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
 
   const [pollingEnabled, setPollingEnabled] = R.useState(true)
   const [lastRefreshTime, setLastRefreshTime] = R.useState<Date>(new Date())
+  const [deleteModalOpen, setDeleteModalOpen] = R.useState(false)
 
   const { data: batches } = MR.Batches.useQuery({
     // filters
@@ -304,6 +306,49 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
     if (pollingEnabled) {
       queryClient.refetchQueries({ queryKey: ["batches", "list"] })
     }
+  }
+
+  const onDeleteSelected = () => {
+    if (selection.size === 0) return
+    setDeleteModalOpen(true)
+  }
+
+  const deleteMutation = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof Batch.deleteBulk>) => {
+      return Batch.deleteBulk(...vars)
+    },
+    onError: (err, vars) => {
+      notify((onClose) => (
+        <M.Alert severity="error" onClose={onClose}>
+          Error: Could not delete {vars[1].length} batch{vars[1].length !== 1 ? 'es' : ''}
+        </M.Alert>
+      ))
+      if (import.meta.env["DEV"]) {
+        console.error("BatchesTable deleteMutation error", err, vars)
+      }
+    },
+    onSettled: () => {
+      deleteMutation.reset()
+    },
+    onSuccess: (_data, vars) => {
+      notify((onClose) => (
+        <M.Alert severity="success" onClose={onClose}>
+          Success: Deleted {vars[1].length} batch{vars[1].length !== 1 ? 'es' : ''}
+        </M.Alert>
+      ))
+      queryClient.refetchQueries({ queryKey: ["batches"] })
+      setSelection(new Map())
+    },
+  })
+
+  const handleDeleteConfirm = () => {
+    const selectedBatches = batches?.data?.filter(batch => selection.has(batch.id)) || []
+    const deletableBatches = selectedBatches.filter(batch => batch.user_id === maipl.user?.id)
+    
+    if (deleteMutation.isIdle && deletableBatches.length > 0) {
+      deleteMutation.mutateAsync([maipl.client, deletableBatches.map(batch => batch.id)])
+    }
+    setDeleteModalOpen(false)
   }
 
   const columns = R.useMemo(
@@ -374,6 +419,13 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
           color={pollingEnabled ? "primary" : "default"}
         />
         <MR.ActionButton
+          children={<I.Delete />}
+          onClick={onDeleteSelected}
+          title="Delete Selected Batches"
+          disabled={selection.size === 0}
+          color={selection.size > 0 ? "error" : "default"}
+        />
+        <MR.ActionButton
           children={<I.AddCircle />}
           component={RR.Link}
           title="Create Batch"
@@ -390,10 +442,71 @@ export default function BatchesTable(props: { sx?: M.SxProps }) {
         setSelection={setSelection}
         visibility={{
           progress: false,
-          select: false,
+          select: true,
           user_id: false,
         }}
       />
+      <DeleteBatchesDialog
+        open={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        batches={batches?.data?.filter(batch => selection.has(batch.id)) || []}
+        deletableBatches={batches?.data?.filter(batch => selection.has(batch.id) && batch.user_id === maipl.user?.id) || []}
+        isPending={deleteMutation.isPending}
+      />
     </M.Stack>
+  )
+}
+
+function DeleteBatchesDialog(props: {
+  open: boolean
+  onClose: () => void
+  onConfirm: () => void
+  batches: Array<Batch.t_list_item>
+  deletableBatches: Array<Batch.t_list_item>
+  isPending?: boolean
+}) {
+  return (
+    <M.Dialog
+      open={props.open}
+      onClose={props.onClose}
+      aria-labelledby="delete-batches-dialog-title"
+      aria-describedby="delete-batches-dialog-description"
+    >
+      <M.DialogTitle id="delete-batches-dialog-title">
+        {props.batches.length === 1 ? "Delete Batch" : "Delete Selected Batches"}
+      </M.DialogTitle>
+      <M.DialogContent>
+        <M.DialogContentText id="delete-batches-dialog-description">
+          You are about to delete {props.deletableBatches.length} batch{props.deletableBatches.length !== 1 ? 'es' : ''}.
+          {props.batches.length !== props.deletableBatches.length && (
+            <M.Typography color="error" variant="body2" sx={{ mt: 1 }}>
+              Note: {props.batches.length - props.deletableBatches.length} batch{props.batches.length - props.deletableBatches.length !== 1 ? 'es' : ''} cannot be deleted because you don't own them.
+            </M.Typography>
+          )}
+        </M.DialogContentText>
+        <M.List>
+          {props.deletableBatches.map(batch => (
+            <M.ListItem key={batch.id}>
+              <M.ListItemText
+                primary={batch.batch_name}
+                secondary={`Status: ${Batch.status(batch)}`}
+              />
+            </M.ListItem>
+          ))}
+        </M.List>
+      </M.DialogContent>
+      <M.DialogActions>
+        <M.Button onClick={props.onClose}>Cancel</M.Button>
+        <M.Button 
+          onClick={props.onConfirm} 
+          color="error"
+          variant="contained"
+          disabled={props.isPending || props.deletableBatches.length === 0}
+        >
+          {props.isPending ? "Deleting..." : "Delete"}
+        </M.Button>
+      </M.DialogActions>
+    </M.Dialog>
   )
 }
