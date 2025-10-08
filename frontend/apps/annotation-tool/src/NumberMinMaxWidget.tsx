@@ -19,9 +19,9 @@ export default function NumberMinMaxWidget(props: JSF.WidgetProps) {
           ])
         }
         inputProps={{
-          min: props.schema.minimum,
-          max: props.schema.maximum,
-          step: props.schema.multipleOf,
+          min: props.schema.minimum ?? 0,
+          max: props.schema.maximum ?? 1,
+          step: props.schema.multipleOf ?? 0.01,
         }}
         sx={{ flexGrow: 1 }}
       />
@@ -36,9 +36,9 @@ export default function NumberMinMaxWidget(props: JSF.WidgetProps) {
           ])
         }
         inputProps={{
-          min: props.schema.minimum,
-          max: props.schema.maximum,
-          step: props.schema.multipleOf,
+          min: props.schema.minimum ?? 0,
+          max: props.schema.maximum ?? 1,
+          step: props.schema.multipleOf ?? 0.01,
         }}
         sx={{ flexGrow: 1 }}
       />
