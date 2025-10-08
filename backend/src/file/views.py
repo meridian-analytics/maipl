@@ -1,6 +1,5 @@
 import django_filters
 from django.db.models import Q
-from django.utils import timezone
 from django_filters import rest_framework as filters
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError, APIException
@@ -99,7 +98,7 @@ class FileDetailView(generics.RetrieveUpdateAPIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer.save(updated_at=timezone.now())
+        serializer.save()
 
         return Response(ReadSerializer(instance).data, status=status.HTTP_200_OK)
 

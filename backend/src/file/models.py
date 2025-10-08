@@ -175,5 +175,50 @@ def handle_h5_file_meta_post_save(sender, instance, **kwargs):
         instance.meta = {'processing': True}
         instance.save(update_fields=['meta'])
         update_meta_from_h5_file.delay(instance.id)
+
+
+@receiver(post_save, sender=File)
+def invalidate_file_cache_on_update(sender, instance, created, **kwargs):
+    """
+    Invalidate the shared file cache when a file's content is updated.
+    
+    This ensures that other tools (annotation, model runner, etc.) don't use
+    stale cached versions of files after they've been updated.
+    
+    Args:
+        sender: The model class (File)
+        instance: The actual instance being saved
+        created: Boolean indicating if this is a new instance
+        **kwargs: Additional keyword arguments including update_fields
+    """
+    # Don't invalidate cache for newly created files
+    if created:
+        return
+    
+    # Get the list of fields that were updated
+    update_fields = kwargs.get('update_fields', None)
+    
+    # If update_fields is None, it means save() was called without specifying fields
+    # In this case, we should check if the file might have changed
+    # If update_fields is provided and doesn't contain 'file', skip invalidation
+    if update_fields is not None and 'file' not in update_fields:
+        return
+    
+    # Import here to avoid circular imports and to access the cache and logger
+    from common.shared_file_cache import shared_file_cache
+    from common.logger import file_logger
+    
+    try:
+        file_logger.info(
+            f"Invalidating cache for file ID: {instance.id} "
+            f"(path: {instance.path}, user: {instance.user_id.email})"
+        )
+        shared_file_cache.delete(instance.id)
+        file_logger.info(f"Cache invalidated successfully for file ID: {instance.id}")
+    except Exception as e:
+        # Log the error but don't raise it to avoid breaking the save operation
+        file_logger.error(
+            f"Failed to invalidate cache for file ID: {instance.id}. Error: {e}"
+        )
     
     
