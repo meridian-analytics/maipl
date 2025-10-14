@@ -4,6 +4,7 @@ import * as JS from "@maipl/js"
 import * as MR from "@maipl/react"
 import { Editor } from "@monaco-editor/react"
 import * as M from "@mui/material"
+import * as MIcon from "@mui/icons-material"
 import * as RQ from "@tanstack/react-query"
 import * as Monaco from "monaco-editor"
 import * as R from "react"
@@ -50,6 +51,98 @@ function Element() {
   )
 }
 
+function HelpDialog(props: { open: boolean; onClose: () => void }) {
+  // Detect OS for correct modifier key display
+  const isMac = R.useMemo(() => {
+    return navigator.platform.toUpperCase().indexOf("MAC") >= 0
+  }, [])
+  const mod = isMac ? "Cmd" : "Ctrl"
+
+  const shortcuts = [
+    {
+      category: "General",
+      items: [
+        { keys: "F1", description: "Open command palette (all commands)" },
+        { keys: `${mod}+F`, description: "Find" },
+        { keys: `${mod}+H`, description: "Find and replace" },
+        { keys: `${mod}+Z`, description: "Undo" },
+        { keys: `${mod}+Shift+Z`, description: "Redo" },
+        { keys: `${mod}+/`, description: "Toggle line comment" },
+      ],
+    },
+    {
+      category: "Multi-Cursor Editing",
+      items: [
+        { keys: "Alt+Click", description: "Add cursor at click position" },
+        { keys: `${mod}+Alt+Up/Down`, description: "Add cursor above/below" },
+        { keys: `${mod}+D`, description: "Select next occurrence of selection" },
+        { keys: `${mod}+Shift+L`, description: "Select all occurrences" },
+        { keys: "Alt+Shift+Drag", description: "Column (box) selection" },
+      ],
+    },
+    {
+      category: "CSV Editing",
+      items: [
+        { keys: "Alt+Shift+Drag", description: "Select entire column" },
+        { keys: `${mod}+H`, description: "Replace values in column/selection" },
+        { keys: `${mod}+F`, description: "Find specific cell values" },
+      ],
+    },
+    {
+      category: "JSON Editing",
+      items: [
+        { keys: "Shift+Alt+F", description: "Format document (prettify)" },
+        { keys: `${mod}+]`, description: "Indent line/selection" },
+        { keys: `${mod}+[`, description: "Outdent line/selection" },
+        { keys: `${mod}+Shift+\\`, description: "Jump to matching bracket" },
+      ],
+    },
+  ]
+
+  return (
+    <M.Dialog open={props.open} onClose={props.onClose} maxWidth="md" fullWidth>
+      <M.DialogTitle>
+        <M.Stack direction="row" alignItems="center" justifyContent="space-between">
+          <M.Typography variant="h6">Editor Keyboard Shortcuts</M.Typography>
+          <M.IconButton onClick={props.onClose} size="small">
+            <MIcon.Close />
+          </M.IconButton>
+        </M.Stack>
+      </M.DialogTitle>
+      <M.DialogContent>
+        <M.Stack spacing={3}>
+          {shortcuts.map(section => (
+            <M.Box key={section.category}>
+              <M.Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                {section.category}
+              </M.Typography>
+              <M.Stack spacing={1}>
+                {section.items.map(item => (
+                  <M.Stack
+                    key={item.keys}
+                    direction="row"
+                    spacing={2}
+                    alignItems="center"
+                  >
+                    <M.Chip
+                      label={item.keys}
+                      size="small"
+                      sx={{ minWidth: 160, fontFamily: "monospace" }}
+                    />
+                    <M.Typography variant="body2" color="text.secondary">
+                      {item.description}
+                    </M.Typography>
+                  </M.Stack>
+                ))}
+              </M.Stack>
+            </M.Box>
+          ))}
+        </M.Stack>
+      </M.DialogContent>
+    </M.Dialog>
+  )
+}
+
 export default function EditFile(props: {
   file: File.t
   fileContents: string
@@ -63,6 +156,13 @@ export default function EditFile(props: {
   const [path, setPath] = R.useState(props.file.path)
   const [tag, setTag] = R.useState(props.file.tag)
   const [value, setValue] = R.useState<undefined | string>(props.fileContents)
+  const [helpOpen, setHelpOpen] = R.useState(false)
+
+  // Detect OS for status bar hints
+  const isMac = R.useMemo(() => {
+    return navigator.platform.toUpperCase().indexOf("MAC") >= 0
+  }, [])
+  const mod = isMac ? "Cmd" : "Ctrl"
 
   const language: Monaco.languages.ILanguageExtensionPoint | null =
     R.useMemo(() => {
@@ -155,10 +255,21 @@ export default function EditFile(props: {
           }}
           value={value}
         />
-        <M.Stack direction="row">
-          <M.Typography>{F.filesize(value?.length ?? 0)}</M.Typography>
-          <M.Typography>{F.iso8601(props.file.created_at)}</M.Typography>
-          <M.Typography>{language?.aliases?.[0] ?? "Plain Text"}</M.Typography>
+        <M.Stack direction="row" alignItems="center" spacing={1}>
+          <M.Typography variant="body2">{F.filesize(value?.length ?? 0)}</M.Typography>
+          <M.Typography variant="body2">{F.iso8601(props.file.created_at)}</M.Typography>
+          <M.Typography variant="body2">{language?.aliases?.[0] ?? "Plain Text"}</M.Typography>
+          <M.Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+          <M.Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+            F1: Commands • {mod}+F: Find • {mod}+H: Replace
+          </M.Typography>
+          <M.IconButton
+            size="small"
+            onClick={() => setHelpOpen(true)}
+            title="Show keyboard shortcuts"
+          >
+            <MIcon.HelpOutline fontSize="small" />
+          </M.IconButton>
           <M.Stack flexGrow={1} />
           <M.Button
             color={hasUnsavedChanges ? "error" : "primary"}
@@ -174,6 +285,7 @@ export default function EditFile(props: {
           />
         </M.Stack>
       </M.Stack>
+      <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
     </MR.Modal>
   )
 }
