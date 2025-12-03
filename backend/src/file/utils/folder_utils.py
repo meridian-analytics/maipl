@@ -65,8 +65,10 @@ def get_direct_subfolders(queryset: QuerySet, path_prefix: str = "") -> list[dic
         # Split into parts
         parts = relative_path.split("/")
         
-        # Get the first part (direct subfolder name)
-        if parts:
+        # Only consider it a subfolder if there are multiple parts
+        # (i.e., the first part is a directory, not a filename)
+        # A folder must have at least one more part after it
+        if len(parts) > 1:
             subfolder_name = parts[0]
             
             # Build the full path for this subfolder
