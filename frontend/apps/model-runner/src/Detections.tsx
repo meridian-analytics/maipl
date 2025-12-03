@@ -54,8 +54,8 @@ function Detections(props: {
   const table = MR.Detections.useTable({
     filter: {
       label: "",
-      score_max: "1",
-      score_min: "0",
+      score_max: 1,
+      score_min: 0,
     },
     debounceDelay: 1000
   })
@@ -84,14 +84,35 @@ function Detections(props: {
 
   const onExport = () => {
     if (exportMutation.isIdle) {
-      return exportMutation.mutateAsync([
-        maipl.client,
-        {
-          ...filter,
-          task: props.task.id,
-          model: props.model.id,
-        },
-      ])
+      // Map filter parameters to the new API format
+      const exportParams: Parameters<typeof Detection.export>[1] = {
+        task: props.task.id,
+      }
+      
+      // Add label filter if provided
+      const label = F.safeParseString(table.debouncedFilter.get("label"), "")
+      if (label) {
+        exportParams.label = label
+      }
+      
+      // Map score_min to score__gte and score_max to score__lte
+      const scoreMin = F.safeParseNumber(
+        table.debouncedFilter.get("score_min"),
+        null,
+      )
+      const scoreMax = F.safeParseNumber(
+        table.debouncedFilter.get("score_max"),
+        null,
+      )
+      
+      if (scoreMin != null) {
+        exportParams.score__gte = scoreMin
+      }
+      if (scoreMax != null) {
+        exportParams.score__lte = scoreMax
+      }
+      
+      return exportMutation.mutateAsync([maipl.client, exportParams])
     }
   }
 
@@ -99,9 +120,11 @@ function Detections(props: {
     mutationFn: (vars: Parameters<typeof Detection.export>) =>
       Detection.export(...vars),
     onError: (err, vars) => {
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred"
       notify(onClose => (
         <M.Alert onClose={onClose} severity="error">
-          Error: Could not export detections for task #{vars[1].task}
+          Error exporting detections for task #{vars[1].task}: {errorMessage}
         </M.Alert>
       ))
       if (import.meta.env["DEV"]) {
@@ -114,17 +137,17 @@ function Detections(props: {
     onSuccess: file => {
       notify(onClose => (
         <M.Alert onClose={onClose} severity="success">
-          Success: Exported detections to{" "}
+          File has been exported successfully. Filename:{" "}
           <M.Link
-            children={`${file.maipl_folder}/${file.basename}`}
+            children={file.basename}
             download={file.basename}
             href={file.file}
             rel="noreferrer"
             target="_blank"
-          />
+          />{" "}
+          (saved in {file.maipl_folder})
         </M.Alert>
       ))
-      props.onClose()
     },
   })
 

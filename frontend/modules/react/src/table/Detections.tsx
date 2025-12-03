@@ -78,10 +78,7 @@ const Table = BaseTable([
   column.accessor("id", {
     header: "Id",
   }),
-  column.accessor("file", {
-    header: "File",
-  }),
-  column.accessor("file_path", {
+  column.accessor("filename", {
     header: "File",
   }),
   column.accessor("start", {

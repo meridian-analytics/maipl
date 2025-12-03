@@ -20,6 +20,7 @@ from .serializers import (
     UpdateSerializer,
 )
 from .swagger_decorators import file_detail_view_schema, set_file_shared_view_schema, file_list_view_schema
+from .utils.folder_utils import get_direct_subfolders, get_files_in_folder
 
 
 class ConflictError(APIException):
@@ -30,6 +31,7 @@ class ConflictError(APIException):
 class FileFilter(filters.FilterSet):
     ids = django_filters.CharFilter(method="filter_by_ids")
     path = django_filters.CharFilter(method="filter_by_path")
+    path_prefix = django_filters.CharFilter(method="filter_by_path_prefix")
     tag = django_filters.CharFilter(method="filter_by_tag")
 
     class Meta:
@@ -43,7 +45,15 @@ class FileFilter(filters.FilterSet):
         return queryset.filter(id__in=ids)
 
     def filter_by_path(self, queryset, _, value):
+        # Keep existing icontains for backward compatibility (search functionality)
         return queryset.filter(path__icontains=value)
+
+    def filter_by_path_prefix(self, queryset, _, value):
+        # Exact folder matching using startswith
+        if value:
+            prefix = value.rstrip("/") + "/"
+            return queryset.filter(path__startswith=prefix)
+        return queryset
 
     def filter_by_tag(self, queryset, _, value):
         return queryset.filter(tag__icontains=value)
@@ -202,3 +212,89 @@ class SetFilesSharedView(APIView):
                 )
 
         return Response(status=status.HTTP_200_OK, data={"message": "Files shared"})
+
+
+class FileFolderView(APIView):
+    """
+    View for listing folder contents (subfolders and files) for a given path prefix.
+    Returns paginated files and a list of direct subfolders.
+    """
+    pagination_class = MaiplPagination
+
+    def get_queryset(self):
+        """Get base queryset filtered by user permissions and maipl_folder."""
+        shared = self.request.query_params.get("shared", "all")
+        user_id = self.request.user.id
+        maipl_folder = self.request.query_params.get("maipl_folder")
+        
+        queryset = File.objects.all()
+        
+        # Filter by maipl_folder if provided
+        if maipl_folder:
+            queryset = queryset.filter(maipl_folder=maipl_folder)
+        
+        # Filter by shared status
+        if shared == "true":
+            queryset = queryset.filter(shared_to=user_id)
+        elif shared == "false":
+            queryset = queryset.filter(user_id=user_id)
+        elif shared == "all":
+            queryset = queryset.filter(
+                Q(user_id=user_id) | Q(shared_to=user_id)
+            ).distinct()
+        
+        return queryset.order_by("path")
+
+    def get(self, request, *args, **kwargs):
+        """Return folders and paginated files for the given path_prefix."""
+        path_prefix = request.query_params.get("path_prefix", "")
+        tag = request.query_params.get("tag", "")
+        
+        # Get base queryset
+        queryset = self.get_queryset()
+        
+        # Filter by tag if provided
+        if tag:
+            queryset = queryset.filter(tag__icontains=tag)
+        
+        # Get direct subfolders
+        folders = get_direct_subfolders(queryset, path_prefix)
+        
+        # Get files directly in this folder (not in subfolders)
+        files_queryset = get_files_in_folder(queryset, path_prefix)
+        
+        # Paginate files
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(files_queryset, request)
+        
+        if page is not None:
+            serializer = ReadSerializer(page, many=True)
+            paginated_response = paginator.get_paginated_response(serializer.data)
+            
+            # Structure response with folders and files separately
+            response_data = paginated_response.data
+            return Response({
+                "folders": folders,
+                "files": {
+                    "data": response_data["data"],
+                    "page": response_data["page"],
+                    "size": response_data["size"],
+                    "count": response_data["count"],
+                    "prev": response_data["prev"],
+                    "next": response_data["next"],
+                }
+            })
+        
+        # If no pagination, return all files (shouldn't happen with MaiplPagination)
+        serializer = ReadSerializer(files_queryset, many=True)
+        return Response({
+            "folders": folders,
+            "files": {
+                "data": serializer.data,
+                "page": 1,
+                "size": len(serializer.data),
+                "count": len(serializer.data),
+                "prev": None,
+                "next": None,
+            }
+        })

@@ -70,6 +70,7 @@ export default function AnnotationFilters(props: {
               EnumWidget,
             }}
             onChange={e => filter.setFilters(e.formData)}
+            children={<></>}
           />
         </M.Box>
       }
