@@ -1,10 +1,13 @@
 import { File } from "@maipl/api"
+import { filesize, fuzzyTime } from "@maipl/format"
 import * as M from "@mui/material"
 import * as I from "@mui/icons-material"
 import * as R from "react"
 import * as RQ from "@tanstack/react-query"
 import { useMaipl } from "../context"
-import type { PaginationState } from "../table/Table"
+import type { PaginationState, SelectionState } from "../table/Table"
+import { EditableTagCell } from "../table/EditableTagCell"
+import UserAvatarGroup from "../ui/UserAvatarGroup"
 
 /** Folder tree node state */
 type FolderNodeState = {
@@ -32,6 +35,10 @@ type FolderListViewProps = {
   onPaginationChange: (pagination: PaginationState) => void
   onFolderClick?: (path: string) => void
   onFileClick?: (file: File.t) => void
+  selection?: SelectionState<File.t>
+  setSelection?: R.Dispatch<R.SetStateAction<SelectionState<File.t>>>
+  onTagUpdate?: (fileId: number, newTag: string) => void
+  FileActionsComponent?: R.ComponentType<{ file: File.t }>
 }
 
 /** Hook to fetch folder contents */
@@ -227,40 +234,191 @@ export function FolderListView(props: FolderListViewProps) {
           <M.Typography variant="subtitle2" sx={{ mb: 1 }}>
             Files ({data.files.count})
           </M.Typography>
-          <M.List>
-            {data.files.data.map((file) => (
-              <M.ListItem
-                key={file.id}
-                button
-                onClick={() => props.onFileClick?.(file)}
-                secondaryAction={
-                  <M.Typography variant="caption" color="text.secondary">
-                    {(file.size / (1024 * 1024)).toFixed(2)} MB
-                  </M.Typography>
-                }
-              >
-                <M.ListItemIcon>
-                  <I.InsertDriveFile />
-                </M.ListItemIcon>
-                <M.ListItemText
-                  primary={file.basename}
-                  secondary={file.path}
-                />
-              </M.ListItem>
-            ))}
-          </M.List>
+          <M.TableContainer>
+            <M.Table size="small">
+              <M.TableHead>
+                <M.TableRow>
+                  {props.selection && props.setSelection && (
+                    <M.TableCell padding="checkbox" width={50}>
+                      <M.Checkbox
+                        indeterminate={
+                          data.files.data.some((f) =>
+                            props.selection?.has(f.id)
+                          ) &&
+                          !data.files.data.every((f) =>
+                            props.selection?.has(f.id)
+                          )
+                        }
+                        checked={data.files.data.every((f) =>
+                          props.selection?.has(f.id)
+                        )}
+                        onChange={(e) => {
+                          if (!props.setSelection) return
+                          props.setSelection((prev) => {
+                            const next = new Map(prev)
+                            if (e.target.checked) {
+                              data.files.data.forEach((file) => {
+                                next.set(file.id, file)
+                              })
+                            } else {
+                              data.files.data.forEach((file) => {
+                                next.delete(file.id)
+                              })
+                            }
+                            return next
+                          })
+                        }}
+                        size="small"
+                      />
+                    </M.TableCell>
+                  )}
+                  <M.TableCell>Name</M.TableCell>
+                  <M.TableCell>Size</M.TableCell>
+                  <M.TableCell>Duration</M.TableCell>
+                  <M.TableCell>Channels</M.TableCell>
+                  <M.TableCell>Rate</M.TableCell>
+                  <M.TableCell>Date</M.TableCell>
+                  <M.TableCell>Tag</M.TableCell>
+                  <M.TableCell>Ownership</M.TableCell>
+                  <M.TableCell>Shared With</M.TableCell>
+                  <M.TableCell>In Use</M.TableCell>
+                  {props.FileActionsComponent && (
+                    <M.TableCell width={50}></M.TableCell>
+                  )}
+                </M.TableRow>
+              </M.TableHead>
+              <M.TableBody>
+                {data.files.data.map((file) => {
+                  const isSelected = props.selection?.has(file.id) ?? false
+                  const duration = File.safeMeta(file, "audio", "duration", 0)
+                  const channels = File.safeMeta(file, "audio", "channels", 0)
+                  const sampleRate = File.safeMeta(
+                    file,
+                    "audio",
+                    "sample_rate",
+                    0
+                  )
+                  const maipl = useMaipl()
+                  const isOwner = file.user_id === maipl.user?.id
+
+                  return (
+                    <M.TableRow
+                      key={file.id}
+                      hover
+                      selected={isSelected}
+                      sx={{ cursor: "pointer" }}
+                      onClick={() => props.onFileClick?.(file)}
+                    >
+                      {props.selection && props.setSelection && (
+                        <M.TableCell padding="checkbox">
+                          <M.Checkbox
+                            checked={isSelected}
+                            onChange={(e) => {
+                              e.stopPropagation()
+                              if (!props.setSelection) return
+                              props.setSelection((prev) => {
+                                const next = new Map(prev)
+                                if (e.target.checked) {
+                                  next.set(file.id, file)
+                                } else {
+                                  next.delete(file.id)
+                                }
+                                return next
+                              })
+                            }}
+                            size="small"
+                          />
+                        </M.TableCell>
+                      )}
+                      <M.TableCell>
+                        <M.Stack direction="row" alignItems="center" spacing={1}>
+                          <I.InsertDriveFile fontSize="small" />
+                          <M.Typography variant="body2">
+                            {file.basename}
+                          </M.Typography>
+                        </M.Stack>
+                      </M.TableCell>
+                      <M.TableCell>{filesize(file.size)}</M.TableCell>
+                      <M.TableCell>
+                        {duration ? `${duration.toFixed(2)} sec` : "-"}
+                      </M.TableCell>
+                      <M.TableCell>{channels ?? "-"}</M.TableCell>
+                      <M.TableCell>
+                        {sampleRate ? `${sampleRate} Hz` : "-"}
+                      </M.TableCell>
+                      <M.TableCell>{fuzzyTime(file.created_at)}</M.TableCell>
+                      <M.TableCell>
+                        {props.onTagUpdate ? (
+                          <EditableTagCell
+                            initialValue={file.tag || ""}
+                            onSave={(newValue) => {
+                              props.onTagUpdate?.(file.id, newValue)
+                            }}
+                            isLoading={false}
+                          />
+                        ) : (
+                          <M.Chip
+                            label={file.tag || "—"}
+                            size="small"
+                            variant="outlined"
+                          />
+                        )}
+                      </M.TableCell>
+                      <M.TableCell>
+                        <M.Box sx={{ display: "flex", justifyContent: "center" }}>
+                          <M.Chip
+                            icon={isOwner ? <I.Person /> : <I.People />}
+                            label={isOwner ? "Owned" : "Shared"}
+                            size="small"
+                            color={isOwner ? "primary" : "secondary"}
+                            variant="outlined"
+                          />
+                        </M.Box>
+                      </M.TableCell>
+                      <M.TableCell>
+                        <M.Box sx={{ display: "flex", justifyContent: "center" }}>
+                          <UserAvatarGroup users={file.shared_to} />
+                        </M.Box>
+                      </M.TableCell>
+                      <M.TableCell>
+                        <M.Box sx={{ display: "flex", justifyContent: "center" }}>
+                          {file.in_use ? (
+                            <I.CheckCircle color="success" fontSize="small" />
+                          ) : (
+                            <I.Cancel color="error" fontSize="small" />
+                          )}
+                        </M.Box>
+                      </M.TableCell>
+                      {props.FileActionsComponent && (
+                        <M.TableCell>
+                          <M.Box
+                            onClick={(e) => e.stopPropagation()}
+                            sx={{ display: "flex", justifyContent: "center" }}
+                          >
+                            <props.FileActionsComponent file={file} />
+                          </M.Box>
+                        </M.TableCell>
+                      )}
+                    </M.TableRow>
+                  )
+                })}
+              </M.TableBody>
+            </M.Table>
+          </M.TableContainer>
 
           {/* Pagination */}
-          <M.Pagination
-            count={Math.ceil(data.files.count / props.pagination.pageSize)}
-            page={props.pagination.pageIndex + 1}
-            onChange={(_, page) => {
-              props.onPaginationChange({
-                ...props.pagination,
-                pageIndex: page - 1,
-              })
-            }}
-          />
+          <M.Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+            <M.Pagination
+              count={Math.ceil(data.files.count / props.pagination.pageSize)}
+              page={props.pagination.pageIndex + 1}
+              onChange={(_, page) => {
+                props.onPaginationChange({
+                  ...props.pagination,
+                  pageIndex: page - 1,
+                })
+              }}
+            />
+          </M.Box>
         </M.Box>
       )}
 

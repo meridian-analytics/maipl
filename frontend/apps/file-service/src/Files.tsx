@@ -631,7 +631,7 @@ export default function Files(props: { sx?: M.SxProps }) {
                   "File.t_maipl_folder"
                 )
                 setState(
-                  { ...qs, folder, page: 1, size: qs.size },
+                  { ...qs, folder, current_path: "", page: 1, size: qs.size },
                   { replace: true }
                 )
               }
@@ -644,6 +644,8 @@ export default function Files(props: { sx?: M.SxProps }) {
             onChange={(e) => setPathInput(e.currentTarget.value)}
             placeholder="path/to/folder"
             value={pathInput}
+            disabled={qs.view === "tree"}
+            helperText={qs.view === "tree" ? "Use folder navigation in tree view" : undefined}
             InputProps={{
               endAdornment: pathInput ? (
                 <M.InputAdornment position="end">
@@ -651,6 +653,7 @@ export default function Files(props: { sx?: M.SxProps }) {
                     size="small"
                     onClick={() => setPathInput("")}
                     title="Clear path"
+                    disabled={qs.view === "tree"}
                   >
                     <I.Clear />
                   </M.IconButton>
@@ -743,6 +746,7 @@ export default function Files(props: { sx?: M.SxProps }) {
             setState={setState}
             selection={selection}
             setSelection={setSelection}
+            updateTag={updateTag}
           />
         ) : (
           <MR.Files.Table
@@ -841,6 +845,7 @@ function TreeViewContent(props: {
   setState: (value: LoaderData, options?: RR.NavigateOptions) => void
   selection: Selection
   setSelection: SetSelection
+  updateTag: (fileId: number, newTag: string) => void
 }) {
   const [pagination, setPagination] = R.useState({
     pageIndex: props.qs.page - 1,
@@ -901,6 +906,10 @@ function TreeViewContent(props: {
           )
         }}
         onFolderClick={handleFolderClick}
+        selection={props.selection}
+        setSelection={props.setSelection}
+        onTagUpdate={props.updateTag}
+        FileActionsComponent={FileActions}
       />
     </M.Stack>
   )
