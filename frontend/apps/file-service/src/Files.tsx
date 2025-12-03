@@ -42,15 +42,21 @@ export const loader = (_maipl: MR.t_context) =>
 function parseParams(search: URLSearchParams) {
   const folder = search.get("folder") ?? File.t_maipl_folder.audio_files
   const path = search.get("path") ?? ""
+  const current_path = search.get("current_path") ?? ""
   const tag = search.get("tag") ?? ""
   const shared = search.get("shared") ?? File.t_filter_shared.all
   const page = Number.parseInt(search.get("page") ?? "1")
   const size = Number.parseInt(search.get("size") ?? "25")
+  const view = search.get("view") ?? "table" // "table" or "tree"
   JS.invariantEnum(folder, File.t_maipl_folder, "File.t_maipl_folder")
   JS.invariantEnum(shared, File.t_filter_shared, "File.t_filter_shared")
   JS.invariant(!Number.isNaN(page), "page must be a number")
   JS.invariant(!Number.isNaN(size), "size must be a number")
-  return { folder, path, tag, shared, page, size }
+  JS.invariant(
+    view === "table" || view === "tree",
+    "view must be 'table' or 'tree'"
+  )
+  return { folder, path, current_path, tag, shared, page, size, view }
 }
 
 function SelectionActions(props: {
@@ -476,10 +482,12 @@ export default function Files(props: { sx?: M.SxProps }) {
       {
         folder: value.folder,
         path: value.path,
+        current_path: value.current_path ?? "",
         tag: value.tag,
         shared: value.shared,
         page: String(value.page),
         size: String(value.size),
+        view: value.view ?? "table",
       },
       options
     )
@@ -692,9 +700,52 @@ export default function Files(props: { sx?: M.SxProps }) {
             }}
           />
           <M.Stack flexGrow={1} />
+          <M.ToggleButtonGroup
+            value={qs.view}
+            exclusive
+            onChange={(_, newView) => {
+              if (newView !== null) {
+                setState({ ...qs, view: newView }, { replace: true })
+              }
+            }}
+            size="small"
+          >
+            <M.ToggleButton value="table">
+              <I.TableChart />
+            </M.ToggleButton>
+            <M.ToggleButton value="tree">
+              <I.AccountTree />
+            </M.ToggleButton>
+          </M.ToggleButtonGroup>
           <SelectionActions selection={selection} setSelection={setSelection} />
         </M.Stack>
-        <MR.Files.Table
+        {qs.current_path && qs.view === "table" && (
+          <M.Alert severity="info" sx={{ mb: 2 }}>
+            <M.Stack direction="row" alignItems="center" spacing={1}>
+              <I.Info />
+              <M.Typography variant="body2">
+                Showing files in folder: <strong>{qs.current_path}</strong>
+              </M.Typography>
+              <M.Button
+                size="small"
+                onClick={() => {
+                  setState({ ...qs, current_path: "" }, { replace: true })
+                }}
+              >
+                Clear
+              </M.Button>
+            </M.Stack>
+          </M.Alert>
+        )}
+        {qs.view === "tree" ? (
+          <TreeViewContent
+            qs={qs}
+            setState={setState}
+            selection={selection}
+            setSelection={setSelection}
+          />
+        ) : (
+          <MR.Files.Table
           columns={extraColumns}
           rows={files.data}
           count={files.count}
@@ -732,7 +783,125 @@ export default function Files(props: { sx?: M.SxProps }) {
             onTagUpdate: updateTag,
           }}
         />
+        )}
       </M.Stack>
     </Context.Provider>
+  )
+}
+
+/** Breadcrumb component for folder navigation */
+function Breadcrumb(props: {
+  currentPath: string
+  onNavigate: (path: string) => void
+}) {
+  if (!props.currentPath) {
+    return null
+  }
+
+  const parts = props.currentPath.split("/").filter(Boolean)
+  const paths = parts.reduce(
+    (acc, part, index) => {
+      acc.push({
+        name: part,
+        path: parts.slice(0, index + 1).join("/"),
+      })
+      return acc
+    },
+    [] as Array<{ name: string; path: string }>
+  )
+
+  return (
+    <M.Breadcrumbs sx={{ mb: 2 }}>
+      <M.Link
+        component="button"
+        variant="body1"
+        onClick={() => props.onNavigate("")}
+        sx={{ cursor: "pointer" }}
+      >
+        Root
+      </M.Link>
+      {paths.map((item, index) => (
+        <M.Link
+          key={item.path}
+          component="button"
+          variant="body1"
+          onClick={() => props.onNavigate(item.path)}
+          sx={{ cursor: "pointer" }}
+        >
+          {item.name}
+        </M.Link>
+      ))}
+    </M.Breadcrumbs>
+  )
+}
+
+/** Tree view content component */
+function TreeViewContent(props: {
+  qs: LoaderData
+  setState: (value: LoaderData, options?: RR.NavigateOptions) => void
+  selection: Selection
+  setSelection: SetSelection
+}) {
+  const [pagination, setPagination] = R.useState({
+    pageIndex: props.qs.page - 1,
+    pageSize: props.qs.size,
+  })
+
+  const handleFolderClick = R.useCallback(
+    (path: string) => {
+      props.setState(
+        {
+          ...props.qs,
+          current_path: path,
+          page: 1,
+        },
+        { replace: false }
+      )
+      setPagination({ pageIndex: 0, pageSize: props.qs.size })
+    },
+    [props]
+  )
+
+  const handleBreadcrumbNavigate = R.useCallback(
+    (path: string) => {
+      props.setState(
+        {
+          ...props.qs,
+          current_path: path,
+          page: 1,
+        },
+        { replace: false }
+      )
+      setPagination({ pageIndex: 0, pageSize: props.qs.size })
+    },
+    [props]
+  )
+
+  return (
+    <M.Stack spacing={2} sx={{ flexGrow: 1, overflow: "auto" }}>
+      <Breadcrumb
+        currentPath={props.qs.current_path}
+        onNavigate={handleBreadcrumbNavigate}
+      />
+      <MR.FolderListView
+        maipl_folder={props.qs.folder}
+        path_prefix={props.qs.current_path}
+        tag={props.qs.tag}
+        shared={props.qs.shared}
+        pagination={pagination}
+        onPaginationChange={(newPagination) => {
+          setPagination(newPagination)
+          props.setState(
+            {
+              ...props.qs,
+              page: newPagination.pageIndex + 1,
+              size: newPagination.pageSize,
+            },
+            { replace: true }
+          )
+        }}
+        onFolderClick={handleFolderClick}
+      />
+    </M.Stack>
   )
 }

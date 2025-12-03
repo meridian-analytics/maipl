@@ -177,6 +177,50 @@ type t_update_request = t_create_request
 /** File.t_update_response */
 type t_update_response = t
 
+/** File.t_folder: Folder object */
+type t_folder = {
+  /** Folder name */
+  name: string
+  /** Full folder path */
+  path: string
+  /** Number of files in this folder (including subfolders) */
+  file_count: number
+}
+
+/** File.t_folder_list_request: Request params for folder listing */
+type t_folder_list_request = {
+  /** Path prefix to list (e.g., "folder1/subfolder") */
+  path_prefix?: string
+  /** MAIPL folder */
+  maipl_folder?: t_maipl_folder
+  /** File tag filter */
+  tag?: string
+  /** Shared status filter */
+  shared?: t_filter_shared
+  /** Page number */
+  page?: number
+  /** Page size */
+  size?: number
+}
+
+/** File.t_folder_list_response: Response from folder listing */
+type t_folder_list_response = {
+  /** List of direct subfolders */
+  folders: Array<{
+    name: string
+    path: string
+    file_count: number
+  }>
+  /** Paginated files directly in this folder */
+  files: t_page<
+    Omit<t, "created_at" | "updated_at" | "meta"> & {
+      created_at: string
+      updated_at: string
+      meta: string
+    }
+  >
+}
+
 /** File.create: upload a new file */
 const create = async (
   client: Client.t,
@@ -239,6 +283,37 @@ const list = async (
       updated_at: new Date(file.updated_at),
       meta: Meta.safeParse(file.meta),
     })),
+  }
+}
+
+/** File.listFolder: get folder contents (subfolders and files) */
+const listFolder = async (
+  client: Client.t,
+  params: t_folder_list_request,
+): Promise<t_folder_list_response> => {
+  const response = await client
+    .get<t_folder_list_response>(`${K.MAIPL_FILE_BACKEND}/api/file/folder/`, {
+      params: {
+        path_prefix: params.path_prefix ?? "",
+        maipl_folder: params.maipl_folder,
+        tag: params.tag,
+        shared: params.shared,
+        page: params.page,
+        size: params.size,
+      },
+    })
+    .then(r => r.data)
+  return {
+    ...response,
+    files: {
+      ...response.files,
+      data: response.files.data.map(file => ({
+        ...file,
+        created_at: new Date(file.created_at),
+        updated_at: new Date(file.updated_at),
+        meta: Meta.safeParse(file.meta),
+      })),
+    },
   }
 }
 
@@ -362,6 +437,9 @@ export {
   t_filter_shared, // enum
   type t_file_share,
   type t_file_share_change,
+  type t_folder,
+  type t_folder_list_request,
+  type t_folder_list_response,
   type t_get_request,
   type t_get_response,
   type t_list_request,
@@ -377,6 +455,7 @@ export {
   discoverMeta,
   get,
   list,
+  listFolder,
   share,
   safeMeta,
   update,

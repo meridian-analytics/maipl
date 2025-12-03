@@ -36,6 +36,8 @@ export {
   useTable,
 } from "./table"
 
+export { FolderTree, FolderListView } from "./tree/Files"
+
 export {
   type UserAvatarProps,
   type UserAvatarGroupProps,
