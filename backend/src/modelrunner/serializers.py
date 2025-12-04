@@ -11,11 +11,18 @@ class ModelRunnerTaskSerializer(CreatorMixin, serializers.ModelSerializer):
     filelist = serializers.PrimaryKeyRelatedField(many=True, queryset=File.objects.all())
     model_file = serializers.PrimaryKeyRelatedField(queryset=File.objects.all())
     detections = serializers.PrimaryKeyRelatedField(queryset=File.objects.all(), required=False)
+    model_file_name = serializers.SerializerMethodField()
 
     class Meta:
         model = ModelRunnerTask
-        fields = '__all__'
-        read_only_fields = ('id', 'status', 'created_at', 'updated_at', 'user_id')
+        fields = ['id', 'description', 'celery_task_id', 'user_id', 'filelist', 'model_file', 
+                  'detections', 'parameters', 'status', 'created_at', 'updated_at', 'model_file_name']
+        read_only_fields = ('id', 'status', 'created_at', 'updated_at', 'user_id', 'model_file_name')
+
+    def get_model_file_name(self, obj):
+        if obj.model_file:
+            return obj.model_file.basename
+        return None
 
 
 

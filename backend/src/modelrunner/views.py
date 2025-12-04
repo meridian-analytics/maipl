@@ -1,8 +1,10 @@
 import csv
 import os
+import re
 import tempfile
 from celery.result import AsyncResult
 from django.contrib.auth import get_user_model
+from os.path import splitext
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,7 +15,7 @@ from common.file_utils import FileUtils
 
 from .models import Detection, ModelRunnerTask
 from .serializers import DetectionSerializer, ModelRunnerTaskSerializer
-from .tasks import run_model
+from .tasks import run_model, sanitize_folder_name
 
 
 class ModelRunnerTaskView(generics.RetrieveUpdateDestroyAPIView):
@@ -120,6 +122,66 @@ class DetectionDetailView(generics.RetrieveAPIView):
     queryset = Detection.objects.all()
 
 
+def generate_export_filepath(task, label=None, score_min=None, score_max=None):
+    """
+    Generate a folder-structured filepath for filtered/exported detection files.
+    
+    Structure examples:
+    - With label and score: detections/task-{task_id}-{model_name}/filtered/label-{label}_score-{min}-{max}.csv
+    - With label only: detections/task-{task_id}-{model_name}/filtered/label-{label}_all.csv
+    - With score only: detections/task-{task_id}-{model_name}/filtered/score-{min}-{max}.csv
+    - No filters: detections/task-{task_id}-{model_name}/filtered/all.csv
+    
+    Note: These are filtered exports. The main unfiltered file is at:
+          detections/task-{task_id}-{model_name}/detections.csv
+    The 'detections' prefix separates detection files from other annotations.
+    Task ID is unique, so date is not needed. Model name helps identify the model used.
+    Label is included in filename instead of a separate folder layer.
+    
+    Args:
+        task: ModelRunnerTask instance
+        label: Optional label filter
+        score_min: Optional minimum score
+        score_max: Optional maximum score
+        
+    Returns:
+        str: Filepath for the exported file
+    """
+    task_id = task.id
+    
+    # Get model name from model_file
+    if task.model_file:
+        model_basename = task.model_file.basename
+        model_name = splitext(model_basename)[0]  # Remove extension
+        model_name = sanitize_folder_name(model_name)
+    else:
+        model_name = "unknown_model"
+    
+    # Build base path - detections prefix to separate from other annotations, task ID and model name (no date needed)
+    base_path = f"detections/task-{task_id}-{model_name}/filtered"
+    
+    # Build filename parts - include label in filename if specified
+    filename_parts = []
+    
+    if label:
+        clean_label = sanitize_folder_name(label)
+        filename_parts.append(f"label-{clean_label}")
+    
+    # Build score part of filename
+    if score_min is not None and score_max is not None:
+        filename_parts.append(f"score-{score_min:.3f}-{score_max:.3f}")
+    elif score_min is not None:
+        filename_parts.append(f"score-{score_min:.3f}+")
+    elif score_max is not None:
+        filename_parts.append(f"score-{score_max:.3f}")
+    else:
+        filename_parts.append("all")
+    
+    filename = "_".join(filename_parts) + ".csv"
+    filepath = f"{base_path}/{filename}"
+    return filepath
+
+
 class DetectionListExportToFileView(APIView):
     """
     Export filtered detections to CSV and upload to file module.
@@ -222,16 +284,6 @@ class DetectionListExportToFileView(APIView):
         # Get detections
         detections = queryset.order_by('filename', 'start')
         
-        # Generate filename with readable format: detections_task{id}_label{label}_score{min}-{max}.csv
-        # Only include parts that are actually filtered (omit unspecified filters)
-        filename_parts = [f"detections_task{task_id}"]
-        
-        # Add label if specified
-        if label:
-            # Clean up label (remove problematic characters)
-            clean_label = str(label).replace('/', '_').replace('\\', '_').replace(' ', '_')
-            filename_parts.append(f"label{clean_label}")
-        
         # Determine score range if any score filters are specified
         score_min = None
         score_max = None
@@ -246,18 +298,8 @@ class DetectionListExportToFileView(APIView):
         elif score_lt:
             score_max = float(score_lt)
         
-        # Add score range if specified (replace dots with underscores for filename safety)
-        if score_min is not None and score_max is not None:
-            score_str = f"score{score_min:.3f}-{score_max:.3f}".replace('.', '_')
-            filename_parts.append(score_str)
-        elif score_min is not None:
-            score_str = f"score{score_min:.3f}+".replace('.', '_')
-            filename_parts.append(score_str)
-        elif score_max is not None:
-            score_str = f"score-{score_max:.3f}".replace('.', '_')
-            filename_parts.append(score_str)
-        
-        csv_filename = "_".join(filename_parts) + ".csv"
+        # Generate folder-structured filepath
+        csv_filename = generate_export_filepath(task, label=label, score_min=score_min, score_max=score_max)
         
         # Create temporary CSV file
         temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv', newline='')
