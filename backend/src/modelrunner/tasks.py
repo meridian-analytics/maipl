@@ -1,9 +1,10 @@
 import csv
 import os
+import re
 import shutil
 import subprocess
 from datetime import datetime
-from os.path import basename
+from os.path import basename, splitext
 
 from celery import shared_task, states
 from celery.exceptions import Ignore
@@ -16,6 +17,61 @@ from .models import Detection, ModelRunnerTask
 from file.models import File
 
 User = get_user_model()
+
+
+def sanitize_folder_name(name):
+    """
+    Sanitize a string to be used as a folder name.
+    Removes or replaces problematic characters for file system paths.
+    
+    Args:
+        name: String to sanitize
+        
+    Returns:
+        str: Sanitized folder name
+    """
+    if not name:
+        return "unknown"
+    # Remove or replace problematic characters
+    # Replace spaces, slashes, and other problematic chars with underscores
+    sanitized = re.sub(r'[^\w\-_\.]', '_', str(name))
+    # Remove consecutive underscores and leading/trailing underscores
+    sanitized = re.sub(r'_+', '_', sanitized).strip('_')
+    # Limit length to avoid filesystem issues
+    if len(sanitized) > 100:
+        sanitized = sanitized[:100]
+    return sanitized if sanitized else "unknown"
+
+
+def generate_detections_filepath(task):
+    """
+    Generate a folder-structured filepath for detection files.
+    
+    Structure: detections/task-{task_id}-{model_name}/detections.csv
+    This is the main unfiltered detection file from the model run.
+    The 'detections' prefix separates detection files from other annotations.
+    Task ID is unique, so date is not needed. Model name helps identify the model used.
+    
+    Args:
+        task: ModelRunnerTask instance
+        
+    Returns:
+        str: Filepath for the detection file
+    """
+    task_id = task.id
+    
+    # Get model name from model_file
+    if task.model_file:
+        model_basename = task.model_file.basename
+        model_name = splitext(model_basename)[0]  # Remove extension
+        model_name = sanitize_folder_name(model_name)
+    else:
+        model_name = "unknown_model"
+    
+    # Build folder-structured path - task ID and model name (no date needed since task IDs are unique)
+    filepath = f"detections/task-{task_id}-{model_name}/detections.csv"
+    
+    return filepath
 
 
 @shared_task(bind=True, name='run_model')
@@ -335,16 +391,16 @@ def save_detections_to_db(task_context):
 
 
 def upload_detections_file(task_context, file_utils):
-    """Upload the detections file to storage."""
+    """Upload the detections file to storage with folder structure."""
     detections_dir = task_context["detections_dir"]
     local_file_path = os.path.join(detections_dir, "detections.csv")
     task = task_context["task"]
     
-    # Create a unique filename for the detections file
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filepath = f"detections_{task.id}_{timestamp}.csv"
+    # Generate folder-structured filepath
+    filepath = generate_detections_filepath(task)
     
     # Upload the file
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     file_instance = file_utils.upload_file(
         local_file_path=local_file_path,
         maipl_folder='annotations',
@@ -352,7 +408,9 @@ def upload_detections_file(task_context, file_utils):
         meta={
             'task_id': task.id,
             'upload_time': timestamp,
-            'file_count': len(task.filelist.all())
+            'file_count': len(task.filelist.all()),
+            'model_name': task.model_file.basename if task.model_file else None,
+            'created_at': task.created_at.isoformat() if task.created_at else None
         },
         user=task.user_id  # Pass the User instance directly
     )

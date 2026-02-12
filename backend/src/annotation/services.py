@@ -219,6 +219,7 @@ def generate_waveform(input_file_path, output_file_path, parameters, start, end)
         ax.set_ylim(-max_amplitude, max_amplitude)
         
         # Save plot with white background and no padding
+        # Using SVG format for scalable vector graphics that can be scaled without quality loss
         annotation_logger.info(f"Saving waveform visualization to: {os.path.basename(output_file_path)}")
         plt.savefig(output_file_path, 
                    dpi=spec_dpi,
@@ -226,7 +227,7 @@ def generate_waveform(input_file_path, output_file_path, parameters, start, end)
                    pad_inches=0,
                    facecolor='white',
                    edgecolor='none',
-                   format='png')
+                   format='svg')
         plt.close()
 
         # Verify file was created and has content

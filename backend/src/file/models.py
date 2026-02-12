@@ -152,8 +152,39 @@ class File(models.Model):
 
 @receiver(pre_save, sender=File)
 def update_size(sender, instance, **kwargs):
+    """
+    Update the file size before saving.
+    For newly uploaded files, get size from the uploaded file object directly.
+    This avoids synchronous metadata requests to storage backend which can block for large files.
+    """
     if instance.file:
-        instance.size = instance.file.size
+        # For newly uploaded files, Django's FileField wraps the uploaded file
+        # The uploaded file object should have size available directly
+        try:
+            # Check if we have a newly uploaded file (has a file-like object)
+            if hasattr(instance.file, 'file') and hasattr(instance.file.file, 'read'):
+                # Try to get size from the underlying file object
+                # For Django's UploadedFile, size is often cached
+                uploaded_file = instance.file.file
+                # Check if size is already available (cached on uploaded file)
+                if hasattr(uploaded_file, 'size'):
+                    instance.size = uploaded_file.size
+                elif hasattr(instance.file, '_size'):
+                    # Check if size was cached by FileField
+                    instance.size = instance.file._size
+                else:
+                    # Fallback: use file.size property
+                    # This may make a metadata request but should be cached after first access
+                    instance.size = instance.file.size
+            else:
+                # For existing files, use the size property
+                instance.size = instance.file.size
+        except (AttributeError, IOError, OSError) as e:
+            # If accessing size fails, try fallback or set to 0
+            try:
+                instance.size = instance.file.size
+            except Exception:
+                instance.size = 0
     else:
         instance.size = 0
 
@@ -171,9 +202,56 @@ def handle_h5_file_meta_post_save(sender, instance, **kwargs):
         (kwargs.get('created', False) or 'file' in update_fields) and 
         instance.meta is None):
         from .tasks import update_meta_from_h5_file
-        # set the meta to 'processing' to avoid race condition
-        instance.meta = {'processing': True}
-        instance.save(update_fields=['meta'])
+        # Use update() instead of save() to avoid triggering signals and blocking the response
+        # This is more efficient and non-blocking for large file uploads
+        File.objects.filter(id=instance.id).update(meta={'processing': True})
+        # Reload instance to get updated meta
+        instance.refresh_from_db(fields=['meta'])
         update_meta_from_h5_file.delay(instance.id)
+
+
+@receiver(post_save, sender=File)
+def invalidate_file_cache_on_update(sender, instance, created, **kwargs):
+    """
+    Invalidate the shared file cache when a file's content is updated.
+    
+    This ensures that other tools (annotation, model runner, etc.) don't use
+    stale cached versions of files after they've been updated.
+    
+    Args:
+        sender: The model class (File)
+        instance: The actual instance being saved
+        created: Boolean indicating if this is a new instance
+        **kwargs: Additional keyword arguments including update_fields
+    """
+    # Don't invalidate cache for newly created files
+    if created:
+        return
+    
+    # Get the list of fields that were updated
+    update_fields = kwargs.get('update_fields', None)
+    
+    # If update_fields is None, it means save() was called without specifying fields
+    # In this case, we should check if the file might have changed
+    # If update_fields is provided and doesn't contain 'file', skip invalidation
+    if update_fields is not None and 'file' not in update_fields:
+        return
+    
+    # Import here to avoid circular imports and to access the cache and logger
+    from common.shared_file_cache import shared_file_cache
+    from common.logger import file_logger
+    
+    try:
+        file_logger.info(
+            f"Invalidating cache for file ID: {instance.id} "
+            f"(path: {instance.path}, user: {instance.user_id.email})"
+        )
+        shared_file_cache.delete(instance.id)
+        file_logger.info(f"Cache invalidated successfully for file ID: {instance.id}")
+    except Exception as e:
+        # Log the error but don't raise it to avoid breaking the save operation
+        file_logger.error(
+            f"Failed to invalidate cache for file ID: {instance.id}. Error: {e}"
+        )
     
     

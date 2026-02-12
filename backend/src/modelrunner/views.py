@@ -1,14 +1,21 @@
+import csv
+import os
+import re
+import tempfile
 from celery.result import AsyncResult
+from django.contrib.auth import get_user_model
+from os.path import splitext
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from common.pagination import MaiplPagination
 from common.shared_mixins import CreateListModelMixin
-
+from common.file_utils import FileUtils
 
 from .models import Detection, ModelRunnerTask
 from .serializers import DetectionSerializer, ModelRunnerTaskSerializer
-from .tasks import run_model
+from .tasks import run_model, sanitize_folder_name
 
 
 class ModelRunnerTaskView(generics.RetrieveUpdateDestroyAPIView):
@@ -113,4 +120,260 @@ class DetectionListView(DetectionListExportView):
 class DetectionDetailView(generics.RetrieveAPIView):
     serializer_class = DetectionSerializer
     queryset = Detection.objects.all()
+
+
+def generate_export_filepath(task, label=None, score_min=None, score_max=None):
+    """
+    Generate a folder-structured filepath for filtered/exported detection files.
+    
+    Structure examples:
+    - With label and score: detections/task-{task_id}-{model_name}/filtered/label-{label}_score-{min}-{max}.csv
+    - With label only: detections/task-{task_id}-{model_name}/filtered/label-{label}_all.csv
+    - With score only: detections/task-{task_id}-{model_name}/filtered/score-{min}-{max}.csv
+    - No filters: detections/task-{task_id}-{model_name}/filtered/all.csv
+    
+    Note: These are filtered exports. The main unfiltered file is at:
+          detections/task-{task_id}-{model_name}/detections.csv
+    The 'detections' prefix separates detection files from other annotations.
+    Task ID is unique, so date is not needed. Model name helps identify the model used.
+    Label is included in filename instead of a separate folder layer.
+    
+    Args:
+        task: ModelRunnerTask instance
+        label: Optional label filter
+        score_min: Optional minimum score
+        score_max: Optional maximum score
+        
+    Returns:
+        str: Filepath for the exported file
+    """
+    task_id = task.id
+    
+    # Get model name from model_file
+    if task.model_file:
+        model_basename = task.model_file.basename
+        model_name = splitext(model_basename)[0]  # Remove extension
+        model_name = sanitize_folder_name(model_name)
+    else:
+        model_name = "unknown_model"
+    
+    # Build base path - detections prefix to separate from other annotations, task ID and model name (no date needed)
+    base_path = f"detections/task-{task_id}-{model_name}/filtered"
+    
+    # Build filename parts - include label in filename if specified
+    filename_parts = []
+    
+    if label:
+        clean_label = sanitize_folder_name(label)
+        filename_parts.append(f"label-{clean_label}")
+    
+    # Build score part of filename
+    if score_min is not None and score_max is not None:
+        filename_parts.append(f"score-{score_min:.3f}-{score_max:.3f}")
+    elif score_min is not None:
+        filename_parts.append(f"score-{score_min:.3f}+")
+    elif score_max is not None:
+        filename_parts.append(f"score-{score_max:.3f}")
+    else:
+        filename_parts.append("all")
+    
+    filename = "_".join(filename_parts) + ".csv"
+    filepath = f"{base_path}/{filename}"
+    return filepath
+
+
+class DetectionListExportToFileView(APIView):
+    """
+    Export filtered detections to CSV and upload to file module.
+    
+    Query parameters:
+    - task (required): Task ID to filter detections
+    - label (optional): Filter by label
+    - score__gte (optional): Minimum score
+    - score__lte (optional): Maximum score
+    - score__gt (optional): Score greater than
+    - score__lt (optional): Score less than
+    - user_id (optional): Filter by user ID
+    - filename (optional): Filter by filename
+    
+    Returns the uploaded File instance.
+    """
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.file_utils = FileUtils()
+    
+    def get(self, request):
+        # Get required task_id parameter
+        task_id = request.query_params.get('task')
+        if not task_id:
+            return Response(
+                {"error": "task parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            task_id = int(task_id)
+        except ValueError:
+            return Response(
+                {"error": "task must be a valid integer"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Verify task exists and belongs to user
+        try:
+            task = ModelRunnerTask.objects.get(id=task_id, user_id=request.user.id)
+        except ModelRunnerTask.DoesNotExist:
+            return Response(
+                {"error": "Task not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Build queryset with same filtering as DetectionListExportView
+        queryset = Detection.objects.filter(task=task_id, user_id=request.user.id)
+        
+        # Apply filters
+        label = request.query_params.get('label')
+        if label:
+            queryset = queryset.filter(label=label)
+        
+        score_gte = request.query_params.get('score__gte')
+        if score_gte:
+            try:
+                queryset = queryset.filter(score__gte=float(score_gte))
+            except ValueError:
+                return Response(
+                    {"error": "score__gte must be a valid number"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        score_lte = request.query_params.get('score__lte')
+        if score_lte:
+            try:
+                queryset = queryset.filter(score__lte=float(score_lte))
+            except ValueError:
+                return Response(
+                    {"error": "score__lte must be a valid number"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        score_gt = request.query_params.get('score__gt')
+        if score_gt:
+            try:
+                queryset = queryset.filter(score__gt=float(score_gt))
+            except ValueError:
+                return Response(
+                    {"error": "score__gt must be a valid number"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        score_lt = request.query_params.get('score__lt')
+        if score_lt:
+            try:
+                queryset = queryset.filter(score__lt=float(score_lt))
+            except ValueError:
+                return Response(
+                    {"error": "score__lt must be a valid number"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        filename_filter = request.query_params.get('filename')
+        if filename_filter:
+            queryset = queryset.filter(filename=filename_filter)
+        
+        # Get detections
+        detections = queryset.order_by('filename', 'start')
+        
+        # Determine score range if any score filters are specified
+        score_min = None
+        score_max = None
+        
+        if score_gte:
+            score_min = float(score_gte)
+        elif score_gt:
+            score_min = float(score_gt)
+        
+        if score_lte:
+            score_max = float(score_lte)
+        elif score_lt:
+            score_max = float(score_lt)
+        
+        # Generate folder-structured filepath
+        csv_filename = generate_export_filepath(task, label=label, score_min=score_min, score_max=score_max)
+        
+        # Create temporary CSV file
+        temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv', newline='')
+        temp_filepath = temp_file.name
+        
+        try:
+            writer = csv.writer(temp_file)
+            # Write header
+            writer.writerow(['filename', 'start', 'end', 'label', 'score'])
+            
+            # Write detection rows
+            for detection in detections:
+                writer.writerow([
+                    detection.filename,
+                    detection.start,
+                    detection.end,
+                    detection.label,
+                    detection.score
+                ])
+            
+            temp_file.close()
+            
+            # Convert TokenUser to User instance (required for File model)
+            User = get_user_model()
+            user_instance = User.objects.get(id=request.user.id)
+            
+            # Check if file with same path already exists and delete it (overwrite behavior)
+            from file.models import File
+            try:
+                existing_file = File.objects.get(user_id=user_instance.id, path=csv_filename)
+                existing_file.delete(force=True)  # Force delete to bypass in_use check
+            except File.DoesNotExist:
+                pass  # File doesn't exist, which is fine
+            except Exception as e:
+                # Log but continue - we'll try to create the file anyway
+                pass
+            
+            # Upload to file module
+            file_instance = self.file_utils.upload_file(
+                local_file_path=temp_filepath,
+                maipl_folder='annotations',
+                path=csv_filename,
+                meta={
+                    'task_id': task_id,
+                    'label': label,
+                    'score_min': score_gte or score_gt,
+                    'score_max': score_lte or score_lt,
+                    'detection_count': detections.count()
+                },
+                user=user_instance
+            )
+            
+            if not file_instance:
+                return Response(
+                    {"error": "Failed to upload file"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            # Return file instance data
+            return Response({
+                'id': file_instance.id,
+                'path': file_instance.path,
+                'maipl_folder': file_instance.maipl_folder,
+                'created_at': file_instance.created_at,
+                'meta': file_instance.meta
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to export detections: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_filepath):
+                os.unlink(temp_filepath)
 

@@ -1,6 +1,7 @@
 import os
 import hashlib
 import redis
+import threading
 from .shared_file_cache import shared_file_cache
 from file.models import File
 from common.logger import file_logger
@@ -16,8 +17,12 @@ class FileUtils:
     def __init__(self):
         self.redis_client = redis.Redis.from_url(settings.REDIS_URL)
         self.logger = file_logger
-        self.file_download_lock_timeout = 300  # 5 minutes
+        # Increased timeout to 30 minutes for very large files (e.g., multi-GB audio files)
+        # This should handle most cases, but lock renewal is still recommended for extremely large files
+        self.file_download_lock_timeout = 1800  # 30 minutes
         self.file_download_blocking_timeout = 60  # 1 minute
+        # Renew lock every 10 minutes during download to prevent expiration
+        self.file_download_lock_renewal_interval = 600  # 10 minutes
 
     def download_file(self, file_id: int) -> Optional[str]:
         """
@@ -64,20 +69,87 @@ class FileUtils:
                 return cached_file_path
             
             try:
-
                 # Get the path where the file should be saved in the cache
                 cache_file_path = shared_file_cache._get_file_path(file_id)
 
-                # Download the file in chunks and save it directly to the cache path
-                self.logger.info(f"Starting download of file {basename} to {cache_file_path}")
-                with open(cache_file_path, 'wb') as cache_file:
-                    for chunk in file_instance.file:
-                        cache_file.write(chunk)
+                # Start lock renewal thread for long downloads
+                stop_renewal = threading.Event()
+                renewal_thread = None
+                
+                def renew_lock_periodically():
+                    """Renew the lock periodically to prevent expiration during long downloads"""
+                    while not stop_renewal.is_set():
+                        # Wait for renewal interval
+                        if stop_renewal.wait(self.file_download_lock_renewal_interval):
+                            break  # Stop if event is set
+                        
+                        # Extend the lock if still owned
+                        try:
+                            if lock.owned():
+                                # Extend the lock by the timeout duration
+                                lock.extend(self.file_download_lock_timeout)
+                                self.logger.debug(f"Extended lock for file {basename} by {self.file_download_lock_timeout} seconds")
+                            else:
+                                self.logger.warning(f"Lock no longer owned for file {basename}, stopping renewal")
+                                break
+                        except redis.exceptions.LockError as e:
+                            self.logger.warning(f"Failed to extend lock for file {basename}: {e}")
+                            break
+                        except Exception as e:
+                            self.logger.warning(f"Unexpected error extending lock for file {basename}: {e}")
+                            break
 
-                # Add the file to the shared cache      
-                shared_file_cache.set(file_id)
-                self.logger.info(f"File downloaded and cached: {cache_file_path}")
-                return cache_file_path
+                # Start renewal thread
+                renewal_thread = threading.Thread(target=renew_lock_periodically, daemon=True)
+                renewal_thread.start()
+
+                try:
+                    # Download the file in chunks and save it directly to the cache path
+                    # Use requests with extended timeout to handle large file downloads
+                    # Default urllib3 read timeout is ~5 minutes, which is too short for large files
+                    try:
+                        import requests
+                    except ImportError:
+                        self.logger.error("requests library not available, falling back to default download method")
+                        # Fallback to original method if requests is not available
+                        self.logger.info(f"Starting download of file {basename} to {cache_file_path}")
+                        with open(cache_file_path, 'wb') as cache_file:
+                            for chunk in file_instance.file:
+                                cache_file.write(chunk)
+                    else:
+                        # Get a presigned URL from the storage backend (valid for 1 hour)
+                        storage = file_instance.file.storage
+                        try:
+                            file_url = storage.url(file_instance.file.name)
+                        except Exception as e:
+                            self.logger.warning(f"Could not get presigned URL for {basename}, falling back to direct download: {e}")
+                            # Fallback to original method if URL generation fails
+                            self.logger.info(f"Starting download of file {basename} to {cache_file_path}")
+                            with open(cache_file_path, 'wb') as cache_file:
+                                for chunk in file_instance.file:
+                                    cache_file.write(chunk)
+                        else:
+                            # Download with extended timeouts
+                            # timeout: (connect_timeout, read_timeout) tuple
+                            # connect: 60 seconds to establish connection
+                            # read: 1800 seconds (30 minutes) to read data - handles very large files
+                            self.logger.info(f"Starting download of file {basename} to {cache_file_path} using presigned URL")
+                            with requests.get(file_url, stream=True, timeout=(60, 1800)) as response:
+                                response.raise_for_status()
+                                with open(cache_file_path, 'wb') as cache_file:
+                                    for chunk in response.iter_content(chunk_size=8192):
+                                        if chunk:  # filter out keep-alive chunks
+                                            cache_file.write(chunk)
+
+                    # Add the file to the shared cache      
+                    shared_file_cache.set(file_id)
+                    self.logger.info(f"File downloaded and cached: {cache_file_path}")
+                    return cache_file_path
+                finally:
+                    # Stop lock renewal thread
+                    stop_renewal.set()
+                    if renewal_thread and renewal_thread.is_alive():
+                        renewal_thread.join(timeout=1)
 
             except File.DoesNotExist:
                 self.logger.error(f"No file found with id: {basename}")
@@ -91,7 +163,17 @@ class FileUtils:
             return None
         finally:
             if 'lock' in locals() and have_lock:
-                lock.release()
+                try:
+                    # Check if lock is still owned before releasing
+                    # Lock may have expired during long downloads
+                    if lock.owned():
+                        lock.release()
+                except redis.exceptions.LockError as e:
+                    # Lock may have expired or been released by another process
+                    self.logger.warning(f"Could not release lock for file {basename}: {e}")
+                except Exception as e:
+                    # Catch any other unexpected errors when releasing lock
+                    self.logger.warning(f"Unexpected error releasing lock for file {basename}: {e}")
 
     def upload_file(self, local_file_path: str, maipl_folder: str, path: str, meta: dict, user: User) -> Optional[File]:
         """

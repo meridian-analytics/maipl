@@ -302,6 +302,7 @@ class BatchList(generics.ListCreateAPIView):
     """
     A view to handle GET and POST requests for batches
     """
+    queryset = Batch.objects.all()
     pagination_class = MaiplPagination
     filterset_fields = {
         "id": ["in", "exact"],
@@ -381,7 +382,45 @@ class BatchList(generics.ListCreateAPIView):
                     },
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
-
+                
+    def delete(self, request, *args, **kwargs):
+        """
+        Override delete to add permission checking for bulk deletion
+        """
+        ids = request.query_params.get('ids')
+        if not ids:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+                data={"error": "No batch IDs provided"}
+            )
+        
+        batch_ids = ids.split(',')
+        try:
+            batch_ids = [int(id.strip()) for id in batch_ids if id.strip()]
+        except ValueError:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+                data={"error": "Invalid batch ID format"}
+            )
+        
+        # Check permissions - only allow deletion of batches owned by the user
+        user_id = request.user.id
+        batches_to_delete = Batch.objects.filter(id__in=batch_ids, user_id=user_id)
+        
+        if batches_to_delete.count() != len(batch_ids):
+            # Some batches don't exist or user doesn't own them
+            owned_batch_ids = list(batches_to_delete.values_list('id', flat=True))
+            not_owned_ids = set(batch_ids) - set(owned_batch_ids)
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+                data={
+                    "error": f"You don't have permission to delete batches with IDs: {list(not_owned_ids)}"
+                }
+            )
+        
+        # Delete the batches
+        batches_to_delete.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class BatchDetail(generics.RetrieveUpdateDestroyAPIView):
     """

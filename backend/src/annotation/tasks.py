@@ -131,11 +131,12 @@ def process_segment(segment):
                 os.remove(img_output.name)
 
         # Generate waveform image and save to database
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as waveform_output:
+        # Using SVG format for scalable vector graphics that can be scaled without quality loss
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".svg") as waveform_output:
             annotation_logger.info(f"Generating waveform for segment {segment.id}...")
             try:
                 generate_waveform(local_path, waveform_output.name, parameters, start, end)
-                waveform_file_name = f"{basename}-[{start}-{end}]-waveform.png"
+                waveform_file_name = f"{basename}-[{start}-{end}]-waveform.svg"
                 with DjangoFile(open(waveform_output.name, 'rb'), name=waveform_file_name) as waveform_file:
                     # Delete existing waveform if it exists, and create or update new waveform
                     existing_waveform = ProcessedImage.objects.filter(
