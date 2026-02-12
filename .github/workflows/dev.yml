@@ -38,6 +38,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Add staging host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H $STAGING_HOST >> ~/.ssh/known_hosts
+
       - name: Set script permissions
         run: |
           chmod +x frontend/scripts/build.sh
@@ -126,6 +131,11 @@ jobs:
       
     steps:
       - uses: actions/checkout@v4
+
+      - name: Add staging host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H $STAGING_HOST >> ~/.ssh/known_hosts
 
       - name: login to registry
         run: |
