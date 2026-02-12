@@ -19,6 +19,7 @@ echo "📦 Building image for AMD64..."
 docker buildx build \
   --platform linux/amd64 \
   --build-arg NODE_ENV=$ENV \
+  --provenance=false \
   -t $FULL_IMAGE_NAME \
   .
 
