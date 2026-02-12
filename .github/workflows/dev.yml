@@ -38,9 +38,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add staging host to known_hosts
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H $STAGING_HOST >> ~/.ssh/known_hosts
 
       - name: Set script permissions
@@ -132,9 +134,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add staging host to known_hosts
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H $STAGING_HOST >> ~/.ssh/known_hosts
 
       - name: login to registry
