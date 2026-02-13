@@ -139,6 +139,8 @@ jobs:
       - name: Build backend and worker
         if: steps.backend-changes.outputs.changed == 'true'
         working-directory: backend/compose
+        env:
+          BUILDX_NO_DEFAULT_ATTESTATIONS: 1
         run: |
           docker compose -f docker-compose.build.yml build
           # Tag the built images for demo

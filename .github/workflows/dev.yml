@@ -147,6 +147,8 @@ jobs:
 
       - name: Build backend and worker
         working-directory: backend/compose
+        env:
+          BUILDX_NO_DEFAULT_ATTESTATIONS: 1
         run: docker compose -f docker-compose.build.yml build
 
       - name: Push backend and worker to registry
