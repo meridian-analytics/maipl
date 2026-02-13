@@ -1,7 +1,7 @@
 # Use an official NVIDIA CUDA runtime as a parent image
 # Ubuntu 22.04 ships with Python 3.10 as the system Python (deadsnakes PPA dropped Python 3.10 for Focal)
 # CUDA 11.8 is backward compatible with code targeting CUDA 11.2/11.4
-FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
 # Set environment variables
 # Set python to be unbuffered so that output is printed in real time
