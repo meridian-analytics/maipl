@@ -19,6 +19,13 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $FRONTEND_HOST >> ~/.ssh/known_hosts
+
       - name: Check for frontend changes
         id: frontend-changes
         run: |
@@ -131,6 +138,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          for host in $BACKEND_HOST_A $BACKEND_HOST_B $WORKER_HOST_A $WORKER_HOST_B $WORKER_HOST_C; do
+            ssh-keyscan -H "$host" >> ~/.ssh/known_hosts
+          done
 
       - name: Check for backend changes
         id: backend-changes
