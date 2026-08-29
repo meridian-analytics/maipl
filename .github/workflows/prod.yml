@@ -1,19 +1,27 @@
 name: Production Build & Deploy
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
+      deploy_frontend:
+        description: "Build and deploy the production frontend"
+        required: true
+        type: boolean
+        default: false
+      deploy_backends:
+        description: "Build images and deploy the production backends"
+        required: true
+        type: boolean
+        default: false
       deploy_workers:
-        description: "Deploy and start MAIPL GPU workers (requires capacity approval)"
+        description: "Deploy and start MAIPL CPU workers"
         required: true
         type: boolean
         default: false
 
 jobs:
   frontend-build-and-deploy:
+    if: inputs.deploy_frontend
     runs-on: self-hosted
     env:
       REGISTRY_URL: ${{ vars.REGISTRY_URL }}
@@ -33,33 +41,20 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H $FRONTEND_HOST >> ~/.ssh/known_hosts
 
-      - name: Check for frontend changes
-        id: frontend-changes
-        run: |
-          if git diff --name-only HEAD~1 HEAD | grep -qE '^frontend/|^\.github/workflows/prod\.yml'; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Set script permissions
-        if: steps.frontend-changes.outputs.changed == 'true'
         run: |
           chmod +x frontend/scripts/build.sh
 
       - name: login to registry
-        if: steps.frontend-changes.outputs.changed == 'true'
         run: |
           echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin
 
       - name: build and push image for prod
-        if: steps.frontend-changes.outputs.changed == 'true'
         run: |
           cd frontend
           source ./scripts/build.sh prod
 
       - name: Deploy to prod
-        if: steps.frontend-changes.outputs.changed == 'true'
         run: |
           if ! ssh ubuntu@$FRONTEND_HOST "
             docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password $REGISTRY_PASSWORD || exit 1
@@ -83,6 +78,7 @@ jobs:
           fi
 
   backend-build-and-deploy:
+    if: inputs.deploy_backends || inputs.deploy_workers
     runs-on: self-hosted
     env:
       # Infrastructure variables
@@ -95,7 +91,8 @@ jobs:
       WORKER_HOST_C: ${{ vars.PROD_WORKER_HOST_C }}
       REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
       REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
-      DEPLOY_WORKERS: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_workers || false }}
+      DEPLOY_BACKENDS: ${{ inputs.deploy_backends }}
+      DEPLOY_WORKERS: ${{ inputs.deploy_workers }}
 
       # Email variables
       EMAIL_HOST: ${{ vars.EMAIL_HOST }}
@@ -161,41 +158,32 @@ jobs:
             done
           fi
 
-      - name: Check for backend changes
-        id: backend-changes
-        run: |
-          if git diff --name-only HEAD~1 HEAD | grep -qE '^backend/|^\.github/workflows/prod\.yml'; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: login to registry
-        if: steps.backend-changes.outputs.changed == 'true'
+        if: env.DEPLOY_BACKENDS == 'true'
         run: |
           echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin 
 
       - name: Build backend and worker
-        if: steps.backend-changes.outputs.changed == 'true'
+        if: env.DEPLOY_BACKENDS == 'true'
         working-directory: backend/compose
         env:
           BUILDX_NO_DEFAULT_ATTESTATIONS: 1
         run: docker compose -f docker-compose.build.yml build
 
       - name: Tag backend and worker
-        if: steps.backend-changes.outputs.changed == 'true'
+        if: env.DEPLOY_BACKENDS == 'true'
         run: |
           docker tag $IMAGE_PREFIX/maipl-backend/ketos-backend:dev $IMAGE_PREFIX/maipl-backend/ketos-backend:prod
           docker tag $IMAGE_PREFIX/maipl-backend/ketos-worker:dev $IMAGE_PREFIX/maipl-backend/ketos-worker:prod
 
       - name: Push backend and worker to registry
-        if: steps.backend-changes.outputs.changed == 'true'
+        if: env.DEPLOY_BACKENDS == 'true'
         run: |
           docker push $IMAGE_PREFIX/maipl-backend/ketos-backend:prod
           docker push $IMAGE_PREFIX/maipl-backend/ketos-worker:prod
 
       - name: Generate environment file
-        if: steps.backend-changes.outputs.changed == 'true'
+        if: env.DEPLOY_BACKENDS == 'true' || env.DEPLOY_WORKERS == 'true'
         run: |
           # Create .env file by combining variables and secrets
           cat > backend/.env << EOL
@@ -257,7 +245,7 @@ jobs:
           EOL
 
       - name: Deploy backends
-        if: steps.backend-changes.outputs.changed == 'true'
+        if: env.DEPLOY_BACKENDS == 'true'
         run: |
           # Create directory if it doesn't exist
           ssh ubuntu@$BACKEND_HOST_A "mkdir -p /srv/maipl/services/backend"
@@ -287,7 +275,7 @@ jobs:
             docker compose up -d"
 
       - name: Deploy workers
-        if: steps.backend-changes.outputs.changed == 'true' && env.DEPLOY_WORKERS == 'true'
+        if: env.DEPLOY_WORKERS == 'true'
         run: |
           # Create directory if it doesn't exist
           ssh ubuntu@$WORKER_HOST_A "mkdir -p /srv/maipl/services/worker"
