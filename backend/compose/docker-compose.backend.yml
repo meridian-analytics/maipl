@@ -3,7 +3,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.backend
-    image: registry.maipl-dev.com/maipl-backend/ketos-backend:prod
+    image: ${IMAGE_PREFIX:-registry.maipl-dev.com}/maipl-backend/ketos-backend:prod
     container_name: ketos-backend
     hostname: ${HOSTNAME}
     ports:
@@ -15,6 +15,7 @@ services:
     command: /backend/entrypoint.backend.sh
     env_file:
       - .env
+    restart: unless-stopped
 
   promtail:
     image: grafana/promtail:2.9.2

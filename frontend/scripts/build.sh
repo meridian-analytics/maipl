@@ -7,10 +7,10 @@ set -e
 ENV=${1:-staging}
 
 # Variables
-REGISTRY="registry.maipl-dev.com"
+IMAGE_PREFIX="${IMAGE_PREFIX:-registry.maipl-dev.com}"
 IMAGE_NAME="maipl-frontend"
 TAG="$ENV"
-FULL_IMAGE_NAME="$REGISTRY/$IMAGE_NAME:$TAG"
+FULL_IMAGE_NAME="$IMAGE_PREFIX/$IMAGE_NAME:$TAG"
 
 echo "🚀 Starting build process for $ENV environment..."
 

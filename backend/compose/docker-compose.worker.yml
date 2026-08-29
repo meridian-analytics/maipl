@@ -1,6 +1,6 @@
 services:
   worker:
-    image: registry.maipl-dev.com/maipl-backend/ketos-worker:prod
+    image: ${IMAGE_PREFIX:-registry.maipl-dev.com}/maipl-backend/ketos-worker:prod
     container_name: ketos-worker
     hostname: ${HOSTNAME}
     volumes:
@@ -10,13 +10,7 @@ services:
     command: /backend/entrypoint.worker.sh
     env_file:
       - .env
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ utility, compute, video ]
+    restart: unless-stopped
 
   promtail:
     image: grafana/promtail:2.9.2

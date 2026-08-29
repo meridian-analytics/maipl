@@ -4,13 +4,20 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      deploy_workers:
+        description: "Deploy and start MAIPL GPU workers (requires capacity approval)"
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   frontend-build-and-deploy:
     runs-on: self-hosted
-    if: github.event_name == 'push'
     env:
       REGISTRY_URL: ${{ vars.REGISTRY_URL }}
+      IMAGE_PREFIX: ${{ vars.REGISTRY_URL }}/library
       FRONTEND_HOST: ${{ vars.FRONTEND_HOST }}
       REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
       REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
@@ -56,17 +63,17 @@ jobs:
         run: |
           if ! ssh ubuntu@$FRONTEND_HOST "
             docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password $REGISTRY_PASSWORD || exit 1
-            docker pull $REGISTRY_URL/maipl-frontend:prod || exit 1  
-            docker stop frontend-app || true
-            docker rm frontend-app || true
-            docker run -d --name frontend-app \
+            docker pull $IMAGE_PREFIX/maipl-frontend:prod || exit 1
+            docker stop maipl-frontend || true
+            docker rm maipl-frontend || true
+            docker run -d --name maipl-frontend \
               --restart unless-stopped \
-              -p 80:80 \
-              $REGISTRY_URL/maipl-frontend:prod || exit 1
+              -p 8081:80 \
+              $IMAGE_PREFIX/maipl-frontend:prod || exit 1
             
             # Verify container is running
             sleep 5
-            if ! docker ps | grep -q frontend-app; then
+            if ! docker ps --format '{{.Names}}' | grep -qx maipl-frontend; then
               echo 'Container failed to start' >&2
               exit 1
             fi
@@ -77,10 +84,10 @@ jobs:
 
   backend-build-and-deploy:
     runs-on: self-hosted
-    if: github.event_name == 'push'
     env:
       # Infrastructure variables
       REGISTRY_URL: ${{ vars.REGISTRY_URL }}
+      IMAGE_PREFIX: ${{ vars.REGISTRY_URL }}/library
       BACKEND_HOST_A: ${{ vars.PROD_BACKEND_HOST_A }}
       BACKEND_HOST_B: ${{ vars.PROD_BACKEND_HOST_B }}
       WORKER_HOST_A: ${{ vars.PROD_WORKER_HOST_A }}
@@ -88,6 +95,7 @@ jobs:
       WORKER_HOST_C: ${{ vars.PROD_WORKER_HOST_C }}
       REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
       REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+      DEPLOY_WORKERS: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_workers || false }}
 
       # Email variables
       EMAIL_HOST: ${{ vars.EMAIL_HOST }}
@@ -144,9 +152,14 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          for host in $BACKEND_HOST_A $BACKEND_HOST_B $WORKER_HOST_A $WORKER_HOST_B $WORKER_HOST_C; do
+          for host in $BACKEND_HOST_A $BACKEND_HOST_B; do
             ssh-keyscan -H "$host" >> ~/.ssh/known_hosts
           done
+          if [ "$DEPLOY_WORKERS" = "true" ]; then
+            for host in $WORKER_HOST_A $WORKER_HOST_B $WORKER_HOST_C; do
+              ssh-keyscan -H "$host" >> ~/.ssh/known_hosts
+            done
+          fi
 
       - name: Check for backend changes
         id: backend-changes
@@ -172,14 +185,14 @@ jobs:
       - name: Tag backend and worker
         if: steps.backend-changes.outputs.changed == 'true'
         run: |
-          docker tag $REGISTRY_URL/maipl-backend/ketos-backend:dev $REGISTRY_URL/maipl-backend/ketos-backend:prod
-          docker tag $REGISTRY_URL/maipl-backend/ketos-worker:dev $REGISTRY_URL/maipl-backend/ketos-worker:prod
+          docker tag $IMAGE_PREFIX/maipl-backend/ketos-backend:dev $IMAGE_PREFIX/maipl-backend/ketos-backend:prod
+          docker tag $IMAGE_PREFIX/maipl-backend/ketos-worker:dev $IMAGE_PREFIX/maipl-backend/ketos-worker:prod
 
       - name: Push backend and worker to registry
         if: steps.backend-changes.outputs.changed == 'true'
         run: |
-          docker push $REGISTRY_URL/maipl-backend/ketos-backend:prod
-          docker push $REGISTRY_URL/maipl-backend/ketos-worker:prod
+          docker push $IMAGE_PREFIX/maipl-backend/ketos-backend:prod
+          docker push $IMAGE_PREFIX/maipl-backend/ketos-worker:prod
 
       - name: Generate environment file
         if: steps.backend-changes.outputs.changed == 'true'
@@ -188,6 +201,7 @@ jobs:
           cat > backend/.env << EOL
           # Environment
           DJANGO_ENV=${ENVIRONMENT}
+          IMAGE_PREFIX=${IMAGE_PREFIX}
           
           # Django settings
           DJANGO_PORT=${DJANGO_PORT:-8000}
@@ -246,74 +260,75 @@ jobs:
         if: steps.backend-changes.outputs.changed == 'true'
         run: |
           # Create directory if it doesn't exist
-          ssh ubuntu@$BACKEND_HOST_A "mkdir -p ~/backend"
-          ssh ubuntu@$BACKEND_HOST_B "mkdir -p ~/backend"
+          ssh ubuntu@$BACKEND_HOST_A "mkdir -p /srv/maipl/services/backend"
+          ssh ubuntu@$BACKEND_HOST_B "mkdir -p /srv/maipl/services/backend"
 
           # Copy compose files and environment file
-          scp backend/compose/docker-compose.backend.yml ubuntu@$BACKEND_HOST_A:~/backend/docker-compose.yml
-          scp backend/compose/docker-compose.backend.yml ubuntu@$BACKEND_HOST_B:~/backend/docker-compose.yml
-          scp backend/.env ubuntu@$BACKEND_HOST_A:~/backend/.env
-          scp backend/.env ubuntu@$BACKEND_HOST_B:~/backend/.env
-          scp backend/compose/promtail-config.yml ubuntu@$BACKEND_HOST_A:~/backend/promtail-config.yml
-          scp backend/compose/promtail-config.yml ubuntu@$BACKEND_HOST_B:~/backend/promtail-config.yml
+          scp backend/compose/docker-compose.backend.yml ubuntu@$BACKEND_HOST_A:/srv/maipl/services/backend/docker-compose.yml
+          scp backend/compose/docker-compose.backend.yml ubuntu@$BACKEND_HOST_B:/srv/maipl/services/backend/docker-compose.yml
+          scp backend/.env ubuntu@$BACKEND_HOST_A:/srv/maipl/services/backend/.env
+          scp backend/.env ubuntu@$BACKEND_HOST_B:/srv/maipl/services/backend/.env
+          scp backend/compose/promtail-config.yml ubuntu@$BACKEND_HOST_A:/srv/maipl/services/backend/promtail-config.yml
+          scp backend/compose/promtail-config.yml ubuntu@$BACKEND_HOST_B:/srv/maipl/services/backend/promtail-config.yml
 
           # Deploy
-          ssh ubuntu@$BACKEND_HOST_A "cd ~/backend && \
+          ssh ubuntu@$BACKEND_HOST_A "cd /srv/maipl/services/backend && \
             export HOSTNAME=backend-a && \
             echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
-            docker compose up -d && \
-            docker system prune -f"
+            docker compose up -d"
 
-          ssh ubuntu@$BACKEND_HOST_B "cd ~/backend && \
+          ssh ubuntu@$BACKEND_HOST_B "cd /srv/maipl/services/backend && \
             export HOSTNAME=backend-b && \
             echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
-            docker compose up -d && \
-            docker system prune -f"
+            docker compose up -d"
 
       - name: Deploy workers
-        if: steps.backend-changes.outputs.changed == 'true'
+        if: steps.backend-changes.outputs.changed == 'true' && env.DEPLOY_WORKERS == 'true'
         run: |
           # Create directory if it doesn't exist
-          ssh ubuntu@$WORKER_HOST_A "mkdir -p ~/worker"
-          ssh ubuntu@$WORKER_HOST_B "mkdir -p ~/worker"
-          ssh ubuntu@$WORKER_HOST_C "mkdir -p ~/worker"
+          ssh ubuntu@$WORKER_HOST_A "mkdir -p /srv/maipl/services/worker"
+          ssh ubuntu@$WORKER_HOST_B "mkdir -p /srv/maipl/services/worker"
+          ssh ubuntu@$WORKER_HOST_C "mkdir -p /srv/maipl/services/worker"
           
           # Copy compose files and environment file
-          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST_A:~/worker/docker-compose.yml
-          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST_B:~/worker/docker-compose.yml
-          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST_C:~/worker/docker-compose.yml
-          scp backend/.env ubuntu@$WORKER_HOST_A:~/worker/.env
-          scp backend/.env ubuntu@$WORKER_HOST_B:~/worker/.env
-          scp backend/.env ubuntu@$WORKER_HOST_C:~/worker/.env
-          scp backend/compose/promtail-config.yml ubuntu@$WORKER_HOST_A:~/worker/promtail-config.yml
-          scp backend/compose/promtail-config.yml ubuntu@$WORKER_HOST_B:~/worker/promtail-config.yml
-          scp backend/compose/promtail-config.yml ubuntu@$WORKER_HOST_C:~/worker/promtail-config.yml
+          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST_A:/srv/maipl/services/worker/docker-compose.yml
+          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST_B:/srv/maipl/services/worker/docker-compose.yml
+          scp backend/compose/docker-compose.worker.yml ubuntu@$WORKER_HOST_C:/srv/maipl/services/worker/docker-compose.yml
+          scp backend/.env ubuntu@$WORKER_HOST_A:/srv/maipl/services/worker/.env
+          scp backend/.env ubuntu@$WORKER_HOST_B:/srv/maipl/services/worker/.env
+          scp backend/.env ubuntu@$WORKER_HOST_C:/srv/maipl/services/worker/.env
+          scp backend/compose/promtail-config.yml ubuntu@$WORKER_HOST_A:/srv/maipl/services/worker/promtail-config.yml
+          scp backend/compose/promtail-config.yml ubuntu@$WORKER_HOST_B:/srv/maipl/services/worker/promtail-config.yml
+          scp backend/compose/promtail-config.yml ubuntu@$WORKER_HOST_C:/srv/maipl/services/worker/promtail-config.yml
 
           # Deploy
-          ssh ubuntu@$WORKER_HOST_A "cd ~/worker && \
+          ssh ubuntu@$WORKER_HOST_A "cd /srv/maipl/services/worker && \
             export HOSTNAME=worker-a && \
             echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
             docker compose up -d && \
-            docker system prune -f"
+            sleep 5 && \
+            test \"\$(docker inspect -f '{{.State.Running}}' ketos-worker)\" = true"
 
-          ssh ubuntu@$WORKER_HOST_B "cd ~/worker && \
+          ssh ubuntu@$WORKER_HOST_B "cd /srv/maipl/services/worker && \
             export HOSTNAME=worker-b && \
             echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
             docker compose up -d && \
-            docker system prune -f"
+            sleep 5 && \
+            test \"\$(docker inspect -f '{{.State.Running}}' ketos-worker)\" = true"
 
-          ssh ubuntu@$WORKER_HOST_C "cd ~/worker && \
+          ssh ubuntu@$WORKER_HOST_C "cd /srv/maipl/services/worker && \
             export HOSTNAME=worker-c && \
             echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
             docker compose pull && \
             docker compose down --remove-orphans && \
             docker compose up -d && \
-            docker system prune -f"
+            sleep 5 && \
+            test \"\$(docker inspect -f '{{.State.Running}}' ketos-worker)\" = true"

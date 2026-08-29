@@ -5,10 +5,10 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.backend
-    image: registry.maipl-dev.com/maipl-backend/ketos-backend:dev
+    image: ${IMAGE_PREFIX:-registry.maipl-dev.com}/maipl-backend/ketos-backend:dev
 
   worker:
     build:
       context: ..
       dockerfile: docker/Dockerfile.worker
-    image: registry.maipl-dev.com/maipl-backend/ketos-worker:dev
+    image: ${IMAGE_PREFIX:-registry.maipl-dev.com}/maipl-backend/ketos-worker:dev
