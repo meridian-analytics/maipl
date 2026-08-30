@@ -1,7 +1,7 @@
 services:
 
   backend:
-    image: registry.maipl-dev.com/maipl-backend/ketos-backend:demo
+    image: ${IMAGE_PREFIX:-ghcr.io/meridian-analytics}/maipl-backend/ketos-backend:demo
     container_name: backend-demo
     hostname: ${HOSTNAME}
     ports:
@@ -17,7 +17,7 @@ services:
       - rabbit
 
   worker:
-    image: registry.maipl-dev.com/maipl-backend/ketos-worker:demo
+    image: ${IMAGE_PREFIX:-ghcr.io/meridian-analytics}/maipl-backend/ketos-worker:demo
     container_name: worker-demo
     hostname: ${HOSTNAME}
     command: /backend/entrypoint.worker.sh

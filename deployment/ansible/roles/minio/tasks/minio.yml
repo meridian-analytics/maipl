@@ -1,9 +1,0 @@
----
-- name: Deploy Minio with Docker
-  hosts: all
-  become: true
-  # The variables previously defined here are now in defaults/main.yml
-  # vars section removed to avoid confusion or conflicts
-
-  roles:
-    - minio

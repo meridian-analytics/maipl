@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "@check": "biome check --apply .",
+    "@check:ci": "biome check .",
     "@build": "pnpm --parallel -F \"./apps/*\" build",
     "@preview": "docker compose up --build",
     "@start": "pnpm --parallel -F \"./apps/*\" start",
