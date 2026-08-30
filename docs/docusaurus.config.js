@@ -7,13 +7,13 @@ const config = {
   favicon: "img/favicon.ico",
 
   // Set the production url of your site here
-  url: "https://your-docusaurus-site.example.com",
+  url: "https://docs.maipl.meridian.cs.dal.ca",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
 
-  organizationName: "MERIDIAN-private",
-  projectName: "docs",
+  organizationName: "meridian-analytics",
+  projectName: "maipl",
 
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
@@ -52,12 +52,16 @@ const config = {
             position: "left",
             label: "Documentation",
           },
-          { to: "page", label: "Example Page", position: "left" },
+          {
+            href: "https://github.com/meridian-analytics/maipl",
+            label: "GitHub",
+            position: "right",
+          },
         ],
       },
       footer: {
         style: "light",
-        copyright: `Copyright © ${new Date().getFullYear()} MAIPL`,
+        copyright: `Copyright © ${new Date().getFullYear()} Dalhousie University`,
       },
       prism: {
         theme: prismThemes.github,

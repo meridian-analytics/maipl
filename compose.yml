@@ -1,0 +1,186 @@
+name: maipl
+
+x-backend-environment: &backend-environment
+  DJANGO_ENV: dev
+  DEBUG: "1"
+  DJANGO_SECRET_KEY: local-development-only-change-me
+  DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,backend
+  DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost:8080,http://localhost:8000
+  CORS_ALLOW_ALL_ORIGINS: "false"
+  CORS_ALLOWED_ORIGINS: http://localhost:8080
+  POSTGRES_DB: maipl
+  POSTGRES_USER: maipl
+  POSTGRES_PASSWORD: maipl-local
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  MINIO_ENDPOINT: minio:9000
+  MINIO_EXTERNAL_ENDPOINT: localhost:9000
+  MINIO_USE_HTTPS: "false"
+  MINIO_EXTERNAL_ENDPOINT_USE_HTTPS: "false"
+  MINIO_ACCESS_KEY: minioadmin
+  MINIO_SECRET_KEY: minioadmin-local
+  MINIO_BUCKET_NAME: maipl-dev
+  MINIO_PRIVATE_BUCKETS: maipl-dev
+  MINIO_STATIC_FILES_BUCKET: static
+  MINIO_CONSISTENCY_CHECK_ON_START: "true"
+  MINIO_BUCKET_CHECK_ON_SAVE: "true"
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  CELERY_BROKER_URL_HOST: rabbitmq
+  CELERY_BROKER_URL_USER: rabbitmq
+  CELERY_BROKER_URL_PASSWORD: rabbitmq-local
+  ALLOWED_REDIRECT_URLS: localhost:8080
+  FILE_CACHE_LOCATION: /cache
+  TASKS_LOCAL_STORAGE: /tasks
+  ADMIN_FIRST_NAME: Local
+  ADMIN_LAST_NAME: Admin
+  ADMIN_EMAIL: admin@example.com
+  ADMIN_PASSWORD: change-me
+
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: maipl
+      POSTGRES_USER: maipl
+      POSTGRES_PASSWORD: maipl-local
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U maipl -d maipl]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin-local
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:9000/minio/health/live]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - >-
+        mc alias set local http://minio:9000 minioadmin minioadmin-local &&
+        mc mb --ignore-existing local/maipl-dev &&
+        mc mb --ignore-existing local/static
+    restart: "no"
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq-local
+    ports:
+      - "15672:15672"
+    healthcheck:
+      test: [CMD, rabbitmq-diagnostics, -q, ping]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: backend
+      dockerfile: docker/Dockerfile.backend
+    image: maipl-backend:local
+    environment: *backend-environment
+    hostname: backend
+    command: /backend/entrypoint.backend.sh
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend-logs:/logs
+      - file-cache:/cache
+      - task-data:/tasks
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import socket; socket.create_connection(('127.0.0.1', 8000), 2).close()"
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  bootstrap:
+    image: maipl-backend:local
+    profiles: [tools]
+    environment: *backend-environment
+    command: python manage.py bootstrap_maipl
+    volumes:
+      - backend-logs:/logs
+      - file-cache:/cache
+      - task-data:/tasks
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  worker:
+    image: maipl-backend:local
+    environment: *backend-environment
+    hostname: worker
+    command: /backend/entrypoint.worker.sh
+    volumes:
+      - backend-logs:/logs
+      - file-cache:/cache
+      - task-data:/tasks
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: frontend
+      args:
+        NODE_ENV: local
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  minio-data:
+  redis-data:
+  backend-logs:
+  file-cache:
+  task-data:

@@ -2,6 +2,46 @@
 
 MAIPL (Marine Artificial Intelligence Platform) is a comprehensive full-stack application designed for processing and analyzing marine animal audio data. The platform provides a complete ecosystem for audio annotation, machine learning model training, model execution, and data management, specifically tailored for marine bioacoustics research.
 
+## Quick Start
+
+The local stack requires Docker Engine 24 or newer with Docker Compose v2.
+The first backend build downloads the scientific Python and Ketos dependencies
+and can take several minutes.
+
+```bash
+git clone https://github.com/meridian-analytics/maipl.git
+cd maipl
+docker compose up --build --detach
+docker compose run --rm bootstrap
+```
+
+Open the local services:
+
+- MAIPL frontend: <http://localhost:8080/>
+- Django API: <http://localhost:8000/>
+- Django Admin: <http://localhost:8000/admin/>
+- API documentation: <http://localhost:8000/swagger/>
+- MinIO console: <http://localhost:9001/>
+- RabbitMQ console: <http://localhost:15672/>
+
+The local-only administrator is `admin@example.com` with password `change-me`.
+MinIO uses `minioadmin` / `minioadmin-local`, and RabbitMQ uses
+`rabbitmq` / `rabbitmq-local`. These defaults are for isolated development
+only and must never be used for an exposed deployment.
+
+Useful commands:
+
+```bash
+docker compose logs --follow backend worker
+docker compose ps
+docker compose down
+docker compose down --volumes  # also removes all local MAIPL data
+```
+
+For component-level development, see the frontend and backend documentation
+below. Production infrastructure and credentials are intentionally not part
+of this public repository.
+
 ## 🎯 Project Overview
 
 MAIPL is built as a modular platform that enables researchers and scientists to:
