@@ -135,4 +135,4 @@ wrapt==1.15.0
 zipp==3.15.0
 zope.event==5.0
 zope.interface==6.2
-whitenoise==6.6.0
+whitenoise==6.12.0
