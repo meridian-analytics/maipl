@@ -4,7 +4,7 @@ MAIPL is maintained by Yue Su ([@yue-su](https://github.com/yue-su)).
 
 Principal contributors:
 
-- Macek
+- Paul Macek
 - Fabio Soares Frazao
 - Yue Su
 
