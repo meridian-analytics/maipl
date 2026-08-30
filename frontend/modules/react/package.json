@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "@emotion/react": "^11.11.4",
-    "@emotion/styled": "^11.11.5",
+    "@emotion/styled": "^11.14.1",
     "@maipl/api": "workspace:^",
     "@maipl/async": "workspace:^",
     "@maipl/constants": "workspace:^",
