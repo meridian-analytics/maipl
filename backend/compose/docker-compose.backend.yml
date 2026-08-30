@@ -3,7 +3,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.backend
-    image: ${IMAGE_PREFIX:-registry.maipl-dev.com}/maipl-backend/ketos-backend:prod
+    image: ${IMAGE_PREFIX:-ghcr.io/meridian-analytics}/maipl-backend/ketos-backend:latest
     container_name: ketos-backend
     hostname: ${HOSTNAME}
     ports:

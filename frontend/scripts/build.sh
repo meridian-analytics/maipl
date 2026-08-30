@@ -7,7 +7,7 @@ set -e
 ENV=${1:-staging}
 
 # Variables
-IMAGE_PREFIX="${IMAGE_PREFIX:-registry.maipl-dev.com}"
+IMAGE_PREFIX="${IMAGE_PREFIX:-ghcr.io/meridian-analytics}"
 IMAGE_NAME="maipl-frontend"
 TAG="$ENV"
 FULL_IMAGE_NAME="$IMAGE_PREFIX/$IMAGE_NAME:$TAG"

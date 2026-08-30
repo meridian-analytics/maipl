@@ -1,16 +1,15 @@
-name: Build and Deploy Docs
+name: Docs
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
     paths:
       - "docs/**"
       - ".github/workflows/docs-build-deploy.yml"
   workflow_dispatch:
     inputs:
       deploy:
-        description: "Build, publish, and deploy the production docs site"
+        description: "Publish and deploy the production docs site"
         required: true
         type: boolean
         default: false
@@ -19,58 +18,55 @@ permissions:
   contents: read
 
 jobs:
-  build-and-deploy:
-    runs-on: self-hosted
+  validate:
+    name: Validate documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+      - working-directory: docs
+        run: npm ci
+      - working-directory: docs
+        run: npm run build
+
+  deploy:
+    name: Deploy documentation
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
+    needs: validate
+    runs-on: [self-hosted, maipl-production]
+    timeout-minutes: 20
+    environment: production
     env:
       REGISTRY_URL: ${{ vars.REGISTRY_URL }}
       IMAGE: ${{ vars.REGISTRY_URL }}/library/docs-site:latest
       DOCS_HOST: ${{ vars.PROD_DOCS_HOST }}
       REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
       REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: docs/package-lock.json
-
-      - name: Install dependencies
-        working-directory: docs
-        run: npm ci
-
-      - name: Build documentation
-        working-directory: docs
-        run: npm run build
-
       - name: Login to Whidden Harbor
-        if: github.event_name == 'workflow_dispatch' && inputs.deploy
         run: |
           printf '%s' "$REGISTRY_PASSWORD" | \
             docker login "http://$REGISTRY_URL" \
               --username "$REGISTRY_USERNAME" \
               --password-stdin
-
       - name: Build and push image
-        if: github.event_name == 'workflow_dispatch' && inputs.deploy
         working-directory: docs
         run: |
           docker build --tag "$IMAGE" .
           docker push "$IMAGE"
-
       - name: Setup SSH
-        if: github.event_name == 'workflow_dispatch' && inputs.deploy
         run: |
           install -d -m 700 ~/.ssh
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$DOCS_HOST" >> ~/.ssh/known_hosts
-
       - name: Deploy docs site
-        if: github.event_name == 'workflow_dispatch' && inputs.deploy
         run: |
           ssh "ubuntu@$DOCS_HOST" "
             set -e

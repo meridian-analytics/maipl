@@ -11,7 +11,7 @@ MAIPL is built as a modular platform that enables researchers and scientists to:
 - **Execute Models**: Run trained models on audio files and generate detection results
 - **Manage Data**: Handle file uploads, sharing, and organization with robust metadata management
 - **Evaluate Performance**: Generate metrics and visualizations to assess model performance
-- **Deploy Infrastructure**: Provision and manage cloud infrastructure for scalable deployments
+- **Run Reproducibly**: Use containerized services for local development and deployment
 
 ## 🏗️ Architecture
 
@@ -34,11 +34,11 @@ The platform consists of four main components:
 - **User Management**: Role-based access control and permissions
 - **Background Tasks**: Celery-based asynchronous processing
 
-### Infrastructure & Deployment
-- **Terraform**: Infrastructure as Code for cloud resource provisioning
-- **Ansible**: Configuration management and automated deployments
-- **Docker**: Containerized applications with multi-environment support
-- **Monitoring**: Prometheus and Grafana for system monitoring
+### Runtime Services
+- **Docker**: Containerized applications and development dependencies
+- **PostgreSQL**: Relational application data
+- **MinIO**: S3-compatible object storage
+- **Redis and RabbitMQ**: Caching and asynchronous task delivery
 
 ### Documentation
 - **Docusaurus Site**: Comprehensive documentation and user guides
@@ -54,7 +54,6 @@ The platform consists of four main components:
 ### Component-Specific Documentation
 - **[Frontend Documentation](./frontend/readme.md)** - React applications, UI components, and development setup
 - **[Backend Documentation](./backend/readme.md)** - Django API, services, and database management
-- **[Deployment Documentation](./deployment/README.md)** - Infrastructure provisioning, Ansible playbooks, and Terraform modules
 - **[Docs Documentation](./docs/README.md)** - Documentation site development and content management
 
 ## 🛠️ Technology Stack
@@ -72,12 +71,11 @@ The platform consists of four main components:
 - **Redis** for caching and task queue
 - **Celery** for background tasks
 
-### Infrastructure
-- **Terraform** for infrastructure provisioning
-- **Ansible** for configuration management
+### Runtime
 - **Docker** for containerization
-- **Nginx** for reverse proxy
-- **Prometheus & Grafana** for monitoring
+- **Nginx** for serving frontend applications
+- **Celery**, **Redis**, and **RabbitMQ** for background processing
+- **PostgreSQL** and **MinIO** for persistent data
 
 ## 📁 Project Structure
 
@@ -85,22 +83,25 @@ The platform consists of four main components:
 maipl/
 ├── frontend/          # React applications and UI components
 ├── backend/           # Django API and services
-├── deployment/        # Infrastructure and deployment configurations
 ├── docs/             # Documentation site (Docusaurus)
 └── scripts/          # Utility scripts
 ```
 
 ## 🤝 Contributing
 
-Please refer to the individual component documentation for specific contribution guidelines:
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the component documentation:
 
 - [Frontend Contributing Guide](./frontend/readme.md#development)
 - [Backend Contributing Guide](./backend/readme.md#development-guidelines)
-- [Deployment Contributing Guide](./deployment/README.md)
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Copyright (C) 2023-2026 Dalhousie University.
+
+MAIPL is licensed under the GNU General Public License version 3. See
+[LICENSE](LICENSE) for details. MAIPL builds on
+[Ketos](https://git-dev.cs.dal.ca/meridian/ketos), which is also licensed
+under GPLv3.
 
 ---
 
