@@ -1,26 +1,32 @@
 name: Build and Deploy Docs
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "docs/**"
-      - ".github/workflows/docs-build-deploy.yml"
   pull_request:
     branches:
       - main
     paths:
       - "docs/**"
+      - ".github/workflows/docs-build-deploy.yml"
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Build, publish, and deploy the production docs site"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: self-hosted
     env:
-      REGISTRY_URL: registry.maipl-dev.com
+      REGISTRY_URL: ${{ vars.REGISTRY_URL }}
+      IMAGE: ${{ vars.REGISTRY_URL }}/library/docs-site:latest
+      DOCS_HOST: ${{ vars.PROD_DOCS_HOST }}
       REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
       REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
-      DOCS_HOST: 192.168.239.166
 
     steps:
       - uses: actions/checkout@v4
@@ -28,8 +34,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
-          cache: "npm"
+          node-version: "20"
+          cache: npm
           cache-dependency-path: docs/package-lock.json
 
       - name: Install dependencies
@@ -40,26 +46,42 @@ jobs:
         working-directory: docs
         run: npm run build
 
-      # Only run registry and deployment steps on push to main
-      - name: Login to registry
-        if: github.event_name == 'push'
+      - name: Login to Whidden Harbor
+        if: github.event_name == 'workflow_dispatch' && inputs.deploy
         run: |
-          echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin
+          printf '%s' "$REGISTRY_PASSWORD" | \
+            docker login "http://$REGISTRY_URL" \
+              --username "$REGISTRY_USERNAME" \
+              --password-stdin
 
-      - name: Build and push Docker image
-        if: github.event_name == 'push'
+      - name: Build and push image
+        if: github.event_name == 'workflow_dispatch' && inputs.deploy
         working-directory: docs
         run: |
-          docker build -t $REGISTRY_URL/maipl-backend/docs-site:latest .
-          docker push $REGISTRY_URL/maipl-backend/docs-site:latest
+          docker build --tag "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Setup SSH
+        if: github.event_name == 'workflow_dispatch' && inputs.deploy
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$DOCS_HOST" >> ~/.ssh/known_hosts
 
       - name: Deploy docs site
-        if: github.event_name == 'push'
+        if: github.event_name == 'workflow_dispatch' && inputs.deploy
         run: |
-          ssh ubuntu@$DOCS_HOST "\
-            echo \"$REGISTRY_PASSWORD\" | sudo docker login $REGISTRY_URL --username $REGISTRY_USERNAME --password-stdin && \
-            sudo docker pull $REGISTRY_URL/maipl-backend/docs-site:latest && \
-            sudo docker stop docs-site || true && \
-            sudo docker rm docs-site || true && \
-            sudo docker run -d --name docs-site -p 3000:80 --restart unless-stopped $REGISTRY_URL/maipl-backend/docs-site:latest && \
-            sudo docker system prune -f"
+          ssh "ubuntu@$DOCS_HOST" "
+            set -e
+            docker pull '$IMAGE'
+            docker rm --force docs-site 2>/dev/null || true
+            docker run --detach \
+              --name docs-site \
+              --publish 3000:80 \
+              --restart unless-stopped \
+              '$IMAGE'
+            sleep 5
+            test \"\$(docker inspect --format '{{.State.Running}}' docs-site)\" = true
+            curl --fail --silent --show-error http://127.0.0.1:3000/ >/dev/null
+          "
