@@ -25,7 +25,7 @@ Cython==0.29.35
 datetime-glob==1.0.8
 decorator==5.1.1
 Django==4.2.1
-django-celery-results==2.5.1
+django-celery-results==2.6.0
 django-constance==3.1.0
 django-cors-headers==4.0.0
 django-filter==23.2
