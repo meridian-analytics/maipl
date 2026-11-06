@@ -9,7 +9,7 @@ aural-features==1.0.0
 billiard==4.1.0
 blosc2==2.0.0
 cachetools==5.3.1
-celery==5.3.1
+celery==5.6.3
 certifi==2023.5.7
 cffi==1.15.1
 charset-normalizer==3.1.0
