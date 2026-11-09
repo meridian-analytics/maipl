@@ -1,20 +1,17 @@
 # Use an official Python runtime as a parent image
-FROM python:3.10.8
+FROM python:3.10-bookworm
 ENV PYTHONUNBUFFERED 1
 
 # Set the working directory to /backend
 WORKDIR /backend
 COPY src/requirements.txt requirements.txt
 
-RUN apt-get update 
-
-# Install HDF5 C library
-RUN apt-get install -y --no-install-recommends libhdf5-serial-dev
-
-# Install sndfile (needed by librosa)
-RUN apt-get install -y --no-install-recommends libsndfile1
-
-RUN apt-get install -y inotify-tools
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libhdf5-dev \
+        libsndfile1 \
+        inotify-tools \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade -v pip
 RUN pip install -r requirements.txt

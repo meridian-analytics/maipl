@@ -25,14 +25,14 @@ export enum Tab {
 }
 
 type LoaderProps = {
-  annotationFile: File.t
+  annotationFile: File.t | null
   batch: Batch.t
   users: Array<User.t>
   tab: Tab
 }
 
 type ShowBatchProps = {
-  annotationFile: File.t
+  annotationFile: File.t | null
   batch: Batch.t
   onClose: () => void
   users: Array<User.t>
@@ -50,7 +50,9 @@ export const loader = (maipl: MR.t_context) =>
       User.list(maipl.client),
     ])
     // annotationFile dependency
-    const annotationFile = await File.get(maipl.client, batch.annotation_file)
+    const annotationFile = batch.annotation_file
+      ? await File.get(maipl.client, batch.annotation_file)
+      : null
     // tab present in url
     const u = new URL(request.url)
     const tab = u.searchParams.get("tab")
@@ -207,9 +209,9 @@ export default function ShowBatch(props: ShowBatchProps) {
             value={String(annotationFile)}
             values={
               annotationFile == null
-                ? { NullFile: "null" }
+                ? { "Built-in default (KW / HB / Background)": "" }
                 : {
-                    [`${props.annotationFile.maipl_folder}/${props.annotationFile.path}`]:
+                    [`${props.annotationFile!.maipl_folder}/${props.annotationFile!.path}`]:
                       String(annotationFile),
                   }
             }

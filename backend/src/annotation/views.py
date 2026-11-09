@@ -344,6 +344,7 @@ class BatchList(generics.ListCreateAPIView):
 
         data = BatchCreateHandler(request, required_fields)
         config = data.get_annotation_config()
+        request.data["annotation_file"] = data.annotation_config_file_id
         request.data["annotation_file_text"] = json.dumps(config)
 
         if data.get_import_file_id():

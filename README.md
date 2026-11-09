@@ -12,8 +12,13 @@ and can take several minutes.
 git clone https://github.com/meridian-analytics/maipl.git
 cd maipl
 docker compose up --build --detach
-docker compose run --rm bootstrap
 ```
+
+The first startup automatically runs database migrations, verifies the required
+roles and permissions, creates the local administrator, and initializes the
+required object-storage buckets. It also builds MinIO and its client from the
+final upstream community source releases because pre-built community images
+are no longer published.
 
 Open the local services:
 
@@ -34,9 +39,25 @@ Useful commands:
 ```bash
 docker compose logs --follow backend worker
 docker compose ps
+docker compose run --rm bootstrap  # re-check local initialization
 docker compose down
 docker compose down --volumes  # also removes all local MAIPL data
 ```
+
+### Create an annotation batch
+
+Upload WAV or FLAC files in **Files**, then create a batch in **Annotation
+Tool**. The annotation configuration defaults to the built-in `KW`, `HB`,
+`KW+HB`, and `Background` schema, so a new installation can process and
+annotate a batch without uploading a configuration file first. To use a
+project-specific form, upload a JSON file containing `schema` and `uiSchema`
+and select it when creating the batch; that selection overrides the built-in
+default for that batch.
+
+The selected configuration is copied into the batch when it is created.
+Changing or deleting an uploaded schema later therefore does not change
+existing batches. Uploaded schemas must be owned by, or shared with, the user
+creating the batch.
 
 For component-level development, see the frontend and backend documentation
 below. Production infrastructure and credentials are intentionally not part

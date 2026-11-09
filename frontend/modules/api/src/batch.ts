@@ -11,7 +11,7 @@ type t = {
   /** Allow change of batch settings */
   allow_change_settings: boolean
   /** Annotation config file id */
-  annotation_file: number
+  annotation_file: null | number
   /** Annotation config file, cached at time of last update */
   annotation_file_text: string
   /** Batch name */
@@ -129,7 +129,7 @@ type t_list_item = Omit<t, "parameters">
 /** Batch.t_create_request */
 type t_create_request = {
   allow_change_settings: boolean
-  annotation_file: number
+  annotation_file: null | number
   batch_name: string
   description: string
   filelist: Array<number>

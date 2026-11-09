@@ -155,8 +155,14 @@ CONSTANCE_CONFIG = {
         "Allowed redirect urls(read-only field)",
     ),
     "ANNOTATION_CONTENT_TYPE": ("text/csv", "Annotation content type"),
-    "CONFIG_CONTENT_TYPE": ("application/json", "Config content type"),
-    "RAW_CONTENT_TYPE": ("audio/wav,audio/flac", "Raw content type"),
+    "CONFIG_CONTENT_TYPE": (
+        "application/json,application/octet-stream",
+        "Config content type",
+    ),
+    "RAW_CONTENT_TYPE": (
+        "audio/wav,audio/x-wav,audio/flac,audio/x-mp4",
+        "Raw content type",
+    ),
     "MODEL_CONTENT_TYPE": ("application/octet-stream", "Model content type"),
     "METRICS_CONTENT_TYPE": ("text/csv", "Metrics content type"),
     "DATASET_CONTENT_TYPE": ("application/octet-stream", "Dataset content type"),
@@ -308,6 +314,7 @@ MINIO_EXTERNAL_ENDPOINT_USE_HTTPS = getenvbool(
     "MINIO_EXTERNAL_ENDPOINT_USE_HTTPS", True
 )
 MINIO_BUCKET_NAME = getenv("MINIO_BUCKET_NAME", "maipl-dev")
+MINIO_MEDIA_FILES_BUCKET = getenv("MINIO_MEDIA_FILES_BUCKET", MINIO_BUCKET_NAME)
 MINIO_PRIVATE_BUCKETS = getenvlist("MINIO_PRIVATE_BUCKETS", [MINIO_BUCKET_NAME])
 MINIO_CONSISTENCY_CHECK_ON_START = getenvbool("MINIO_CONSISTENCY_CHECK_ON_START", True)
 MINIO_BUCKET_CHECK_ON_SAVE = getenvbool("MINIO_BUCKET_CHECK_ON_SAVE", True)
