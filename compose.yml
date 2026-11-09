@@ -54,7 +54,10 @@ services:
       retries: 20
 
   minio:
-    image: minio/minio:latest
+    build:
+      context: backend
+      dockerfile: docker/Dockerfile.minio
+    image: maipl-minio:local
     command: server /data --console-address :9001
     environment:
       MINIO_ROOT_USER: minioadmin
@@ -71,7 +74,7 @@ services:
       retries: 20
 
   minio-init:
-    image: minio/mc:latest
+    image: maipl-minio:local
     depends_on:
       minio:
         condition: service_healthy
@@ -142,7 +145,6 @@ services:
 
   bootstrap:
     image: maipl-backend:local
-    profiles: [tools]
     environment: *backend-environment
     command: python manage.py bootstrap_maipl
     volumes:
@@ -163,8 +165,8 @@ services:
       - file-cache:/cache
       - task-data:/tasks
     depends_on:
-      backend:
-        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
 
   frontend:
     build:
@@ -174,8 +176,8 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      backend:
-        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
 
 volumes:
   postgres-data:

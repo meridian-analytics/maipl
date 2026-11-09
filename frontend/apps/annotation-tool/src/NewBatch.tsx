@@ -60,6 +60,15 @@ function optionsForFiles(files: Map<number, File.t>): Record<string, string> {
   )
 }
 
+function annotationConfigOptions(
+  files: Map<number, File.t>
+): Record<string, string> {
+  return {
+    "Built-in default (KW / HB / Background)": "",
+    ...optionsForFiles(files),
+  }
+}
+
 function NewBatch(props: { onClose: () => void }) {
   const maipl = MR.useMaipl()
   const notify = MR.useNotify()
@@ -217,7 +226,7 @@ function NewBatch(props: { onClose: () => void }) {
         maipl.client,
         {
           allow_change_settings: false,
-          annotation_file: annotationFile ?? 0,
+          annotation_file: annotationFile,
           batch_name: name,
           description,
           import_file: importFile ?? null,
@@ -235,7 +244,7 @@ function NewBatch(props: { onClose: () => void }) {
         maipl.client,
         {
           allow_change_settings: false,
-          annotation_file: annotationFile ?? 0,
+          annotation_file: annotationFile,
           batch_name: name,
           description,
           import_file: importFile ?? null,
@@ -330,10 +339,12 @@ function NewBatch(props: { onClose: () => void }) {
             </M.Select>
           </M.FormControl>
           <MR.Picker
-            label="Annotation Configuration (required)"
-            setValue={(value) => setAnnotationFile(Number(value))}
+            label="Annotation Configuration"
+            setValue={(value) =>
+              setAnnotationFile(value ? Number(value) : null)
+            }
             value={annotationFile ? String(annotationFile) : ""}
-            values={optionsForFiles(annotationFiles)}
+            values={annotationConfigOptions(annotationFiles)}
             fullWidth
           />
         </M.Stack>
@@ -621,7 +632,7 @@ function NewBatch(props: { onClose: () => void }) {
           <M.Button children="Close" onClick={props.onClose} />
           <M.Button
             children="Create"
-            disabled={createMutation.isPending || !name || !annotationFile || (!importFile && table.selection.size === 0)}
+            disabled={createMutation.isPending || !name || (!importFile && table.selection.size === 0)}
             onClick={onCreate}
             variant="contained"
           />

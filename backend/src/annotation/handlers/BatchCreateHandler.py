@@ -10,6 +10,7 @@ from django.db.models import Q
 from annotation.models import Annotation, Batch, Segment
 from common.file_utils import FileUtils
 from file.models import File
+from annotation.schema_defaults import load_default_annotation_schema
 
 
 class BatchCreateHandler:
@@ -36,7 +37,7 @@ class BatchCreateHandler:
 
     def __init__(self, request, required_fields):
         self.required_fields = required_fields
-        self.annotation_config_file_id = request.data['annotation_file']
+        self.annotation_config_file_id = request.data.get('annotation_file') or None
         self.import_file_id = request.data.get('import_file', None)
         self.filelist = []
         self.annotations = []
@@ -48,8 +49,24 @@ class BatchCreateHandler:
         self.file_utils = FileUtils()
 
     def get_annotation_config(self):
-        """Get the annotation configuration from file."""
-        return json.loads(File.objects.get(id=self.annotation_config_file_id).file.read())
+        """Get a user-selected configuration or the built-in default."""
+        if self.annotation_config_file_id is None:
+            return load_default_annotation_schema()
+
+        annotation_file = (
+            File.objects.filter(id=self.annotation_config_file_id)
+            .filter(Q(user_id=self.user) | Q(shared_to=self.user))
+            .distinct()
+            .first()
+        )
+        if annotation_file is None:
+            raise ValueError("Annotation configuration is not accessible")
+
+        annotation_file.file.open("rb")
+        try:
+            return json.load(annotation_file.file)
+        finally:
+            annotation_file.file.close()
 
     def get_import_file_id(self):
         """Get the import file ID."""

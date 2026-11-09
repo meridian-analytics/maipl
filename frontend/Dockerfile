@@ -34,6 +34,7 @@ RUN pnpm @build
 
 # deploy
 FROM nginx:alpine
+RUN rm -f /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/nginx.conf
 COPY --from=build /build/apps/annotation-tool/dist /usr/share/nginx/html/annotation-tool
 COPY --from=build /build/apps/authentication-service/dist /usr/share/nginx/html/authentication-service

@@ -1,0 +1,31 @@
+{
+  "schema": {
+    "properties": {
+      "comments": {
+        "size": "small",
+        "title": "Comments",
+        "type": "string"
+      },
+      "label": {
+        "enum": [
+          "KW",
+          "HB",
+          "KW+HB",
+          "Background"
+        ],
+        "title": "Label",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "uiSchema": {
+    "label": {
+      "ui:options": {
+        "multiple": true
+      },
+      "ui:widget": "SelectWidget"
+    },
+    "ui:submitDisabled": true
+  }
+}

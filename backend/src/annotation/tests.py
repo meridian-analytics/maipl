@@ -1,10 +1,18 @@
+import importlib
 import tempfile
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase
 
 from annotation import services
+from annotation.handlers.BatchCreateHandler import BatchCreateHandler
+from annotation.schema_defaults import load_default_annotation_schema
 from annotation.tasks import validate_generated_file
+
+
+batch_create_module = importlib.import_module(
+    "annotation.handlers.BatchCreateHandler"
+)
 
 
 class GeneratedArtifactValidationTests(SimpleTestCase):
@@ -38,3 +46,58 @@ class GenerationFailureTests(SimpleTestCase):
         parameters = {"amplification": 1, "channel": 0}
         with self.assertRaisesRegex(ValueError, "Failed to generate processed audio"):
             services.generate_audio("bad.wav", "output.flac", parameters, 0, 1)
+
+
+class AnnotationSchemaSelectionTests(SimpleTestCase):
+    def test_built_in_schema_is_valid_and_complete(self):
+        config = load_default_annotation_schema()
+
+        self.assertEqual(config["schema"]["type"], "object")
+        self.assertEqual(
+            config["schema"]["properties"]["label"]["enum"],
+            ["KW", "HB", "KW+HB", "Background"],
+        )
+        self.assertIn("uiSchema", config)
+
+    def test_missing_file_selection_uses_built_in_schema(self):
+        handler = BatchCreateHandler.__new__(BatchCreateHandler)
+        handler.annotation_config_file_id = None
+
+        self.assertEqual(
+            handler.get_annotation_config(), load_default_annotation_schema()
+        )
+
+    def test_inaccessible_custom_schema_is_rejected(self):
+        queryset = MagicMock()
+        with patch.object(batch_create_module.File, "objects") as file_objects:
+            file_objects.filter.return_value = queryset
+            queryset.filter.return_value = queryset
+            queryset.distinct.return_value = queryset
+            queryset.first.return_value = None
+
+            handler = BatchCreateHandler.__new__(BatchCreateHandler)
+            handler.annotation_config_file_id = 42
+            handler.user = MagicMock()
+
+            with self.assertRaisesRegex(ValueError, "not accessible"):
+                handler.get_annotation_config()
+
+    def test_accessible_custom_schema_overrides_default(self):
+        queryset = MagicMock()
+        with patch.object(batch_create_module.File, "objects") as file_objects:
+            file_objects.filter.return_value = queryset
+            queryset.filter.return_value = queryset
+            queryset.distinct.return_value = queryset
+            custom_file = MagicMock()
+            custom_file.file.read.return_value = b'{"schema": {}, "uiSchema": {}}'
+            queryset.first.return_value = custom_file
+
+            handler = BatchCreateHandler.__new__(BatchCreateHandler)
+            handler.annotation_config_file_id = 42
+            handler.user = MagicMock()
+
+            self.assertEqual(
+                handler.get_annotation_config(), {"schema": {}, "uiSchema": {}}
+            )
+            custom_file.file.open.assert_called_once_with("rb")
+            custom_file.file.close.assert_called_once()
