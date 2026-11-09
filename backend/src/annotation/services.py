@@ -22,7 +22,7 @@ def generate_image(input_file_path, output_file_path, parameters, start, end):
         annotation_logger.info("The audio file is working.")
     else:
         annotation_logger.error("The audio file is not working.")
-        return
+        raise ValueError(f"Audio file verification failed: {input_file_path}")
 
     try:
         # Basic spectrogram configuration with required parameters
@@ -59,14 +59,14 @@ def generate_image(input_file_path, output_file_path, parameters, start, end):
 
     except Exception as e:
         annotation_logger.error(f"Error setting up spectrogram configuration: {e}")
-        return
+        raise ValueError(f"Invalid spectrogram configuration: {e}") from e
 
     try:
         start = float(start)
         end = float(end)
     except Exception as e:
         annotation_logger.error(f"Error converting start and end times to float: {e}")
-        return
+        raise ValueError(f"Invalid segment time range: {e}") from e
 
     # Set default values for visualization parameters if not provided
     visualization_params = {
@@ -97,6 +97,7 @@ def generate_image(input_file_path, output_file_path, parameters, start, end):
             spec_height=visualization_params['spec_height'])
     except Exception as e:
         annotation_logger.error(f"Error processing segment image: {e}")
+        raise ValueError(f"Failed to generate spectrogram: {e}") from e
 
 
 def generate_audio(input_file_path, output_file_path, parameters, start, end):
@@ -118,7 +119,7 @@ def generate_audio(input_file_path, output_file_path, parameters, start, end):
         channel = int(parameters['channel'])
     except Exception as e:
         annotation_logger.error(f"Error setting up parameters: {e}")
-        return
+        raise ValueError(f"Invalid audio processing parameters: {e}") from e
 
     try:
         process_segment_audio(
@@ -132,6 +133,7 @@ def generate_audio(input_file_path, output_file_path, parameters, start, end):
             channel=channel)
     except Exception as e:
         annotation_logger.error(f"Error processing segment audio: {e}")
+        raise ValueError(f"Failed to generate processed audio: {e}") from e
 
 
 def generate_waveform(input_file_path, output_file_path, parameters, start, end):
@@ -243,7 +245,9 @@ def generate_waveform(input_file_path, output_file_path, parameters, start, end)
 
     except ImportError as e:
         annotation_logger.error(f"Failed to import required packages for waveform generation: {e}")
+        raise
     except Exception as e:
         annotation_logger.error(f"Error during waveform generation: {e}")
         import traceback
-        annotation_logger.error(f"Full traceback:\n{traceback.format_exc()}") 
+        annotation_logger.error(f"Full traceback:\n{traceback.format_exc()}")
+        raise ValueError(f"Failed to generate waveform: {e}") from e

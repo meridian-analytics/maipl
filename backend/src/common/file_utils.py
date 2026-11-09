@@ -2,6 +2,7 @@ import os
 import hashlib
 import redis
 import threading
+import tempfile
 from .shared_file_cache import shared_file_cache
 from file.models import File
 from common.logger import file_logger
@@ -104,42 +105,36 @@ class FileUtils:
                 renewal_thread.start()
 
                 try:
-                    # Download the file in chunks and save it directly to the cache path
-                    # Use requests with extended timeout to handle large file downloads
-                    # Default urllib3 read timeout is ~5 minutes, which is too short for large files
+                    # Read through Django storage so workers use the internal MinIO
+                    # endpoint. Public presigned URLs are intended for browsers and
+                    # may route to a different ingress service.
+                    self.logger.info(
+                        f"Starting internal storage download of {basename} to {cache_file_path}"
+                    )
+                    partial_path = None
                     try:
-                        import requests
-                    except ImportError:
-                        self.logger.error("requests library not available, falling back to default download method")
-                        # Fallback to original method if requests is not available
-                        self.logger.info(f"Starting download of file {basename} to {cache_file_path}")
-                        with open(cache_file_path, 'wb') as cache_file:
-                            for chunk in file_instance.file:
-                                cache_file.write(chunk)
-                    else:
-                        # Get a presigned URL from the storage backend (valid for 1 hour)
-                        storage = file_instance.file.storage
-                        try:
-                            file_url = storage.url(file_instance.file.name)
-                        except Exception as e:
-                            self.logger.warning(f"Could not get presigned URL for {basename}, falling back to direct download: {e}")
-                            # Fallback to original method if URL generation fails
-                            self.logger.info(f"Starting download of file {basename} to {cache_file_path}")
-                            with open(cache_file_path, 'wb') as cache_file:
-                                for chunk in file_instance.file:
+                        with tempfile.NamedTemporaryFile(
+                            mode="wb",
+                            dir=os.path.dirname(cache_file_path),
+                            prefix=f".{os.path.basename(cache_file_path)}.",
+                            suffix=".part",
+                            delete=False,
+                        ) as cache_file:
+                            partial_path = cache_file.name
+                            file_instance.file.open("rb")
+                            try:
+                                for chunk in file_instance.file.chunks():
                                     cache_file.write(chunk)
-                        else:
-                            # Download with extended timeouts
-                            # timeout: (connect_timeout, read_timeout) tuple
-                            # connect: 60 seconds to establish connection
-                            # read: 1800 seconds (30 minutes) to read data - handles very large files
-                            self.logger.info(f"Starting download of file {basename} to {cache_file_path} using presigned URL")
-                            with requests.get(file_url, stream=True, timeout=(60, 1800)) as response:
-                                response.raise_for_status()
-                                with open(cache_file_path, 'wb') as cache_file:
-                                    for chunk in response.iter_content(chunk_size=8192):
-                                        if chunk:  # filter out keep-alive chunks
-                                            cache_file.write(chunk)
+                            finally:
+                                file_instance.file.close()
+
+                        if os.path.getsize(partial_path) <= 0:
+                            raise ValueError(f"Downloaded file is empty: {basename}")
+                        os.replace(partial_path, cache_file_path)
+                        partial_path = None
+                    finally:
+                        if partial_path and os.path.exists(partial_path):
+                            os.remove(partial_path)
 
                     # Add the file to the shared cache      
                     shared_file_cache.set(file_id)
