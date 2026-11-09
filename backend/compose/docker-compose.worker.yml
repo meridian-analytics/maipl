@@ -1,6 +1,6 @@
 services:
   worker:
-    image: ${IMAGE_PREFIX:-ghcr.io/meridian-analytics}/maipl-backend/ketos-worker:latest
+    image: ${IMAGE_PREFIX:-ghcr.io/meridian-analytics}/maipl-backend/ketos-worker:prod
     container_name: ketos-worker
     hostname: ${HOSTNAME}
     volumes:
