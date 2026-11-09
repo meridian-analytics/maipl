@@ -13,6 +13,16 @@ from file.models import File
 from .models import Batch, ProcessedAudio, ProcessedImage
 from .services import generate_audio, generate_image, generate_waveform
 
+
+def validate_generated_file(path, artifact_name):
+    """Ensure a generated artifact exists and contains data before upload."""
+    if not os.path.isfile(path):
+        raise ValueError(f"{artifact_name} was not created")
+    size = os.path.getsize(path)
+    if size <= 0:
+        raise ValueError(f"{artifact_name} is empty")
+    return size
+
 @shared_task(bind=True)
 def process_batch(self, batch_id):
     """Process all segments in a batch.
@@ -103,6 +113,7 @@ def process_segment(segment):
             annotation_logger.info(f"Generating spectrogram for segment {segment.id}...")
             try:
                 generate_image(local_path, img_output.name, parameters, start, end)
+                validate_generated_file(img_output.name, "Spectrogram")
                 image_file_name = f"{basename}-[{start}-{end}]-spectrogram.png"
                 with DjangoFile(open(img_output.name, 'rb'), name=image_file_name) as image_file:
                     # Delete existing spectrogram if it exists, and create or update new spectrogram
@@ -136,6 +147,7 @@ def process_segment(segment):
             annotation_logger.info(f"Generating waveform for segment {segment.id}...")
             try:
                 generate_waveform(local_path, waveform_output.name, parameters, start, end)
+                validate_generated_file(waveform_output.name, "Waveform")
                 waveform_file_name = f"{basename}-[{start}-{end}]-waveform.svg"
                 with DjangoFile(open(waveform_output.name, 'rb'), name=waveform_file_name) as waveform_file:
                     # Delete existing waveform if it exists, and create or update new waveform
@@ -168,6 +180,7 @@ def process_segment(segment):
             annotation_logger.info(f"Generating processed audio for segment {segment.id}...")
             try:
                 generate_audio(local_path, audio_output.name, parameters, start, end)
+                validate_generated_file(audio_output.name, "Processed audio")
                 audio_file_name = f"{basename}-[{start}-{end}].flac"
                 with DjangoFile(open(audio_output.name, 'rb'), name=audio_file_name) as audio_file:
                     # Delete existing audio if it exists, and create or update new audio
@@ -193,4 +206,4 @@ def process_segment(segment):
 
     except Exception as e:
         annotation_logger.error(f"Unexpected error processing segment {segment.id}: {e}")
-        return False   
+        return False
