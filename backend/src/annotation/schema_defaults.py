@@ -5,6 +5,11 @@ from pathlib import Path
 DEFAULT_ANNOTATION_SCHEMA_PATH = (
     Path(__file__).resolve().parent / "defaults" / "default_annotation_schema.json"
 )
+DEFAULT_ANNOTATION_SCHEMA_NAME = "Default marine mammal annotation schema"
+DEFAULT_ANNOTATION_SCHEMA_DESCRIPTION = (
+    "Classifies audio as Killer whale (KW), Humpback whale (HB), "
+    "both species (KW+HB), or Background."
+)
 
 
 def load_default_annotation_schema():
@@ -16,3 +21,11 @@ def load_default_annotation_schema():
     ):
         raise ValueError("Default annotation schema must contain schema and uiSchema")
     return config
+
+
+def get_default_annotation_schema_details():
+    return {
+        "name": DEFAULT_ANNOTATION_SCHEMA_NAME,
+        "description": DEFAULT_ANNOTATION_SCHEMA_DESCRIPTION,
+        "config": load_default_annotation_schema(),
+    }

@@ -57,3 +57,11 @@ You can preview the production build using `preview`.
 ```sh
 $ pnpm preview
 ```
+
+## Built-in annotation schema
+
+The batch form selects the **Default marine mammal annotation schema** when no
+custom annotation configuration file is chosen. It provides labels for Killer
+whale (`KW`), Humpback whale (`HB`), both species (`KW+HB`), and `Background`.
+The selected schema can be reviewed from the batch creation and batch details
+screens. A custom annotation configuration file overrides this built-in schema.

@@ -16,11 +16,17 @@ from .views import (
     SegmentList,
     TaskStatusView,
     BatchAnnotationExportView,
+    DefaultAnnotationSchemaView,
 )
 
 app_name = "annotation"
 
 urlpatterns = [
+    path(
+        "schema/default/",
+        DefaultAnnotationSchemaView.as_view(),
+        name="default_annotation_schema",
+    ),
     path("batch/", BatchList.as_view(), name="batch_list"),
     path("batch/<int:pk>/", BatchDetail.as_view(), name="batch_detail"),
     path(

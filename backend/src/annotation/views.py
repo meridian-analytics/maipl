@@ -45,6 +45,16 @@ from .swagger_decorators import (
 )
 from .tasks import process_batch
 from .handlers.batch_annotation_export import BatchAnnotationExportHandler
+from .schema_defaults import get_default_annotation_schema_details
+
+
+class DefaultAnnotationSchemaView(APIView):
+    """Return the built-in annotation schema and its user-facing metadata."""
+
+    def get(self, request):
+        return Response(
+            get_default_annotation_schema_details(), status=status.HTTP_200_OK
+        )
 
 
 class ImageListView(DeleteByIdsMixin, generics.ListCreateAPIView):
