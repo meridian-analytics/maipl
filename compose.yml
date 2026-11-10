@@ -63,8 +63,8 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin-local
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MAIPL_DEV_MINIO_API_PORT:-9000}:9000"
+      - "${MAIPL_DEV_MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio-data:/data
     healthcheck:
@@ -103,7 +103,7 @@ services:
       RABBITMQ_DEFAULT_USER: rabbitmq
       RABBITMQ_DEFAULT_PASS: rabbitmq-local
     ports:
-      - "15672:15672"
+      - "${MAIPL_DEV_RABBITMQ_CONSOLE_PORT:-15672}:15672"
     healthcheck:
       test: [CMD, rabbitmq-diagnostics, -q, ping]
       interval: 5s
@@ -119,7 +119,7 @@ services:
     hostname: backend
     command: /backend/entrypoint.backend.sh
     ports:
-      - "8000:8000"
+      - "${MAIPL_DEV_BACKEND_PORT:-8000}:8000"
     volumes:
       - backend-logs:/logs
       - file-cache:/cache
@@ -139,6 +139,10 @@ services:
         - python
         - -c
         - "import socket; socket.create_connection(('127.0.0.1', 8000), 2).close()"
+      # A brand-new database applies the full migration history and collects
+      # static files before Gunicorn starts. Do not mark that expected first
+      # boot work as unhealthy on slower development machines.
+      start_period: 5m
       interval: 5s
       timeout: 5s
       retries: 30
@@ -174,7 +178,7 @@ services:
       args:
         NODE_ENV: local
     ports:
-      - "8080:80"
+      - "${MAIPL_DEV_FRONTEND_PORT:-8080}:80"
     depends_on:
       bootstrap:
         condition: service_completed_successfully

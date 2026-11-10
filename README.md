@@ -29,6 +29,11 @@ Open the local services:
 - MinIO console: <http://localhost:9001/>
 - RabbitMQ console: <http://localhost:15672/>
 
+If one of these host ports is already in use, it can be changed without
+editing Compose. The available overrides are `MAIPL_DEV_FRONTEND_PORT`,
+`MAIPL_DEV_BACKEND_PORT`, `MAIPL_DEV_MINIO_API_PORT`,
+`MAIPL_DEV_MINIO_CONSOLE_PORT`, and `MAIPL_DEV_RABBITMQ_CONSOLE_PORT`.
+
 The local-only administrator is `admin@example.com` with password `change-me`.
 MinIO uses `minioadmin` / `minioadmin-local`, and RabbitMQ uses
 `rabbitmq` / `rabbitmq-local`. These defaults are for isolated development
