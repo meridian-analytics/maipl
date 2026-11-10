@@ -48,7 +48,18 @@ $ pnpm @preview
 
 ### <a name="dev-schema"></a> Annotation Schema Setup
 
-When creating a batch, you need to provide a JSON schema that defines the structure of your annotations. Here's a guide on how to create a valid schema:
+New installations include a built-in marine-mammal annotation schema for
+Killer whale, Humpback whale, both species, and Background. It is selected by
+default when creating a batch, so uploading a schema is not required for basic
+annotation workflows.
+
+To override the default for a project, upload a JSON file to the **annotation
+schemas** folder and select it while creating the batch. The file must contain
+`schema` and `uiSchema`. The selected configuration is copied into the batch;
+changing or deleting the uploaded file later does not affect existing batches.
+Uploaded schemas must be owned by, or shared with, the user creating the batch.
+
+Here is a guide for creating a custom schema:
 
 #### Basic Schema Structure
 
