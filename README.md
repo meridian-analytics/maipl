@@ -73,8 +73,15 @@ MAIPL_DEV_ORIGIN=https://dev.example.org \
 MAIPL_DEV_HOST=dev.example.org \
 MAIPL_DEV_ALLOWED_HOSTS=dev.example.org,backend \
 MAIPL_DEV_HMR_PORT=443 \
+MAIPL_DEV_MINIO_ENDPOINT=storage.dev.example.org \
+MAIPL_DEV_MINIO_HTTPS=true \
 docker compose -f compose.yml -f compose.dev.yml up --build
 ```
+
+The storage hostname must proxy the MinIO S3 API on port `9000` and allow
+large request bodies. It is required because media URLs are signed for the
+browser; leaving the default `localhost:9000` value is only appropriate when
+the browser and Compose stack run on the same computer.
 
 Keep a remotely exposed development environment behind authentication or an
 IP allowlist. Do not expose the individual Vite, database, or storage ports.
