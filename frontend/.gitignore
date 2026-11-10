@@ -2,6 +2,7 @@
 .env/.env
 apps/*/.env
 node_modules
+.pnpm-store
 dist
 
 

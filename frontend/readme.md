@@ -48,7 +48,18 @@ $ pnpm @preview
 
 ### <a name="dev-schema"></a> Annotation Schema Setup
 
-When creating a batch, you need to provide a JSON schema that defines the structure of your annotations. Here's a guide on how to create a valid schema:
+New installations include a built-in marine-mammal annotation schema for
+Killer whale, Humpback whale, both species, and Background. It is selected by
+default when creating a batch, so uploading a schema is not required for basic
+annotation workflows.
+
+To override the default for a project, upload a JSON file to the **annotation
+schemas** folder and select it while creating the batch. The file must contain
+`schema` and `uiSchema`. The selected configuration is copied into the batch;
+changing or deleting the uploaded file later does not affect existing batches.
+Uploaded schemas must be owned by, or shared with, the user creating the batch.
+
+Here is a guide for creating a custom schema:
 
 #### Basic Schema Structure
 
@@ -208,3 +219,17 @@ When creating a batch, you need to provide a JSON schema that defines the struct
 ```
 
 <small>[back to top](#maipl)</small>
+
+# Frontend development
+
+The repository contains several Vite applications, but they can be developed
+through a single browser origin. From the repository root, run:
+
+```bash
+docker compose -f compose.yml -f compose.dev.yml up --build
+```
+
+The development gateway listens on <http://localhost:8080/> and proxies each
+production-style path to its Vite server. It also proxies `/api/` to Django and
+supports Vite WebSocket connections for hot module replacement. See the root
+README for SSH forwarding and HTTPS development-host settings.

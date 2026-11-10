@@ -29,6 +29,11 @@ Open the local services:
 - MinIO console: <http://localhost:9001/>
 - RabbitMQ console: <http://localhost:15672/>
 
+If one of these host ports is already in use, it can be changed without
+editing Compose. The available overrides are `MAIPL_DEV_FRONTEND_PORT`,
+`MAIPL_DEV_BACKEND_PORT`, `MAIPL_DEV_MINIO_API_PORT`,
+`MAIPL_DEV_MINIO_CONSOLE_PORT`, and `MAIPL_DEV_RABBITMQ_CONSOLE_PORT`.
+
 The local-only administrator is `admin@example.com` with password `change-me`.
 MinIO uses `minioadmin` / `minioadmin-local`, and RabbitMQ uses
 `rabbitmq` / `rabbitmq-local`. These defaults are for isolated development
@@ -43,6 +48,48 @@ docker compose run --rm bootstrap  # re-check local initialization
 docker compose down
 docker compose down --volumes  # also removes all local MAIPL data
 ```
+
+### Live frontend development through one port
+
+Use the development override to run all Vite applications with hot module
+replacement behind one Nginx gateway. The individual Vite ports remain inside
+the Docker network; the browser only connects to port `8080`.
+
+```bash
+docker compose -f compose.yml -f compose.dev.yml up --build
+```
+
+Open <http://localhost:8080/>. Application routes match production, including
+`/annotation-tool`, `/file-service`, and `/model-runner`. Source changes under
+`frontend/` are reflected without rebuilding or merging to `main`.
+
+For private access from another computer, forward only the gateway port:
+
+```bash
+ssh -L 8080:localhost:8080 user@development-host
+```
+
+Then open <http://localhost:8080/> on the local computer. To expose the gateway
+through an HTTPS development hostname, point the reverse proxy at port `8080`
+with WebSocket support and start the stack with values matching that hostname:
+
+```bash
+MAIPL_DEV_ORIGIN=https://dev.example.org \
+MAIPL_DEV_HOST=dev.example.org \
+MAIPL_DEV_ALLOWED_HOSTS=dev.example.org,backend \
+MAIPL_DEV_HMR_PORT=443 \
+MAIPL_DEV_MINIO_ENDPOINT=storage.dev.example.org \
+MAIPL_DEV_MINIO_HTTPS=true \
+docker compose -f compose.yml -f compose.dev.yml up --build
+```
+
+The storage hostname must proxy the MinIO S3 API on port `9000` and allow
+large request bodies. It is required because media URLs are signed for the
+browser; leaving the default `localhost:9000` value is only appropriate when
+the browser and Compose stack run on the same computer.
+
+Keep a remotely exposed development environment behind authentication or an
+IP allowlist. Do not expose the individual Vite, database, or storage ports.
 
 ### Create an annotation batch
 

@@ -21,7 +21,11 @@ export default V.defineConfig(config => {
     envPrefix: "MAIPL_",
     plugins: [react()],
     server: {
+      hmr: {
+        clientPort: safeNumber(env["VITE_HMR_CLIENT_PORT"], 8080),
+      },
+      host: env["VITE_HOST"] || "127.0.0.1",
       port: safeNumber(env["VITE_PORT"], 3000),
     },
   }
-}) 
+})
