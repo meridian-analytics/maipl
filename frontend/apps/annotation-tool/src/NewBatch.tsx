@@ -9,6 +9,11 @@ import * as RQ from "@tanstack/react-query"
 import * as R from "react"
 import * as RR from "react-router-dom"
 import {
+  DEFAULT_ANNOTATION_CONFIG_NAME,
+  DEFAULT_ANNOTATION_CONFIG_VALUE,
+  DefaultAnnotationSchemaDetails,
+} from "./DefaultAnnotationSchema"
+import {
   MagSpectrogramSchema,
   MagSpectrogramUiSchema,
   MelSpectrogramSchema,
@@ -55,16 +60,16 @@ function optionsForFiles(files: Map<number, File.t>): Record<string, string> {
   return Object.fromEntries(
     Array.from(
       files.values(),
-      (f) => [`${f.maipl_folder}/${f.path}`, String(f.id)] as const
-    ).sort((a, b) => a[0].localeCompare(b[0]))
+      f => [`${f.maipl_folder}/${f.path}`, String(f.id)] as const,
+    ).sort((a, b) => a[0].localeCompare(b[0])),
   )
 }
 
 function annotationConfigOptions(
-  files: Map<number, File.t>
+  files: Map<number, File.t>,
 ): Record<string, string> {
   return {
-    "Built-in default (KW / HB / Background)": "",
+    [DEFAULT_ANNOTATION_CONFIG_NAME]: DEFAULT_ANNOTATION_CONFIG_VALUE,
     ...optionsForFiles(files),
   }
 }
@@ -76,7 +81,7 @@ function NewBatch(props: { onClose: () => void }) {
 
   const [tab, setTab] = R.useState<Tab>(Tab.files)
   const [selectionType, setSelectionType] = R.useState<SelectionType>(
-    SelectionType.initial
+    SelectionType.initial,
   )
 
   // field: name
@@ -115,8 +120,13 @@ function NewBatch(props: { onClose: () => void }) {
         maipl_folder: File.t_maipl_folder.annotation_schemas,
         page: 1,
         size: 100,
-      }).then((page) => new Map(page.data.map((f) => [f.id, f]))),
+      }).then(page => new Map(page.data.map(f => [f.id, f]))),
     initialData: new Map<number, File.t>(),
+  })
+
+  const defaultSchemaQuery = RQ.useQuery({
+    queryKey: ["default-annotation-schema"],
+    queryFn: () => Batch.defaultAnnotationSchema(maipl.client),
   })
 
   // field: import_file
@@ -129,7 +139,7 @@ function NewBatch(props: { onClose: () => void }) {
         maipl_folder: File.t_maipl_folder.annotations,
         page: 1,
         size: 100,
-      }).then((page) => new Map(page.data.map((f) => [f.id, f]))),
+      }).then(page => new Map(page.data.map(f => [f.id, f]))),
     initialData: new Map<number, File.t>(),
   })
 
@@ -155,7 +165,7 @@ function NewBatch(props: { onClose: () => void }) {
     mutationFn: (vars: Parameters<typeof Batch.create>) =>
       Batch.create(...vars),
     onError: (err, vars) => {
-      notify((onClose) => (
+      notify(onClose => (
         <M.Alert onClose={onClose} severity="error">
           Error: Could not create batch
         </M.Alert>
@@ -167,8 +177,8 @@ function NewBatch(props: { onClose: () => void }) {
     onSettled: () => {
       createMutation.reset()
     },
-    onSuccess: (batch) => {
-      notify((onClose) => (
+    onSuccess: batch => {
+      notify(onClose => (
         <M.Alert onClose={onClose} severity="success">
           Success: Created batch{" "}
           {
@@ -189,7 +199,7 @@ function NewBatch(props: { onClose: () => void }) {
     mutationFn: (vars: Parameters<typeof Batch.preview>) =>
       Batch.preview(...vars),
     onError: (err, vars) => {
-      notify((onClose) => (
+      notify(onClose => (
         <M.Alert onClose={onClose} severity="error">
           Error: Could not preview batch
         </M.Alert>
@@ -202,7 +212,7 @@ function NewBatch(props: { onClose: () => void }) {
       const imageUrl = URL.createObjectURL(result)
       setPreviewImage(imageUrl)
       setTab(Tab.preview)
-      notify((onClose) => (
+      notify(onClose => (
         <M.Alert onClose={onClose} severity="success">
           Success: Previewed batch
         </M.Alert>
@@ -279,18 +289,18 @@ function NewBatch(props: { onClose: () => void }) {
           <M.TextField
             label="Batch Name (required)"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={e => setName(e.target.value)}
           />
           <M.TextField
             label="Description"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={e => setDescription(e.target.value)}
           />
           <M.FormControl fullWidth>
             <M.InputLabel>Spectrogram Type</M.InputLabel>
             <M.Select
               value={spectrogramType}
-              onChange={(e) => {
+              onChange={e => {
                 const newType = e.target.value as
                   | "MagSpectrogram"
                   | "MelSpectrogram"
@@ -327,7 +337,7 @@ function NewBatch(props: { onClose: () => void }) {
                         normalize_wav: false,
                         resample_method: "scipy",
                         smooth: 0.01,
-                      }
+                      },
                 )
               }}
               label="Spectrogram Type"
@@ -340,13 +350,33 @@ function NewBatch(props: { onClose: () => void }) {
           </M.FormControl>
           <MR.Picker
             label="Annotation Configuration"
-            setValue={(value) =>
-              setAnnotationFile(value ? Number(value) : null)
+            setValue={value =>
+              setAnnotationFile(
+                value === DEFAULT_ANNOTATION_CONFIG_VALUE || value == null
+                  ? null
+                  : Number(value),
+              )
             }
-            value={annotationFile ? String(annotationFile) : ""}
+            value={
+              annotationFile == null
+                ? DEFAULT_ANNOTATION_CONFIG_VALUE
+                : String(annotationFile)
+            }
             values={annotationConfigOptions(annotationFiles)}
             fullWidth
           />
+          {annotationFile == null && (
+            <M.Box>
+              <M.Typography variant="caption" color="text.secondary">
+                Killer whale (KW), Humpback whale (HB), both species (KW+HB), or
+                Background
+              </M.Typography>
+              <DefaultAnnotationSchemaDetails
+                details={defaultSchemaQuery.data}
+                loading={defaultSchemaQuery.isPending}
+              />
+            </M.Box>
+          )}
         </M.Stack>
         <M.Stack direction="row" flexGrow={1} justifyContent="center">
           <M.Tabs
@@ -388,7 +418,7 @@ function NewBatch(props: { onClose: () => void }) {
                 <I.InsertDriveFileOutlined sx={{ fontSize: 50 }} />
                 <MR.Picker
                   label="IMPORT .CSV"
-                  setValue={(value) => setImportFile(Number(value))}
+                  setValue={value => setImportFile(Number(value))}
                   value=""
                   values={optionsForFiles(importFiles)}
                   fullWidth
@@ -403,13 +433,13 @@ function NewBatch(props: { onClose: () => void }) {
               <M.Stack direction="row" alignItems="center" sx={{ padding: 2 }}>
                 <M.TextField
                   label="Path"
-                  onChange={(e) => table.filter.set("path", e.target.value)}
+                  onChange={e => table.filter.set("path", e.target.value)}
                   placeholder="path/to/folder"
                   value={table.filter.get("path")}
                 />
                 <M.TextField
                   label="Tag"
-                  onChange={(e) => table.filter.set("tag", e.target.value)}
+                  onChange={e => table.filter.set("tag", e.target.value)}
                   placeholder="my-tag"
                   value={table.filter.get("tag")}
                 />
@@ -481,8 +511,8 @@ function NewBatch(props: { onClose: () => void }) {
             <M.Stack gap={2} sx={{ paddingTop: 4 }}>
               <M.TextField
                 label="Length (seconds)"
-                onChange={(e) =>
-                  setSegmentParameters((prev) => ({
+                onChange={e =>
+                  setSegmentParameters(prev => ({
                     ...prev,
                     length: Math.max(1, Number(e.target.value) || 60),
                   }))
@@ -492,8 +522,8 @@ function NewBatch(props: { onClose: () => void }) {
               />
               <M.TextField
                 label="Step (seconds)"
-                onChange={(e) =>
-                  setSegmentParameters((prev) => ({
+                onChange={e =>
+                  setSegmentParameters(prev => ({
                     ...prev,
                     step:
                       e.target.value == ""
@@ -506,8 +536,8 @@ function NewBatch(props: { onClose: () => void }) {
               />
               <MR.Switch
                 value={segmentParameters.pad}
-                setValue={(v) =>
-                  setSegmentParameters((prev) => ({
+                setValue={v =>
+                  setSegmentParameters(prev => ({
                     ...prev,
                     pad: typeof v == "function" ? v(prev.pad) : v,
                   }))
@@ -557,7 +587,7 @@ function NewBatch(props: { onClose: () => void }) {
                 <M.Box
                   component="img"
                   src={previewImage}
-                  onError={(e) => {
+                  onError={e => {
                     console.error("Image load error:", e)
                     console.log("Image src:", e.target.src)
                   }}
@@ -592,7 +622,7 @@ function NewBatch(props: { onClose: () => void }) {
             <Form
               children=" "
               formData={parameters}
-              onChange={(e) =>
+              onChange={e =>
                 setParameters({ ...e.formData, type: spectrogramType })
               }
               schema={
@@ -617,8 +647,8 @@ function NewBatch(props: { onClose: () => void }) {
               {F.filesize(
                 files.data.reduce(
                   (r, f) => r + (table.selection.has(f.id) ? f.size : 0),
-                  0
-                )
+                  0,
+                ),
               )}
               )
             </M.Typography>
@@ -632,7 +662,11 @@ function NewBatch(props: { onClose: () => void }) {
           <M.Button children="Close" onClick={props.onClose} />
           <M.Button
             children="Create"
-            disabled={createMutation.isPending || !name || (!importFile && table.selection.size === 0)}
+            disabled={
+              createMutation.isPending ||
+              !name ||
+              (!importFile && table.selection.size === 0)
+            }
             onClick={onCreate}
             variant="contained"
           />

@@ -6,7 +6,10 @@ from django.test import SimpleTestCase
 
 from annotation import services
 from annotation.handlers.BatchCreateHandler import BatchCreateHandler
-from annotation.schema_defaults import load_default_annotation_schema
+from annotation.schema_defaults import (
+    get_default_annotation_schema_details,
+    load_default_annotation_schema,
+)
 from annotation.tasks import validate_generated_file
 
 
@@ -49,6 +52,14 @@ class GenerationFailureTests(SimpleTestCase):
 
 
 class AnnotationSchemaSelectionTests(SimpleTestCase):
+    def test_built_in_schema_details_are_readable(self):
+        details = get_default_annotation_schema_details()
+
+        self.assertEqual(details["name"], "Default marine mammal annotation schema")
+        self.assertIn("Killer whale (KW)", details["description"])
+        self.assertIn("Humpback whale (HB)", details["description"])
+        self.assertEqual(details["config"], load_default_annotation_schema())
+
     def test_built_in_schema_is_valid_and_complete(self):
         config = load_default_annotation_schema()
 

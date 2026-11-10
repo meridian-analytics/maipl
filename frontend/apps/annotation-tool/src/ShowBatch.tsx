@@ -11,6 +11,12 @@ import * as RR from "react-router-dom"
 import * as RRT from "react-router-typesafe"
 import BatchShare from "./BatchShare"
 import {
+  DEFAULT_ANNOTATION_CONFIG_NAME,
+  DEFAULT_ANNOTATION_CONFIG_VALUE,
+  DefaultAnnotationSchemaDetails,
+  parseAnnotationConfig,
+} from "./DefaultAnnotationSchema"
+import {
   MagSpectrogramSchema,
   MagSpectrogramUiSchema,
   MelSpectrogramSchema,
@@ -92,66 +98,69 @@ export default function ShowBatch(props: ShowBatchProps) {
   const name = props.batch.batch_name
   const description = props.batch.description
   const parameters = props.batch.parameters
-  const spectrogramType = (props.batch.parameters as { type: "MagSpectrogram" | "MelSpectrogram" }).type
+  const spectrogramType = (
+    props.batch.parameters as { type: "MagSpectrogram" | "MelSpectrogram" }
+  ).type
   const annotationFile = props.batch.annotation_file
   const segmentParameters = props.batch.segment_parameters
 
   // field: share_to
-  const [shareTo, setShareTo] = R.useState<Map<number, Batch.t_role_code>>(() => new Map())
+  const [shareTo, setShareTo] = R.useState<Map<number, Batch.t_role_code>>(
+    () => new Map(),
+  )
 
-   const updateMutation = RQ.useMutation({
-     mutationFn: (vars: Parameters<typeof Batch.patch>) => Batch.patch(...vars),
-     onError: (err, vars) => {
-       notify((onClose) => (
-         <M.Alert onClose={onClose} severity="error">
-           Error: Could not update batch
-         </M.Alert>
-       ))
-       if (import.meta.env["DEV"]) {
-         console.error("ShowBatch update error", err, vars)
-       }
-     },
-     onSettled: () => {
-       updateMutation.reset()
-     },
-     onSuccess: () => {
-       notify((onClose) => (
-         <M.Alert onClose={onClose} severity="success">
-           Success: updated batch{" "}
-           {
-             <M.Link
-               component={RR.Link}
-               to={`/batches/${props.batch.id}`}
-               children={`#${props.batch.id}`}
-             />
-           }
-         </M.Alert>
-       ))
-       queryClient.refetchQueries({ queryKey: ["batches"] })
-       props.onClose()
-     },
-   })
+  const updateMutation = RQ.useMutation({
+    mutationFn: (vars: Parameters<typeof Batch.patch>) => Batch.patch(...vars),
+    onError: (err, vars) => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="error">
+          Error: Could not update batch
+        </M.Alert>
+      ))
+      if (import.meta.env["DEV"]) {
+        console.error("ShowBatch update error", err, vars)
+      }
+    },
+    onSettled: () => {
+      updateMutation.reset()
+    },
+    onSuccess: () => {
+      notify(onClose => (
+        <M.Alert onClose={onClose} severity="success">
+          Success: updated batch{" "}
+          {
+            <M.Link
+              component={RR.Link}
+              to={`/batches/${props.batch.id}`}
+              children={`#${props.batch.id}`}
+            />
+          }
+        </M.Alert>
+      ))
+      queryClient.refetchQueries({ queryKey: ["batches"] })
+      props.onClose()
+    },
+  })
 
-   const onUpdate = () => {
-     if (updateMutation.isIdle) {
-       return updateMutation.mutateAsync([
-         maipl.client,
-         {
-           id: props.batch.id,
-           shared_to: Array.from(shareTo.entries()),
-         },
-       ])
-     }
-   }
- 
+  const onUpdate = () => {
+    if (updateMutation.isIdle) {
+      return updateMutation.mutateAsync([
+        maipl.client,
+        {
+          id: props.batch.id,
+          shared_to: Array.from(shareTo.entries()),
+        },
+      ])
+    }
+  }
 
   const table = MR.Files.useTable({
     selection: R.useMemo(
       () =>
         new Map(
-          props.batch.filelist.map((id) => [id, true as unknown as File.t])
+          props.batch.filelist.map(id => [id, true as unknown as File.t]),
         ),
-      [props.batch]
+      [props.batch],
     ),
     pagination: {
       pageIndex: 0,
@@ -206,17 +215,36 @@ export default function ShowBatch(props: ShowBatchProps) {
             disabled={true}
             label="Annotation Configuration"
             setValue={() => {}}
-            value={String(annotationFile)}
+            value={
+              annotationFile == null
+                ? DEFAULT_ANNOTATION_CONFIG_VALUE
+                : String(annotationFile)
+            }
             values={
               annotationFile == null
-                ? { "Built-in default (KW / HB / Background)": "" }
+                ? {
+                    [DEFAULT_ANNOTATION_CONFIG_NAME]:
+                      DEFAULT_ANNOTATION_CONFIG_VALUE,
+                  }
                 : {
-                    [`${props.annotationFile!.maipl_folder}/${props.annotationFile!.path}`]:
-                      String(annotationFile),
+                    [`${props.annotationFile!.maipl_folder}/${
+                      props.annotationFile!.path
+                    }`]: String(annotationFile),
                   }
             }
             fullWidth
           />
+          {annotationFile == null && (
+            <M.Box>
+              <M.Typography variant="caption" color="text.secondary">
+                Killer whale (KW), Humpback whale (HB), both species (KW+HB), or
+                Background
+              </M.Typography>
+              <DefaultAnnotationSchemaDetails
+                config={parseAnnotationConfig(props.batch.annotation_file_text)}
+              />
+            </M.Box>
+          )}
         </M.Stack>
         <M.Stack direction="row" flexGrow={1} justifyContent="center">
           <M.Tabs
@@ -276,13 +304,13 @@ export default function ShowBatch(props: ShowBatchProps) {
                 }}
                 sx={{
                   "& .MuiTableCell-root": {
-                    color: "text.disabled"
+                    color: "text.disabled",
                   },
                   "& .MuiCheckbox-root": {
                     disabled: true,
-                    color: "action.disabled" 
+                    color: "action.disabled",
                   },
-                  pointerEvents: "none"
+                  pointerEvents: "none",
                 }}
               />
             </M.Stack>
@@ -361,14 +389,18 @@ export default function ShowBatch(props: ShowBatchProps) {
             />
           </M.Stack>
         )}
-        <M.Stack direction="row" justifyContent="space-between" alignItems="center">
+        <M.Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
           <M.Typography>
             Selection: {table.selection.size} files (
             {F.filesize(
               files.data.reduce(
                 (r, f) => r + (table.selection.has(f.id) ? f.size : 0),
-                0
-              )
+                0,
+              ),
             )}
             )
           </M.Typography>

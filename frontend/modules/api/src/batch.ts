@@ -206,21 +206,43 @@ type t_export_response = {
   filename: string
 }
 
+type t_annotation_config = {
+  schema: Record<string, unknown>
+  uiSchema: Record<string, unknown>
+}
+
+type t_default_annotation_schema = {
+  name: string
+  description: string
+  config: t_annotation_config
+}
+
+/** Batch.defaultAnnotationSchema: get the built-in annotation schema. */
+const defaultAnnotationSchema = (
+  client: Client.t,
+): Promise<t_default_annotation_schema> => {
+  return client
+    .get<t_default_annotation_schema>(
+      `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/schema/default/`,
+    )
+    .then(response => response.data)
+}
+
 /** Batch.export: export an existing batch */
 const export_ = async (client: Client.t, id: number): Promise<string> => {
   const response = await client
     .post<t_export_response>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/export/`,
-      { batch_id: id }
+      { batch_id: id },
     )
-    .then((r) => r.data)
+    .then(r => r.data)
   return response.filename
 }
 
 /** Batch.audios: get list of batch audios */
 const audios = async (
   client: Client.t,
-  id: number
+  id: number,
 ): Promise<Array<Segment.t_audio>> => {
   return client
     .get<Array<Segment.t_audio>>(
@@ -229,9 +251,9 @@ const audios = async (
         params: {
           batch_id: id,
         },
-      }
+      },
     )
-    .then((r) => r.data)
+    .then(r => r.data)
 }
 
 /** Batch.create: create a new batch */
@@ -239,9 +261,9 @@ const create = async (client: Client.t, body: t_create_request): Promise<t> => {
   const response = await client
     .post<t_create_response>(
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/`,
-      body
+      body,
     )
-    .then((r) => r.data)
+    .then(r => r.data)
   return {
     ...response,
     created_at: new Date(response.created_at),
@@ -250,14 +272,14 @@ const create = async (client: Client.t, body: t_create_request): Promise<t> => {
 
 const preview = async (
   client: Client.t,
-  body: t_create_request
+  body: t_create_request,
 ): Promise<Blob> => {
   const response = await client.post(
     `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/preview/`,
     body,
     {
       responseType: "blob",
-    }
+    },
   )
   return response.data
 }
@@ -265,26 +287,23 @@ const preview = async (
 /** Batch.delete: delete an existing batch */
 const delete_ = (client: Client.t, id: number): Promise<void> => {
   return client.delete(
-    `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/`
+    `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/`,
   )
 }
 
 /** Batch.deleteBulk: delete multiple batches by IDs */
 const deleteBulk = (client: Client.t, ids: number[]): Promise<void> => {
-  return client.delete(
-    `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/`,
-    {
-      params: {
-        ids: ids.join(","),
-      },
-    }
-  )
+  return client.delete(`${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/`, {
+    params: {
+      ids: ids.join(","),
+    },
+  })
 }
 
 /** Batch.images: get list of batch images */
 const images = (
   client: Client.t,
-  id: number
+  id: number,
 ): Promise<Array<Segment.t_image>> => {
   return client
     .get<Array<Segment.t_image>>(
@@ -293,15 +312,15 @@ const images = (
         params: {
           batch_id: id,
         },
-      }
+      },
     )
-    .then((r) => r.data)
+    .then(r => r.data)
 }
 
 /** Batch.list: get paginated list of batches */
 const list = async (
   client: Client.t,
-  params: t_list_request
+  params: t_list_request,
 ): Promise<t_page<t_list_item>> => {
   const response = await client
     .get<t_list_response>(
@@ -312,12 +331,12 @@ const list = async (
           batch_name__contains: params.name, // todo: backend remap
           user_id: params.user, // todo: backend remap
         },
-      }
+      },
     )
-    .then((r) => r.data)
+    .then(r => r.data)
   return {
     ...response,
-    data: response.data.map((item) => ({
+    data: response.data.map(item => ({
       ...item,
       created_at: new Date(item.created_at),
       role: item.role && {
@@ -332,9 +351,9 @@ const list = async (
 const get = async (client: Client.t, id: number): Promise<t> => {
   const response = await client
     .get<t_get_response>(
-      `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/`
+      `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/`,
     )
-    .then((r) => r.data)
+    .then(r => r.data)
   return {
     ...response,
     created_at: new Date(response.created_at),
@@ -350,11 +369,11 @@ type Patch<T extends { id: number }> = Pick<T, "id"> & Partial<Omit<T, "id">>
 /** Batch.patch: partial update existing batch */
 const patch = (
   client: Client.t,
-  body: Patch<t_update_request>
+  body: Patch<t_update_request>,
 ): Promise<void> => {
   return client.patch(
     `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${body.id}/`,
-    body
+    body,
   )
 }
 
@@ -365,23 +384,23 @@ const process = async (client: Client.t, id: number): Promise<number> => {
       `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/process/`,
       {
         batch_id: id,
-      }
+      },
     )
-    .then((r) => r.data)
+    .then(r => r.data)
   return response.task_id
 }
 
 /** Batch.segments: get unpaginated list of batch segments */
 const segments = async (
   client: Client.t,
-  id: number
+  id: number,
 ): Promise<Array<Segment.t>> => {
   const response = await client
     .get<t_read_segments_response>(
-      `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/segments/`
+      `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${id}/segments/`,
     )
-    .then((r) => r.data)
-  return response.map((s) => ({
+    .then(r => r.data)
+  return response.map(s => ({
     ...s,
     created_at: new Date(s.created_at),
     end: Number(s.end),
@@ -412,7 +431,7 @@ const status = (batch: t_list_item): t_status => {
 const update = (client: Client.t, body: t_update_request): Promise<void> => {
   return client.put(
     `${K.MAIPL_ANNOTATION_BACKEND}/api/annotation/batch/${body.id}/`,
-    body
+    body,
   )
 }
 
@@ -431,11 +450,14 @@ export {
   type t_segment_parameters,
   type t_update_request,
   type t_export_response,
+  type t_annotation_config,
+  type t_default_annotation_schema,
   audios,
   create,
   preview,
   delete_ as delete,
   deleteBulk,
+  defaultAnnotationSchema,
   export_ as export,
   get,
   images,
