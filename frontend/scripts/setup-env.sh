@@ -58,6 +58,15 @@ for dir in "$PROJECT_ROOT/apps"/*/ ; do
                 echo "" >> "$dir.env"
                 echo "VITE_BASE_URL=$BASE_URL" >> "$dir.env"
             fi
+            if [ "$ENV" = "proxy" ]; then
+                PORT=$(get_port "$APP_NAME")
+                if [ ! -z "$PORT" ]; then
+                    echo "VITE_PORT=$PORT" >> "$dir.env"
+                fi
+                if [ ! -z "$VITE_HMR_CLIENT_PORT" ]; then
+                    echo "VITE_HMR_CLIENT_PORT=$VITE_HMR_CLIENT_PORT" >> "$dir.env"
+                fi
+            fi
         fi
     fi
-done 
+done

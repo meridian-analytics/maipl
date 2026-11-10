@@ -208,3 +208,17 @@ When creating a batch, you need to provide a JSON schema that defines the struct
 ```
 
 <small>[back to top](#maipl)</small>
+
+# Frontend development
+
+The repository contains several Vite applications, but they can be developed
+through a single browser origin. From the repository root, run:
+
+```bash
+docker compose -f compose.yml -f compose.dev.yml up --build
+```
+
+The development gateway listens on <http://localhost:8080/> and proxies each
+production-style path to its Vite server. It also proxies `/api/` to Django and
+supports Vite WebSocket connections for hot module replacement. See the root
+README for SSH forwarding and HTTPS development-host settings.

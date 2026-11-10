@@ -44,6 +44,41 @@ docker compose down
 docker compose down --volumes  # also removes all local MAIPL data
 ```
 
+### Live frontend development through one port
+
+Use the development override to run all Vite applications with hot module
+replacement behind one Nginx gateway. The individual Vite ports remain inside
+the Docker network; the browser only connects to port `8080`.
+
+```bash
+docker compose -f compose.yml -f compose.dev.yml up --build
+```
+
+Open <http://localhost:8080/>. Application routes match production, including
+`/annotation-tool`, `/file-service`, and `/model-runner`. Source changes under
+`frontend/` are reflected without rebuilding or merging to `main`.
+
+For private access from another computer, forward only the gateway port:
+
+```bash
+ssh -L 8080:localhost:8080 user@development-host
+```
+
+Then open <http://localhost:8080/> on the local computer. To expose the gateway
+through an HTTPS development hostname, point the reverse proxy at port `8080`
+with WebSocket support and start the stack with values matching that hostname:
+
+```bash
+MAIPL_DEV_ORIGIN=https://dev.example.org \
+MAIPL_DEV_HOST=dev.example.org \
+MAIPL_DEV_ALLOWED_HOSTS=dev.example.org,backend \
+MAIPL_DEV_HMR_PORT=443 \
+docker compose -f compose.yml -f compose.dev.yml up --build
+```
+
+Keep a remotely exposed development environment behind authentication or an
+IP allowlist. Do not expose the individual Vite, database, or storage ports.
+
 ### Create an annotation batch
 
 Upload WAV or FLAC files in **Files**, then create a batch in **Annotation

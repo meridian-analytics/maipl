@@ -1,0 +1,5 @@
+FROM node:20-alpine
+
+RUN apk add --no-cache git && npm install --global pnpm@9.0.1
+
+WORKDIR /workspace

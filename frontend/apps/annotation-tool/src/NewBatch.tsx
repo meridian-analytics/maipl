@@ -374,6 +374,7 @@ function NewBatch(props: { onClose: () => void }) {
               <DefaultAnnotationSchemaDetails
                 details={defaultSchemaQuery.data}
                 loading={defaultSchemaQuery.isPending}
+                onRetry={() => defaultSchemaQuery.refetch()}
               />
             </M.Box>
           )}

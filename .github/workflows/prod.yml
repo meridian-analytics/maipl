@@ -33,11 +33,19 @@ concurrency:
 jobs:
   frontend-build-and-deploy:
     if: >-
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
-      (github.event_name == 'workflow_dispatch' && inputs.deploy_frontend)
+      always() && (
+        (github.event_name == 'workflow_run' &&
+         github.event.workflow_run.conclusion == 'success' &&
+         needs.backend-build-and-deploy.result == 'success') ||
+        (github.event_name == 'workflow_dispatch' &&
+         inputs.deploy_frontend &&
+         (needs.backend-build-and-deploy.result == 'success' ||
+          needs.backend-build-and-deploy.result == 'skipped'))
+      )
     runs-on: [self-hosted, maipl-production]
     environment: production
     timeout-minutes: 30
+    needs: [backend-build-and-deploy]
     env:
       REGISTRY_URL: ${{ vars.REGISTRY_URL }}
       IMAGE_PREFIX: ${{ vars.REGISTRY_URL }}/library
@@ -377,6 +385,9 @@ jobs:
           asset_path=$(printf '%s' "$frontend_html" | grep -o '/annotation-tool/assets/index-[^" ]*\.js' | head -1)
           test -n "$asset_path"
           curl --fail --silent --show-error "https://maipl.meridian.cs.dal.ca${asset_path}" \
-            | grep --fixed-strings --quiet 'Built-in default (KW / HB / Background)'
+            | grep --fixed-strings --quiet 'Default marine mammal annotation schema'
+          schema_status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            https://api.maipl.meridian.cs.dal.ca/api/annotation/schema/default/)
+          test "$schema_status" = 401
           api_status=$(curl --silent --output /dev/null --write-out '%{http_code}' https://api.maipl.meridian.cs.dal.ca/)
           test "$api_status" = 404

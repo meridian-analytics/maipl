@@ -22,9 +22,36 @@ export function DefaultAnnotationSchemaDetails(props: {
   details?: Batch.t_default_annotation_schema
   config?: Batch.t_annotation_config
   loading?: boolean
+  onRetry?: () => void
 }) {
   const [open, setOpen] = R.useState(false)
   const config = props.details?.config ?? props.config
+
+  if (props.loading) {
+    return (
+      <M.Stack direction="row" spacing={1} alignItems="center" padding={1}>
+        <M.CircularProgress size={16} />
+        <M.Typography variant="caption">Loading schema details...</M.Typography>
+      </M.Stack>
+    )
+  }
+
+  if (config == null) {
+    return (
+      <M.Alert
+        severity="warning"
+        action={
+          props.onRetry && (
+            <M.Button color="inherit" size="small" onClick={props.onRetry}>
+              Retry
+            </M.Button>
+          )
+        }
+      >
+        Schema details are temporarily unavailable.
+      </M.Alert>
+    )
+  }
 
   return (
     <>
@@ -32,9 +59,8 @@ export function DefaultAnnotationSchemaDetails(props: {
         onClick={() => setOpen(true)}
         size="small"
         startIcon={<I.InfoOutlined />}
-        disabled={props.loading || config == null}
       >
-        {props.loading ? "Loading schema..." : "View schema details"}
+        View schema details
       </M.Button>
       <M.Dialog
         open={open}
