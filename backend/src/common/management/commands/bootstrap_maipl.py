@@ -65,10 +65,17 @@ class Command(BaseCommand):
         self.stdout.write("Database roles, groups, and permissions are present")
 
     def _verify_constance(self):
-        # Reading these values verifies that the database-backed Constance
-        # configuration is available. Defaults are defined in api/settings.py;
-        # operators can override them later in Django Admin.
-        config.ALLOWED_REDIRECT_URLS
+        # Constance persists defaults in the database, so changing the
+        # environment alone does not update an existing installation. Keep
+        # environment-managed redirect hosts in sync on every bootstrap run.
+        allowed_redirect_urls = os.environ.get("ALLOWED_REDIRECT_URLS")
+        if (
+            allowed_redirect_urls
+            and config.ALLOWED_REDIRECT_URLS != allowed_redirect_urls
+        ):
+            config.ALLOWED_REDIRECT_URLS = allowed_redirect_urls
+            self.stdout.write("Allowed redirect URLs synchronized")
+
         config.ANNOTATION_CONTENT_TYPE
         config.RAW_CONTENT_TYPE
         self.stdout.write("Django Constance configuration is available")

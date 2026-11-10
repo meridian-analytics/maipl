@@ -1,10 +1,35 @@
 import os
 import tempfile
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase
 
 from common.file_utils import FileUtils
+from common.management.commands.bootstrap_maipl import Command
+
+
+class BootstrapConfigurationTests(SimpleTestCase):
+    def test_redirect_urls_are_synchronized_from_the_environment(self):
+        constance = SimpleNamespace(
+            ALLOWED_REDIRECT_URLS="localhost:8080",
+            ANNOTATION_CONTENT_TYPE="text/csv",
+            RAW_CONTENT_TYPE="audio/wav",
+        )
+
+        with (
+            patch.dict(
+                os.environ,
+                {"ALLOWED_REDIRECT_URLS": "dev.maipl-dev.com"},
+            ),
+            patch(
+                "common.management.commands.bootstrap_maipl.config",
+                constance,
+            ),
+        ):
+            Command()._verify_constance()
+
+        self.assertEqual(constance.ALLOWED_REDIRECT_URLS, "dev.maipl-dev.com")
 
 
 class InternalStorageDownloadTests(SimpleTestCase):
