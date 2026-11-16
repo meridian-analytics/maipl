@@ -24,6 +24,9 @@ from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from activity.models import ActivityEvent
+from activity.services import hash_identifier, track_event
+
 from .models import User
 from .serializers import CustomUserSerializer, GroupSerializer, LoginSerializer, UpdateUserProfileSerializer
 
@@ -167,6 +170,16 @@ class LoginView(APIView):
             serializer.is_valid(raise_exception=True)
             user = serializer.validated_data
         except ValidationError:
+            track_event(
+                event_type="auth.login_failed",
+                category=ActivityEvent.Category.SECURITY,
+                module="user",
+                request=request,
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                metadata={
+                    "identifier_hash": hash_identifier(request.data.get("username"))
+                },
+            )
             return Response({"error": "invalid user credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
         # Verify challenge
@@ -253,6 +266,15 @@ class TokenView(APIView):
         # Delete the code and challenge
         cache.delete(f"auth:{code}:challenge")
         cache.delete(f"auth:{code}:user")
+
+        track_event(
+            event_type="auth.login_succeeded",
+            category=ActivityEvent.Category.SECURITY,
+            actor=user,
+            module="user",
+            request=request,
+            status_code=status.HTTP_200_OK,
+        )
 
         return Response(tokens, status=status.HTTP_200_OK)
     
