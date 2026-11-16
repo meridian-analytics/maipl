@@ -169,3 +169,42 @@ class BatchActivityTests(SimpleTestCase):
         self.assertEqual(metadata["imported_annotation_count"], 1)
         self.assertEqual(metadata["annotation_schema_source"], "default")
         self.assertEqual(metadata["segment_length_seconds"], 60)
+
+    @patch("annotation.views.track_event")
+    @patch("annotation.views.process_batch.delay")
+    @patch("annotation.views.Batch.objects.get")
+    def test_processing_started_event_contains_batch_and_task_summary(
+        self, get_batch, delay_task, track_event
+    ):
+        from annotation.views import ProcessBatchView
+
+        batch = MagicMock()
+        batch.batch_name = "survey"
+        batch.parameters = {
+            "type": "MagSpectrogram",
+            "rate": 24000,
+            "freq_min": 100,
+            "freq_max": 10000,
+            "channel": 0,
+            "color_map": "viridis",
+        }
+        batch.segment_parameters = {"length": 60, "step": 30, "pad": False}
+        batch.filelist.count.return_value = 3
+        batch.segments.count.return_value = 12
+        get_batch.return_value = batch
+        delay_task.return_value = MagicMock(id="task-123")
+        request = MagicMock()
+        request.data = {"batch_id": 7}
+
+        response = ProcessBatchView().post(request)
+
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(batch.task_id, "task-123")
+        batch.save.assert_called_once_with()
+        metadata = track_event.call_args.kwargs["metadata"]
+        self.assertEqual(metadata["batch_name"], "survey")
+        self.assertEqual(metadata["task_id"], "task-123")
+        self.assertEqual(metadata["file_count"], 3)
+        self.assertEqual(metadata["segment_count"], 12)
+        self.assertEqual(metadata["sample_rate_hz"], 24000)
+        self.assertEqual(metadata["segment_length_seconds"], 60)
