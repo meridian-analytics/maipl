@@ -1,5 +1,7 @@
 import importlib
 import tempfile
+from decimal import Decimal
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase
@@ -169,6 +171,47 @@ class BatchActivityTests(SimpleTestCase):
         self.assertEqual(metadata["imported_annotation_count"], 1)
         self.assertEqual(metadata["annotation_schema_source"], "default")
         self.assertEqual(metadata["segment_length_seconds"], 60)
+
+
+class SegmentAnnotationActivityTests(SimpleTestCase):
+    def test_annotation_save_summary_contains_changes_and_labels(self):
+        from annotation.views import AnnotationBatchSegmentView
+
+        annotations = [
+            {
+                "id": "annotation-1",
+                "region": {"properties": {"label": ["KW", "HB"]}},
+            },
+            {
+                "id": "annotation-2",
+                "region": {"properties": {"label": "KW"}},
+            },
+        ]
+        metadata = AnnotationBatchSegmentView._build_activity_metadata(
+            batch=SimpleNamespace(id=7, batch_name="survey"),
+            segment=SimpleNamespace(
+                id=12,
+                filename="recording.wav",
+                start=Decimal("60.000"),
+                end=Decimal("120.000"),
+            ),
+            annotations=annotations,
+            created_count=1,
+            updated_count=1,
+            deleted_count=2,
+        )
+
+        self.assertEqual(metadata["batch_name"], "survey")
+        self.assertEqual(metadata["segment_id"], 12)
+        self.assertEqual(metadata["segment_start_seconds"], 60.0)
+        self.assertEqual(metadata["submitted_annotation_count"], 2)
+        self.assertEqual(metadata["created_count"], 1)
+        self.assertEqual(metadata["updated_count"], 1)
+        self.assertEqual(metadata["deleted_count"], 2)
+        self.assertEqual(metadata["label_counts"], {"KW": 2, "HB": 1})
+        self.assertEqual(
+            metadata["annotation_ids"], ["annotation-1", "annotation-2"]
+        )
 
     @patch("annotation.views.track_event")
     @patch("annotation.views.process_batch.delay")

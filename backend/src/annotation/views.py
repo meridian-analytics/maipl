@@ -194,6 +194,9 @@ class AnnotationBatchSegmentView(APIView):
 
         user = get_user_model().objects.get(id=request.user.id)
         batch = Batch.objects.get(id=batch_id)
+        segment = Segment.objects.select_related("file").get(
+            id=segment_id, batch_id=batch_id
+        )
 
         # Collect all annotation IDs from the request
         annotation_ids = [
@@ -207,6 +210,9 @@ class AnnotationBatchSegmentView(APIView):
         }
 
         response_data = []
+        created_count = 0
+        updated_count = 0
+        deleted_count = 0
 
         # Begin a transaction
         with transaction.atomic():
@@ -226,15 +232,15 @@ class AnnotationBatchSegmentView(APIView):
                     if UserCan.edit_all_annotations(user, batch):
                         annotation_obj.region = annotation["region"]
                         annotation_obj.created_at = annotation["created_at"]
+                        updated_count += 1
                     elif UserCan.edit_annotation(user, batch):
                         if annotation_obj.user_id.id == user.id:
                             annotation_obj.region = annotation["region"]
                             annotation_obj.created_at = annotation["created_at"]
+                            updated_count += 1
 
                 else:
                     # Create a new annotation
-                    segment = Segment.objects.get(id=segment_id)
-                    batch = Batch.objects.get(id=batch_id)
                     file = segment.file
 
                     annotation_obj = Annotation(
@@ -246,6 +252,7 @@ class AnnotationBatchSegmentView(APIView):
                         user_id=user,
                         created_at=annotation["created_at"],
                     )
+                    created_count += 1
 
                 # Save the annotation (either updated or new)
                 annotation_obj.save()
@@ -258,11 +265,64 @@ class AnnotationBatchSegmentView(APIView):
             for annotation in annotations_to_delete:
                 if UserCan.delete_all_annotations(user, batch):
                     annotation.delete()
+                    deleted_count += 1
                 elif UserCan.delete_annotation(user, batch):
                     if annotation.user_id.id == user.id:
                         annotation.delete()
+                        deleted_count += 1
+
+        track_event(
+            event_type="annotation.segment_annotations_saved",
+            category=ActivityEvent.Category.AUDIT,
+            actor=request.user,
+            module="annotation",
+            obj=segment,
+            request=request,
+            status_code=status.HTTP_200_OK,
+            metadata=self._build_activity_metadata(
+                batch=batch,
+                segment=segment,
+                annotations=annotations,
+                created_count=created_count,
+                updated_count=updated_count,
+                deleted_count=deleted_count,
+            ),
+        )
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _build_activity_metadata(
+        *, batch, segment, annotations, created_count, updated_count, deleted_count
+    ):
+        label_counts = {}
+        for annotation in annotations:
+            label = annotation.get("region", {}).get("properties", {}).get("label")
+            labels = label if isinstance(label, list) else [label]
+            for value in labels:
+                if value:
+                    label_counts[str(value)] = label_counts.get(str(value), 0) + 1
+
+        annotation_ids = [
+            str(annotation["id"])
+            for annotation in annotations[:20]
+            if annotation.get("id") is not None
+        ]
+        return {
+            "batch_id": batch.id,
+            "batch_name": batch.batch_name,
+            "segment_id": segment.id,
+            "filename": segment.filename,
+            "segment_start_seconds": float(segment.start),
+            "segment_end_seconds": float(segment.end),
+            "submitted_annotation_count": len(annotations),
+            "created_count": created_count,
+            "updated_count": updated_count,
+            "deleted_count": deleted_count,
+            "label_counts": label_counts,
+            "annotation_ids": annotation_ids,
+            "annotation_ids_truncated": len(annotations) > 20,
+        }
 
     @annotation_batch_segment_view_schema("get")
     def get(self, request, batch_id, segment_id, *args, **kwargs):
