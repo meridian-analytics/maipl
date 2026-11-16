@@ -8,6 +8,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 import django.db
 
+from activity.models import ActivityEvent
+from activity.services import track_event
 from common.pagination import MaiplPagination
 from common.shared_mixins import CreateListModelMixin
 
@@ -132,7 +134,7 @@ class FileListView(CreateListModelMixin, generics.ListCreateAPIView):
         data = UploadValidationHandler(self.request)
         data.validate()
         try:
-            serializer.save()
+            uploaded_file = serializer.save()
         except django.db.IntegrityError:
             raise ConflictError(
                 detail={
@@ -142,6 +144,27 @@ class FileListView(CreateListModelMixin, generics.ListCreateAPIView):
                     "type": "file_conflict"
                 }
             )
+
+        request_file = self.request.FILES.get("file")
+        track_event(
+            event_type="file.uploaded",
+            category=ActivityEvent.Category.AUDIT,
+            actor=self.request.user,
+            module="file",
+            obj=uploaded_file,
+            request=self.request,
+            status_code=status.HTTP_201_CREATED,
+            metadata={
+                "filename": uploaded_file.basename,
+                "path": uploaded_file.path,
+                "extension": uploaded_file.extname,
+                "size_bytes": uploaded_file.size,
+                "content_type": getattr(request_file, "content_type", ""),
+                "maipl_folder": uploaded_file.maipl_folder,
+                "tag": uploaded_file.tag,
+                "sha256": uploaded_file.sha256,
+            },
+        )
 
     def get_queryset(self):
         shared = self.request.query_params.get("shared", "all")

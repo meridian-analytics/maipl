@@ -40,6 +40,7 @@ class ActivityTrackingMiddleware:
             and request.path.startswith("/api/")
             and not request.path.startswith(self.EXCLUDED_PREFIXES)
             and getattr(user, "is_authenticated", False)
+            and not getattr(request, "activity_explicitly_tracked", False)
         )
 
     @staticmethod

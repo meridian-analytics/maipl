@@ -51,6 +51,7 @@ class ActivityServiceTests(SimpleTestCase):
         self.assertEqual(kwargs["object_id"], "123")
         self.assertEqual(kwargs["path"], "/api/annotation/batches/")
         self.assertEqual(kwargs["metadata"], {"batch_size": 5})
+        self.assertTrue(self.request.activity_explicitly_tracked)
 
     def test_sensitive_metadata_is_redacted_recursively(self):
         sanitized = sanitize_metadata(
@@ -97,6 +98,20 @@ class ActivityMiddlewareTests(SimpleTestCase):
         request = self.factory.get("/api/annotation/batches/")
         request.user = self.user
         ActivityTrackingMiddleware(lambda request: JsonResponse({"ok": True}))(request)
+        mocked_track_event.assert_not_called()
+
+    @patch("activity.middleware.track_event")
+    def test_explicit_business_event_prevents_duplicate_request_event(
+        self, mocked_track_event
+    ):
+        request = self.factory.post("/api/file/")
+        request.user = self.user
+
+        def response_with_explicit_event(incoming_request):
+            incoming_request.activity_explicitly_tracked = True
+            return JsonResponse({"ok": True}, status=201)
+
+        ActivityTrackingMiddleware(response_with_explicit_event)(request)
         mocked_track_event.assert_not_called()
 
 

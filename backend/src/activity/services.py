@@ -72,7 +72,7 @@ def track_event(*, event_type, category=ActivityEvent.Category.AUDIT, actor=None
         )
         session = getattr(request, "session", None) if request is not None else None
 
-        return ActivityEvent.objects.create(
+        event = ActivityEvent.objects.create(
             actor_id=actor_id,
             actor_email_snapshot=actor_email,
             category=category,
@@ -90,6 +90,12 @@ def track_event(*, event_type, category=ActivityEvent.Category.AUDIT, actor=None
             user_agent=request_meta.get("HTTP_USER_AGENT", "")[:512],
             metadata=sanitize_metadata(metadata or {}),
         )
+        if request is not None:
+            request.activity_explicitly_tracked = True
+            underlying_request = getattr(request, "_request", None)
+            if underlying_request is not None:
+                underlying_request.activity_explicitly_tracked = True
+        return event
     except Exception:
         logger.exception("Unable to persist activity event %s", event_type)
         return None
