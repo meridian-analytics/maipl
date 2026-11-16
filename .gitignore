@@ -1,5 +1,6 @@
 # Backend-specific ignores are in backend/.gitignore
 
 # Local environment files
+.env
 .env.local
 .env.*.local 
