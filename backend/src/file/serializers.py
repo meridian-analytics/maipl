@@ -139,3 +139,18 @@ class CreateSerializer(CreatorMixin, serializers.ModelSerializer):
 class FileChangeSerializer(serializers.Serializer):
     file = serializers.IntegerField()
     changes = serializers.ListField()
+
+
+class FolderStorageUsageSerializer(serializers.Serializer):
+    maipl_folder = serializers.CharField()
+    used_bytes = serializers.IntegerField(min_value=0)
+    file_count = serializers.IntegerField(min_value=0)
+
+
+class StorageUsageSerializer(serializers.Serializer):
+    used_bytes = serializers.IntegerField(min_value=0)
+    file_count = serializers.IntegerField(min_value=0)
+    quota_bytes = serializers.IntegerField(min_value=0, allow_null=True)
+    remaining_bytes = serializers.IntegerField(min_value=0, allow_null=True)
+    usage_percent = serializers.FloatField(min_value=0, allow_null=True)
+    by_folder = FolderStorageUsageSerializer(many=True)

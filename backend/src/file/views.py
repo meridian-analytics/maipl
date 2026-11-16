@@ -19,8 +19,10 @@ from .serializers import (
     CreateSerializer,
     FileChangeSerializer,
     ReadSerializer,
+    StorageUsageSerializer,
     UpdateSerializer,
 )
+from .storage_usage import get_storage_usage
 from .swagger_decorators import file_detail_view_schema, set_file_shared_view_schema, file_list_view_schema
 from .utils.folder_utils import get_direct_subfolders, get_files_in_folder
 
@@ -207,6 +209,14 @@ class FileListView(CreateListModelMixin, generics.ListCreateAPIView):
         for file in files:
             file.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class StorageUsageView(APIView):
+    """Return the authenticated user's owned-file storage usage."""
+
+    def get(self, request):
+        usage = get_storage_usage(request.user.id)
+        return Response(StorageUsageSerializer(usage).data)
 
 
 class SetFilesSharedView(APIView):
