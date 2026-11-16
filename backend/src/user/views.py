@@ -48,6 +48,7 @@ account_activation_token = AccountActivationTokenGenerator()
 # API View for creating a new user. This is a POST endpoint that accepts user data, validates it, creates a new user and sends an activation email.
 class CustomUserCreate(APIView):
     # Disable authentication for this endpoint.
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
@@ -105,6 +106,7 @@ class CustomUserCreate(APIView):
 # API View for activating a user's account. This is a GET endpoint that accepts a user ID and a token, and activates the user's account if the token is valid.
 class ActivateAccount(APIView):
     # Disable authentication for this endpoint.
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
@@ -141,6 +143,7 @@ class ActivateAccount(APIView):
 
 
 class LoginView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
@@ -207,6 +210,7 @@ class LoginView(APIView):
 
 
 class TokenView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
@@ -279,6 +283,7 @@ class TokenView(APIView):
         return Response(tokens, status=status.HTTP_200_OK)
     
 class RefreshTokenView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(

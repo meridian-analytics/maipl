@@ -24,6 +24,7 @@ class ActivityServiceTests(SimpleTestCase):
             HTTP_USER_AGENT="Maple browser",
             REMOTE_ADDR="127.0.0.1",
         )
+        self.request.session = SimpleNamespace(session_key=None)
 
     @patch("activity.services.ActivityEvent.objects.create")
     def test_track_event_persists_actor_object_and_request_context(self, create_event):
@@ -50,6 +51,7 @@ class ActivityServiceTests(SimpleTestCase):
         self.assertEqual(kwargs["object_type"], "annotation.batch")
         self.assertEqual(kwargs["object_id"], "123")
         self.assertEqual(kwargs["path"], "/api/annotation/batches/")
+        self.assertEqual(kwargs["session_id"], "")
         self.assertEqual(kwargs["metadata"], {"batch_size": 5})
         self.assertTrue(self.request.activity_explicitly_tracked)
 

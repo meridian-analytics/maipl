@@ -81,7 +81,7 @@ def track_event(*, event_type, category=ActivityEvent.Category.AUDIT, actor=None
             object_type=object_type,
             object_id=object_id,
             request_id=getattr(request, "activity_request_id", None),
-            session_id=session.session_key if session is not None else "",
+            session_id=(session.session_key or "") if session is not None else "",
             path=request.path[:2048] if request is not None else "",
             http_method=request.method[:10] if request is not None else "",
             status_code=status_code,
