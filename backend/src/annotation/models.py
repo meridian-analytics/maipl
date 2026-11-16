@@ -40,7 +40,7 @@ class Batch(models.Model):
     Batch model for storing batch information and settings.
     """
 
-    batch_name = models.CharField(max_length=250, unique=True)
+    batch_name = models.CharField(max_length=250)
     description = models.TextField(blank=True, null=True)
     parameters = models.JSONField()
     allow_change_settings = models.BooleanField(default=False)

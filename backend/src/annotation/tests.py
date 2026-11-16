@@ -11,6 +11,8 @@ from annotation.schema_defaults import (
     load_default_annotation_schema,
 )
 from annotation.tasks import validate_generated_file
+from annotation.models import Batch
+from annotation.serializers import BatchWriteSerializer
 
 
 batch_create_module = importlib.import_module(
@@ -112,3 +114,58 @@ class AnnotationSchemaSelectionTests(SimpleTestCase):
             )
             custom_file.file.open.assert_called_once_with("rb")
             custom_file.file.close.assert_called_once()
+
+
+class BatchOwnershipConstraintTests(SimpleTestCase):
+    def test_batch_name_is_unique_per_user_not_globally(self):
+        batch_name_field = Batch._meta.get_field("batch_name")
+
+        self.assertFalse(batch_name_field.unique)
+        self.assertIn(("batch_name", "user_id"), Batch._meta.unique_together)
+
+    def test_serializer_does_not_apply_global_name_validator(self):
+        serializer = BatchWriteSerializer()
+        validator_names = {
+            validator.__class__.__name__
+            for validator in serializer.fields["batch_name"].validators
+        }
+
+        self.assertNotIn("UniqueValidator", validator_names)
+
+
+class BatchActivityTests(SimpleTestCase):
+    @patch("annotation.views.track_event")
+    def test_batch_created_event_contains_a_useful_summary(self, track_event):
+        from annotation.views import BatchList
+
+        batch = MagicMock()
+        batch.batch_name = "survey"
+        batch.description = "A test batch"
+        batch.parameters = {
+            "type": "MagSpectrogram",
+            "rate": 24000,
+            "freq_min": 100,
+            "freq_max": 10000,
+        }
+        batch.segment_parameters = {"length": 60, "step": 30, "pad": False}
+        batch.allow_change_settings = True
+        batch.filelist.count.return_value = 3
+        handler = MagicMock(
+            batch=batch,
+            annotation_config_file_id=None,
+            import_file_id=9,
+        )
+        handler.get_segment_ids.return_value = [1, 2, 3, 4]
+        handler.get_annotations.return_value = [{"label": "KW"}]
+        request = MagicMock()
+        response = MagicMock(status_code=201)
+
+        BatchList._track_batch_created(request, handler, response)
+
+        metadata = track_event.call_args.kwargs["metadata"]
+        self.assertEqual(metadata["batch_name"], "survey")
+        self.assertEqual(metadata["file_count"], 3)
+        self.assertEqual(metadata["segment_count"], 4)
+        self.assertEqual(metadata["imported_annotation_count"], 1)
+        self.assertEqual(metadata["annotation_schema_source"], "default")
+        self.assertEqual(metadata["segment_length_seconds"], 60)
