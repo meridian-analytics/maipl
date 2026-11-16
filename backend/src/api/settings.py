@@ -23,6 +23,12 @@ DEBUG = getenvbool("DEBUG", DJANGO_ENV == "dev")
 # Demo environment flag - determines whether this instance is a demo environment
 IS_DEMO_ENVIRONMENT = getenvbool("IS_DEMO_ENVIRONMENT", False)
 
+# Activity tracking is intentionally server-side and can be disabled per environment.
+ACTIVITY_TRACKING_ENABLED = getenv(
+    "ACTIVITY_TRACKING_ENABLED", "true"
+).lower() in ("true", "1")
+ACTIVITY_CAPTURE_IP = getenvbool("ACTIVITY_CAPTURE_IP", False)
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -96,6 +102,7 @@ INSTALLED_APPS = [
     "django_celery_results",
     "django_filters",
     "guardian",
+    "activity",
 ]
 
 MIDDLEWARE = [
@@ -108,6 +115,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "activity.middleware.ActivityTrackingMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "api.middleware.DemoEnvironmentMiddleware",  # Demo environment middleware
 ]

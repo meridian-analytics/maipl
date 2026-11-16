@@ -13,6 +13,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from activity.models import ActivityEvent
+from activity.services import track_event
 from common.pagination import MaiplPagination
 from common.shared_mixins import CreateListModelMixin, DeleteByIdsMixin
 from common.sorting import SortableMixin
@@ -81,11 +83,38 @@ class ProcessBatchView(APIView):
             )
 
         try:
+            batch = Batch.objects.get(id=batch_id)
             task = process_batch.delay(batch_id)
             # update task id in batch
-            batch = Batch.objects.get(id=batch_id)
             batch.task_id = task.id
             batch.save()
+
+            parameters = batch.parameters or {}
+            segment_parameters = batch.segment_parameters or {}
+            track_event(
+                event_type="annotation.batch_processing_started",
+                category=ActivityEvent.Category.AUDIT,
+                actor=request.user,
+                module="annotation",
+                obj=batch,
+                request=request,
+                status_code=status.HTTP_202_ACCEPTED,
+                metadata={
+                    "batch_name": batch.batch_name,
+                    "task_id": task.id,
+                    "file_count": batch.filelist.count(),
+                    "segment_count": batch.segments.count(),
+                    "visualization_type": parameters.get("type"),
+                    "sample_rate_hz": parameters.get("rate"),
+                    "frequency_min_hz": parameters.get("freq_min"),
+                    "frequency_max_hz": parameters.get("freq_max"),
+                    "channel": parameters.get("channel"),
+                    "color_map": parameters.get("color_map"),
+                    "segment_length_seconds": segment_parameters.get("length"),
+                    "segment_step_seconds": segment_parameters.get("step"),
+                    "segment_padding": segment_parameters.get("pad"),
+                },
+            )
             return Response(
                 {"task_id": task.id, "message": "Your request has been processed."},
                 status=status.HTTP_202_ACCEPTED,
@@ -165,6 +194,9 @@ class AnnotationBatchSegmentView(APIView):
 
         user = get_user_model().objects.get(id=request.user.id)
         batch = Batch.objects.get(id=batch_id)
+        segment = Segment.objects.select_related("file").get(
+            id=segment_id, batch_id=batch_id
+        )
 
         # Collect all annotation IDs from the request
         annotation_ids = [
@@ -178,6 +210,9 @@ class AnnotationBatchSegmentView(APIView):
         }
 
         response_data = []
+        created_count = 0
+        updated_count = 0
+        deleted_count = 0
 
         # Begin a transaction
         with transaction.atomic():
@@ -197,15 +232,15 @@ class AnnotationBatchSegmentView(APIView):
                     if UserCan.edit_all_annotations(user, batch):
                         annotation_obj.region = annotation["region"]
                         annotation_obj.created_at = annotation["created_at"]
+                        updated_count += 1
                     elif UserCan.edit_annotation(user, batch):
                         if annotation_obj.user_id.id == user.id:
                             annotation_obj.region = annotation["region"]
                             annotation_obj.created_at = annotation["created_at"]
+                            updated_count += 1
 
                 else:
                     # Create a new annotation
-                    segment = Segment.objects.get(id=segment_id)
-                    batch = Batch.objects.get(id=batch_id)
                     file = segment.file
 
                     annotation_obj = Annotation(
@@ -217,6 +252,7 @@ class AnnotationBatchSegmentView(APIView):
                         user_id=user,
                         created_at=annotation["created_at"],
                     )
+                    created_count += 1
 
                 # Save the annotation (either updated or new)
                 annotation_obj.save()
@@ -229,11 +265,64 @@ class AnnotationBatchSegmentView(APIView):
             for annotation in annotations_to_delete:
                 if UserCan.delete_all_annotations(user, batch):
                     annotation.delete()
+                    deleted_count += 1
                 elif UserCan.delete_annotation(user, batch):
                     if annotation.user_id.id == user.id:
                         annotation.delete()
+                        deleted_count += 1
+
+        track_event(
+            event_type="annotation.segment_annotations_saved",
+            category=ActivityEvent.Category.AUDIT,
+            actor=request.user,
+            module="annotation",
+            obj=segment,
+            request=request,
+            status_code=status.HTTP_200_OK,
+            metadata=self._build_activity_metadata(
+                batch=batch,
+                segment=segment,
+                annotations=annotations,
+                created_count=created_count,
+                updated_count=updated_count,
+                deleted_count=deleted_count,
+            ),
+        )
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _build_activity_metadata(
+        *, batch, segment, annotations, created_count, updated_count, deleted_count
+    ):
+        label_counts = {}
+        for annotation in annotations:
+            label = annotation.get("region", {}).get("properties", {}).get("label")
+            labels = label if isinstance(label, list) else [label]
+            for value in labels:
+                if value:
+                    label_counts[str(value)] = label_counts.get(str(value), 0) + 1
+
+        annotation_ids = [
+            str(annotation["id"])
+            for annotation in annotations[:20]
+            if annotation.get("id") is not None
+        ]
+        return {
+            "batch_id": batch.id,
+            "batch_name": batch.batch_name,
+            "segment_id": segment.id,
+            "filename": segment.filename,
+            "segment_start_seconds": float(segment.start),
+            "segment_end_seconds": float(segment.end),
+            "submitted_annotation_count": len(annotations),
+            "created_count": created_count,
+            "updated_count": updated_count,
+            "deleted_count": deleted_count,
+            "label_counts": label_counts,
+            "annotation_ids": annotation_ids,
+            "annotation_ids_truncated": len(annotations) > 20,
+        }
 
     @annotation_batch_segment_view_schema("get")
     def get(self, request, batch_id, segment_id, *args, **kwargs):
@@ -367,7 +456,10 @@ class BatchList(generics.ListCreateAPIView):
                     data.generate_segments_with_filelist()
                     response.data["segments"] = data.get_segment_ids()
                     data.import_annotations_to_batch()
+                    self._track_batch_created(request, data, response)
                     return response
+            except ValidationError as e:
+                return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
             except (ValueError, Exception) as e:
                 return Response(
                     {
@@ -383,7 +475,10 @@ class BatchList(generics.ListCreateAPIView):
                     data.set_batch_id(response.data["id"])
                     data.generate_segments_with_filelist()
                     response.data["segments"] = data.get_segment_ids()
+                    self._track_batch_created(request, data, response)
                     return response
+            except ValidationError as e:
+                return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
                 return Response(
                     {
@@ -393,6 +488,43 @@ class BatchList(generics.ListCreateAPIView):
                     },
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
+
+    @staticmethod
+    def _track_batch_created(request, handler, response):
+        batch = handler.batch
+        parameters = batch.parameters or {}
+        segment_parameters = batch.segment_parameters or {}
+        description = batch.description or ""
+
+        track_event(
+            event_type="annotation.batch_created",
+            category=ActivityEvent.Category.AUDIT,
+            actor=request.user,
+            module="annotation",
+            obj=batch,
+            request=request,
+            status_code=response.status_code,
+            metadata={
+                "batch_name": batch.batch_name,
+                "description": description[:500],
+                "file_count": batch.filelist.count(),
+                "segment_count": len(handler.get_segment_ids()),
+                "imported_annotation_count": len(handler.get_annotations()),
+                "annotation_schema_source": (
+                    "custom" if handler.annotation_config_file_id else "default"
+                ),
+                "annotation_file_id": handler.annotation_config_file_id,
+                "import_file_id": handler.import_file_id,
+                "allow_change_settings": batch.allow_change_settings,
+                "visualization_type": parameters.get("type"),
+                "sample_rate_hz": parameters.get("rate"),
+                "frequency_min_hz": parameters.get("freq_min"),
+                "frequency_max_hz": parameters.get("freq_max"),
+                "segment_length_seconds": segment_parameters.get("length"),
+                "segment_step_seconds": segment_parameters.get("step"),
+                "segment_padding": segment_parameters.get("pad"),
+            },
+        )
                 
     def delete(self, request, *args, **kwargs):
         """

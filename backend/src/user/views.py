@@ -24,6 +24,9 @@ from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from activity.models import ActivityEvent
+from activity.services import hash_identifier, track_event
+
 from .models import User
 from .serializers import CustomUserSerializer, GroupSerializer, LoginSerializer, UpdateUserProfileSerializer
 
@@ -45,6 +48,7 @@ account_activation_token = AccountActivationTokenGenerator()
 # API View for creating a new user. This is a POST endpoint that accepts user data, validates it, creates a new user and sends an activation email.
 class CustomUserCreate(APIView):
     # Disable authentication for this endpoint.
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
@@ -102,6 +106,7 @@ class CustomUserCreate(APIView):
 # API View for activating a user's account. This is a GET endpoint that accepts a user ID and a token, and activates the user's account if the token is valid.
 class ActivateAccount(APIView):
     # Disable authentication for this endpoint.
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
@@ -138,6 +143,7 @@ class ActivateAccount(APIView):
 
 
 class LoginView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
@@ -167,6 +173,16 @@ class LoginView(APIView):
             serializer.is_valid(raise_exception=True)
             user = serializer.validated_data
         except ValidationError:
+            track_event(
+                event_type="auth.login_failed",
+                category=ActivityEvent.Category.SECURITY,
+                module="user",
+                request=request,
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                metadata={
+                    "identifier_hash": hash_identifier(request.data.get("username"))
+                },
+            )
             return Response({"error": "invalid user credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
         # Verify challenge
@@ -194,6 +210,7 @@ class LoginView(APIView):
 
 
 class TokenView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
@@ -254,9 +271,19 @@ class TokenView(APIView):
         cache.delete(f"auth:{code}:challenge")
         cache.delete(f"auth:{code}:user")
 
+        track_event(
+            event_type="auth.login_succeeded",
+            category=ActivityEvent.Category.SECURITY,
+            actor=user,
+            module="user",
+            request=request,
+            status_code=status.HTTP_200_OK,
+        )
+
         return Response(tokens, status=status.HTTP_200_OK)
     
 class RefreshTokenView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
